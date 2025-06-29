@@ -4,10 +4,14 @@ set(LIB_NAME TripleEngineCore)
 
 include(${CMAKE_SOURCE_DIR}/cmake/CopyDlls.cmake)
 
+file(GLOB_RECURSE SOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+)
+
+assign_source_groups("${CMAKE_CURRENT_SOURCE_DIR}/src" SOURCE_FILES "src")
+
 add_library(${LIB_NAME} SHARED
-	src/tripleEngineCore.cpp
-	src/application.cpp
-	src/glWindow.cpp
+	${SOURCE_FILES}
 )
 
 target_include_directories(${LIB_NAME}
@@ -18,6 +22,8 @@ file(GLOB_RECURSE HEADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
 )
+
+assign_source_groups("${CMAKE_CURRENT_SOURCE_DIR}/include" HEADER_FILES "include")
 
 target_sources(${LIB_NAME} PRIVATE
 	${HEADER_FILES}
@@ -32,18 +38,14 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 target_link_libraries(${LIB_NAME} PRIVATE glfw)
 
-# ───── GLAD ─────
-target_link_libraries(${LIB_NAME} PRIVATE glad)
-
 # ───── TLogger ─────
 target_link_libraries(${LIB_NAME} PRIVATE TripleLogger)
 
-# ───── TRenderer ─────
-target_link_libraries(${LIB_NAME} PRIVATE TripleRenderer)
+target_link_libraries(${LIB_NAME} PRIVATE glad)
 
 # ───── Characters Exports For Windows ─────
 if(WIN32)
-    target_compile_definitions(${LIB_NAME} PRIVATE CORE_EXPORTS)
+    target_compile_definitions(${LIB_NAME} PUBLIC CORE_EXPORTS)
 endif()
 
 copy_dll_to_bin(TripleEngineCore)

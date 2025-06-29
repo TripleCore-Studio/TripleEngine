@@ -1,6 +1,7 @@
 #include <iostream>
-#include <Application.h>
-#include <TripleEngineCore.h>
+#include <Application/Application.h>
+
+using namespace TripleEngineCore;
 
 class EditorApp : public TripleEngineCore::Application {
 	int index = 0;
@@ -11,7 +12,7 @@ class EditorApp : public TripleEngineCore::Application {
 
 int main() {
 	std::unique_ptr<EditorApp> app = std::make_unique<EditorApp>();
-	app->start("Triple Editor v0.0.1", 500, 300);
+	app->start("Triple Editor v(0.0.1)", 500, 300);
 
 	std::getchar();
 	return 0;

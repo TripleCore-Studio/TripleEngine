@@ -1,17 +1,10 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#ifdef _WIN32
-#ifdef CORE_EXPORTS
-#define CORE_API __declspec(dllexport)
-#else
-#define CORE_API __declspec(dllimport)
-#endif
-#else
-#define CORE_API
-#endif
-
 #include <memory>
+#include <ExportMacros.h>
+#include "Interfaces/IRenderer.h"
+#include "ModuleLoader.h"
 
 namespace TripleEngineCore {
 	class CORE_API Application {
@@ -26,7 +19,13 @@ namespace TripleEngineCore {
 		Application& operator=(const Application&) = delete;
 		Application& operator=(Application&&) = delete;
 
+		void loadCallbacks();
+
+		std::unique_ptr<System::ModuleLoader> _pModuleLoader;
+
 		std::unique_ptr<struct GLWindow> _pWindow;
+		std::unique_ptr<struct EventDispatcher> _pEventDispatcher;
+		bool _isRunning;
 	};
 }
 #endif // APPLICATION_H

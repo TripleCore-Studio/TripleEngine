@@ -26,6 +26,7 @@ target_include_directories(${LIB_NAME}
 target_compile_features(${LIB_NAME} PUBLIC cxx_std_17)
 
 target_link_libraries(${LIB_NAME} PRIVATE spdlog)
+target_link_libraries(${LIB_NAME} PUBLIC fmt::fmt)
 
 if(WIN32)
     target_compile_definitions(${LIB_NAME} PRIVATE LOGGER_EXPORTS)

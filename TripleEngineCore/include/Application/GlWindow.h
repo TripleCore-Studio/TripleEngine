@@ -1,33 +1,33 @@
 #ifndef GLWINDOW_H
 #define GLWINDOW_H
 
-#ifdef _WIN32
-#ifdef CORE_EXPORTS
-#define CORE_API __declspec(dllexport)
-#else
-#define CORE_API __declspec(dllimport)
-#endif
-#else
-#define CORE_API
-#endif
+#include <memory>
+#include <functional>
+#include <ExportMacros.h>
 
 struct GLFWwindow;
 
 namespace TripleEngineCore {
 	class CORE_API GLWindow {
 	public:
-		GLWindow(const char* title, int width, int height);
-		~GLWindow();
-		virtual void shutdown();
-		virtual void onUpdate();
-
 		enum class ErrorCode {
 			None = 0,
 			GlfwInitError,
 			CreateWindowError
 		};
+
+		using EventCallbackFn = std::function<void(class Event&)>;
+
+		GLWindow(const char* title, int width, int height);
+		~GLWindow();
+
+		void setEventCallback(const EventCallbackFn& callback) { _data.eventCallback = callback; }
+
+		virtual void shutdown();
+		virtual void onUpdate();
+
+		ErrorCode init(void** outProc);
 	private:
-		ErrorCode init();
 		GLWindow(const GLWindow&) = delete;
 		GLWindow& operator=(const GLWindow&) = delete;
 
@@ -37,6 +37,7 @@ namespace TripleEngineCore {
 			char* title;
 			int width;
 			int height;
+			EventCallbackFn eventCallback;
 		};
 
 		WindowData _data;

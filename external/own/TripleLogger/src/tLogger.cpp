@@ -1,21 +1,19 @@
 #include "TLogger.h"
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <memory>
+
+namespace {
+    static std::shared_ptr<spdlog::logger> logger;
+}
 
 namespace TripleLogger {
-	void TLogger::LogError(const std::string& text)
-	{
-		spdlog::error("{0}", text);
-	}
-	void TLogger::LogWarning(const std::string& text)
-	{
-		spdlog::warn("{0}", text);
-	}
-	void TLogger::LogInfo(const std::string& text)
-	{
-		spdlog::info("{0}", text);
-	}
-	void TLogger::LogCritical(const std::string& text)
-	{
-		spdlog::critical("{0}", text);
-	}
+    void TLogger::LogMessage(LogLevel level, const std::string& message) {
+        switch (level) {
+        case LogLevel::Info:  spdlog::info(message); break;
+        case LogLevel::Warn:  spdlog::warn(message); break;
+        case LogLevel::Error: spdlog::error(message); break;
+        case LogLevel::Critical: spdlog::critical(message); break;
+        }
+    }
 }
