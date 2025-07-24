@@ -16,7 +16,7 @@ namespace TripleEngineCore {
 			case ModuleType::OpenGLRenderer:
 			{
 				if (_modules.find(type) != _modules.end()) {
-					TripleLogger::TLogger::Error("Module already loaded: OpenGLRenderer");
+					TripleLogger::TLogger::ModuleError(this->getLoaderClassName(), "Module already loaded: OpenGLRenderer");
 					return ErrorCode::ModuleAlreadyLoaded;
 				}
 				auto module = std::make_unique<OpenGLRenderModule>(this->_modulesPath, "TripleRenderer_OpenGL");
@@ -28,7 +28,7 @@ namespace TripleEngineCore {
 				break;
 			}
 			default:
-				TripleLogger::TLogger::Error("Unknown module type: {}", static_cast<int>(type));
+				TripleLogger::TLogger::ModuleError(this->getLoaderClassName(), "Unknown module type: {}", "ModuleType::OpenGLRenderer");
 				break;
 			}
 		}
@@ -38,10 +38,10 @@ namespace TripleEngineCore {
 			if (it != _modules.end()) {
 				it->second->unload();
 				_modules.erase(it);
-				TripleLogger::TLogger::Info("Module unloaded successfully: \"{}\"", static_cast<int>(type));
+				TripleLogger::TLogger::ModuleInfo(this->getLoaderClassName(), "Module unloaded successfully: \"{}\"", static_cast<int>(type));
 			}
 			else {
-				TripleLogger::TLogger::Error("Module not found: \"{}\"", static_cast<int>(type));
+				TripleLogger::TLogger::ModuleError(this->getLoaderClassName(), "Module not found: \"{}\"", "ModuleType::OpenGLRenderer");
 			}
 		}
 		IModule* ModuleLoader::getModule(ModuleType type)
@@ -50,8 +50,11 @@ namespace TripleEngineCore {
 			if (it != _modules.end()) {
 				return it->second.get();
 			}
-			TripleLogger::TLogger::Error("Module not found: \"{}\"", static_cast<int>(type));
 			return nullptr;
+		}
+		std::string ModuleLoader::getLoaderClassName()
+		{
+			return "ModuleLoader";
 		}
 		ModuleLoader::~ModuleLoader()
 		{

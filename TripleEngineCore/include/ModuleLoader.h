@@ -39,6 +39,7 @@ namespace TripleEngineCore {
 			ErrorCode loadModule(ModuleType type);
 			void unloadModule(ModuleType type);
 			IModule* getModule(ModuleType type);
+			std::string getLoaderClassName();
 
 			~ModuleLoader();
 

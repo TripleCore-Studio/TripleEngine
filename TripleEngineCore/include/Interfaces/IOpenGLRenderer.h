@@ -7,7 +7,7 @@
 namespace TripleEngineCore {
     class CORE_API IOpenGLRenderer : public virtual IRenderer {
     public:
-        virtual void initGlad(void* loader) = 0;
+        virtual bool initGlad(void* loader) = 0;
     };
 }
 

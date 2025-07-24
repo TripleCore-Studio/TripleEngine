@@ -7,3 +7,12 @@
 [submodule "external/third_party/fmt"]
 	path = external/third_party/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "external/third_party/glm"]
+	path = external/third_party/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "external/third_party/googletest"]
+	path = external/third_party/googletest
+	url = https://github.com/google/googletest.git
+[submodule "external/third_party/stb"]
+	path = external/third_party/stb
+	url = https://github.com/nothings/stb

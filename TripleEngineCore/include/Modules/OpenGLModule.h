@@ -10,11 +10,12 @@ namespace TripleEngineCore {
 	class OpenGLRenderModule : public IModule {
 	public:
 		OpenGLRenderModule(const std::string& modulesPath, const std::string& moduleName);
-		virtual const std::string& getName() const override;
+		virtual const std::string& getModuleName() const override;
 		virtual bool load() override;
 		virtual void unload() override;
 
 		IRenderer* getRenderer() const;
+		std::string getModuleClassName();
 
 		~OpenGLRenderModule();
 

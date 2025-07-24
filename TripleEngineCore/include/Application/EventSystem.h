@@ -13,10 +13,24 @@ namespace TripleEngineCore {
 			None = 0,
 			WindowClose,
 			WindowResize,
+			MouseMove
 		};
 
 		virtual Type getType() const = 0;
 		virtual ~Event() = default;
+	};
+
+	class MouseMoveEvent : public Event {
+	public:
+		MouseMoveEvent(float x, float y)
+			: x(x), y(y) {
+		}
+		Type getType() const override { return Type::MouseMove; }
+		float getX() const { return x; }
+		float getY() const { return y; }
+	private:
+		float x;
+		float y;
 	};
 
 	class WindowCloseEvent : public Event {

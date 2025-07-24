@@ -11,44 +11,74 @@ namespace TripleEngineCore {
 	{
 		TripleLogger::TLogger::Info("Application starting...");
 		this->_pEventDispatcher = std::make_unique<EventDispatcher>();
-
 		this->_pModuleLoader = std::make_unique<System::ModuleLoader>("modules");
+
 		this->_pModuleLoader->loadModule(ModuleType::OpenGLRenderer);
+		this->_isRunning = false;
 
-		this->_isRunning = true;
+		this->_pRenderer = nullptr;
 	}
 
-	Application::~Application()
+	Application::ErrorCode Application::start(const char* title, unsigned int width, unsigned int height)
 	{
-		TripleLogger::TLogger::Info("Application stoping...");
-	}
+		OpenGLRenderModule* openGLModule = dynamic_cast<OpenGLRenderModule*>(this->_pModuleLoader->getModule(ModuleType::OpenGLRenderer));
+		if (openGLModule == nullptr) {
+			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Failed to get OpenGL module");
+			return ErrorCode::ModuleLoadError;
+		}
 
-	int Application::start(const char* title, unsigned int width, unsigned int height)
-	{
+		this->_pRenderer = openGLModule->getRenderer();
+		if (this->_pRenderer == nullptr) {
+			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Failed to get OpenGL renderer from module");
+			return ErrorCode::ModuleLoadError;
+		}
+
+		IOpenGLRenderer* pGLRenderer = dynamic_cast<IOpenGLRenderer*>(this->_pRenderer);
+		if (!pGLRenderer) {
+			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Failed to cast renderer to OpenGL renderer interface");
+			return ErrorCode::ModuleLoadError;
+		}
+
 		this->_pWindow = std::make_unique<GLWindow>(title, width, height);
-		void* proc = nullptr;
-		this->_pWindow->init(&proc);
+		void* loader = nullptr;
+		if (this->_pWindow->init(&loader) != GLWindow::ErrorCode::None) {
+			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Failed to initialize window");
+			return ErrorCode::FailedToLoadWindow;
+		}
 
-		OpenGLRenderModule* module = dynamic_cast<OpenGLRenderModule*>(this->_pModuleLoader->getModule(ModuleType::OpenGLRenderer));
-		IRenderer* rend = module->getRenderer();
-		IOpenGLRenderer* glRend = dynamic_cast<IOpenGLRenderer*>(rend);
+		if (loader == nullptr) {
+			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Loader for OpenGL not initialized");
+			return ErrorCode::FailedToLoadWindow;
+		}
 
-		glRend->initGlad(proc);
+		if (pGLRenderer->initGlad(loader)) {
+			TripleLogger::TLogger::ModuleInfo(this->getModuleName(), "OpenGL renderer initialized successfully");
+		}
+		else {
+			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Failed to initialize OpenGL renderer");
+			return ErrorCode::FailedInitRenderer;
+		}
 
 		this->loadCallbacks();
+		this->_isRunning = true;
 
 		while (_isRunning) {
-			glRend->RenderFrame();
 			this->onUpdate();
+			this->onRender();
 			this->_pWindow->onUpdate();
 		}
 
-		return 0;
+		return ErrorCode::None;
 	}
 
 	void Application::onUpdate()
 	{
+		
+	}
 
+	void Application::onRender()
+	{
+		this->_pRenderer->RenderFrame(this->_pWindow->getTime());
 	}
 
 	void Application::loadCallbacks()
@@ -69,8 +99,13 @@ namespace TripleEngineCore {
 		this->_pEventDispatcher->addListener(Event::Type::WindowResize, [this](Event& event) {
 			if (event.getType() == Event::Type::WindowResize) {
 				auto& resizeEvent = static_cast<WindowResizeEvent&>(event);
-				TripleLogger::TLogger::Info("Window resized to {}x{}", resizeEvent.getWidth(), resizeEvent.getHeight());
+				this->getRenderer()->SetViewport(0, 0, resizeEvent.getWidth(), resizeEvent.getHeight());
 			}
 			});
+	}
+
+	Application::~Application()
+	{
+		TripleLogger::TLogger::Info("Application stoping...");
 	}
 }

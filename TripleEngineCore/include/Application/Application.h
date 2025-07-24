@@ -9,10 +9,21 @@
 namespace TripleEngineCore {
 	class CORE_API Application {
 	public:
+		enum class ErrorCode {
+			None = 0,
+			FailedToLoadWindow,
+			ModuleLoadError,
+			FailedInitRenderer
+		};
+
 		Application();
 		virtual ~Application();
-		virtual int start(const char* title, unsigned int width, unsigned int height);
+		virtual ErrorCode start(const char* title, unsigned int width, unsigned int height);
 		virtual void onUpdate();
+		virtual void onRender();
+
+		IRenderer* getRenderer() { return _pRenderer; }
+		const IRenderer* getRenderer() const { return _pRenderer; }
 	private:
 		Application(const Application&) = delete;
 		Application(Application&&) = delete;
@@ -20,11 +31,13 @@ namespace TripleEngineCore {
 		Application& operator=(Application&&) = delete;
 
 		void loadCallbacks();
+		const char* getModuleName() const { return "Application"; }
 
 		std::unique_ptr<System::ModuleLoader> _pModuleLoader;
-
 		std::unique_ptr<struct GLWindow> _pWindow;
 		std::unique_ptr<struct EventDispatcher> _pEventDispatcher;
+
+		IRenderer* _pRenderer;
 		bool _isRunning;
 	};
 }

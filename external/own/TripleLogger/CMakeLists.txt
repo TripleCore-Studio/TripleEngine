@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 set(LIB_NAME TripleLogger)
 
+project(${LIB_NAME} VERSION 1.0)
+
 include(${CMAKE_SOURCE_DIR}/cmake/CopyDlls.cmake)
 
 add_library(${LIB_NAME} SHARED

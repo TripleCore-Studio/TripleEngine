@@ -12,9 +12,10 @@ namespace TripleEngineCore
 		public:
 			OpenGLRenderer() {}
 			virtual void Initialize() override;
-			virtual void RenderFrame() override;
+			virtual void RenderFrame(float time) override;
 			virtual void Shutdown() override;
-			virtual void initGlad(void* loader) override;
+			virtual bool initGlad(void* loader) override;
+			virtual void SetViewport(int x, int y, int width, int height) override;
         };
 	}
 }

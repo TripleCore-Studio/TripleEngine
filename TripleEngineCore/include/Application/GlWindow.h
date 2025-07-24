@@ -15,29 +15,31 @@ namespace TripleEngineCore {
 			GlfwInitError,
 			CreateWindowError
 		};
-
 		using EventCallbackFn = std::function<void(class Event&)>;
 
 		GLWindow(const char* title, int width, int height);
-		~GLWindow();
+		ErrorCode init(void** outProc);
+		virtual void onUpdate();
 
 		void setEventCallback(const EventCallbackFn& callback) { _data.eventCallback = callback; }
 
-		virtual void shutdown();
-		virtual void onUpdate();
+		const char* getModuleName() const { return "GLWindow"; }
+		double getTime() const;
 
-		ErrorCode init(void** outProc);
+		virtual void shutdown();
+		~GLWindow();
 	private:
 		GLWindow(const GLWindow&) = delete;
 		GLWindow& operator=(const GLWindow&) = delete;
+		void initGLFWCallbacks();
 
 		struct WindowData
 		{
 		public:
-			char* title;
-			int width;
-			int height;
-			EventCallbackFn eventCallback;
+			char* title = nullptr;
+			int width = 0;
+			int height = 0;
+			EventCallbackFn eventCallback = nullptr;
 		};
 
 		WindowData _data;
