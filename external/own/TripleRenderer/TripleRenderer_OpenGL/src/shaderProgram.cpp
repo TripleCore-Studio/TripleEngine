@@ -13,18 +13,18 @@ namespace TripleEngineCore {
 			if (!this->isCompiled()) {
 				unsigned int vertexShader = compileShader(verSource, GL_VERTEX_SHADER, this->_errorLog);
 				if (vertexShader == 0) {
-					return false; // Compilation failed
+					return false;
 				}
 				unsigned int fragmentShader = compileShader(fragSource, GL_FRAGMENT_SHADER, this->_errorLog);
 				if (fragmentShader == 0) {
-					glDeleteShader(vertexShader); // Clean up vertex shader if fragment shader fails
-					return false; // Compilation failed
+					glDeleteShader(vertexShader);
+					return false;
 				}
 				_programID = linkProgram(vertexShader, fragmentShader, this->_errorLog);
 				if (_programID == 0) {
 					glDeleteShader(vertexShader);
 					glDeleteShader(fragmentShader);
-					return false; // Linking failed
+					return false;
 				}
 				glDeleteShader(vertexShader);
 				glDeleteShader(fragmentShader);
@@ -33,13 +33,22 @@ namespace TripleEngineCore {
 			}
 			else {
 				_errorLog = "Shader program already compiled.";
-				return false; // Already compiled
+				return false;
 			}
 		}
 		void ShaderProgram::use()
 		{
 			if (this->_compiled && this->_programID != 0) {
 				glUseProgram(this->_programID);
+			}
+		}
+		void ShaderProgram::setUniformMat4(const std::string& name, const float* matrix)
+		{
+			if (this->_compiled && this->_programID != 0) {
+				GLint location = glGetUniformLocation(this->_programID, name.c_str());
+				if (location != -1) {
+					glUniformMatrix4fv(location, 1, GL_FALSE, matrix);
+				}
 			}
 		}
 		bool ShaderProgram::deleteProgram()

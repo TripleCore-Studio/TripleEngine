@@ -41,6 +41,10 @@ target_link_libraries(${LIB_NAME} PRIVATE glfw)
 # ───── TLogger ─────
 target_link_libraries(${LIB_NAME} PRIVATE TripleLogger)
 
+# ───── TripleMath ─────
+target_link_libraries(${LIB_NAME} PRIVATE TripleMath)
+
+# ───── GLAD ─────
 target_link_libraries(${LIB_NAME} PRIVATE glad)
 
 # ───── Characters Exports For Windows ─────

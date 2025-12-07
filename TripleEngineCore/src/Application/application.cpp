@@ -73,7 +73,7 @@ namespace TripleEngineCore {
 
 	void Application::onUpdate()
 	{
-		
+
 	}
 
 	void Application::onRender()

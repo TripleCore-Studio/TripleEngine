@@ -19,6 +19,7 @@ add_subdirectory(external/third_party/googletest)
 
 add_subdirectory(external/own/TripleLogger)
 add_subdirectory(external/own/TripleRenderer)
+add_subdirectory(external/own/TripleMath)
 
 add_subdirectory(TripleEngineCore)
 

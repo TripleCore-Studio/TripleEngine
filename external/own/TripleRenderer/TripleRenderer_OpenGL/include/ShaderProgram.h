@@ -10,6 +10,7 @@ namespace TripleEngineCore {
 			ShaderProgram();
 			bool compileProgram(const std::string& verSource, const std::string& fragSource);
 			void use();
+			void setUniformMat4(const std::string& name, const float* matrix);
 			bool isCompiled() const { return _compiled; }
 			std::string getErrorLog() const { return _errorLog; }
 			unsigned int getProgramID() const { return _programID; }

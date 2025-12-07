@@ -12,8 +12,5 @@ class EditorApp : public TripleEngineCore::Application {
 
 int main() {
 	std::unique_ptr<EditorApp> app = std::make_unique<EditorApp>();
-	app->start("Triple Editor v(0.0.1)", 600, 400);
-
-	std::getchar();
-	return 0;
+	return (int)app->start("Triple Editor v(0.0.1)", 600, 400);
 }

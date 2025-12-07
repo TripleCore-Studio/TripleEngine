@@ -1,4 +1,4 @@
-#include "VertexBufferObject.h"
+#include "Buffer/VertexBufferObject.h"
 #include <glad/glad.h>
 
 namespace TripleEngineCore {
