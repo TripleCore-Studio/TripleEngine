@@ -51,6 +51,15 @@ namespace TripleEngineCore {
 				}
 			}
 		}
+		void ShaderProgram::setUniform1f(const std::string& name, float f)
+		{
+			if (this->_compiled && this->_programID != 0) {
+				GLint location = glGetUniformLocation(this->_programID, name.c_str());
+				if (location != -1) {
+					glUniform1f(location, f);
+				}
+			}
+		}
 		bool ShaderProgram::deleteProgram()
 		{
 			if (_programID != 0) {

@@ -2,8 +2,19 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace TripleEngineCore::TripleMath {
+
+    static glm::mat4 toGlm(const Mat4& m) {
+        return glm::make_mat4(m.data);
+    }
+
+    static Mat4 fromGlm(const glm::mat4& m) {
+        Mat4 out;
+        memcpy(out.data, glm::value_ptr(m), sizeof(float) * 16);
+        return out;
+    }
 
     Mat4::Mat4() {
         glm::mat4 m(1.0f);
@@ -28,5 +39,18 @@ namespace TripleEngineCore::TripleMath {
 
     Mat4 Mat4::identity() {
         return Mat4(1.0f);
+    }
+
+    Vec4 Mat4::operator*(const Vec4& v) const {
+        glm::mat4 m = toGlm(*this);
+        glm::vec4 vec(v.x, v.y, v.z, v.w);
+        glm::vec4 res = m * vec;
+        return Vec4(res.x, res.y, res.z, res.w);
+    }
+
+    Mat4 Mat4::operator*(const Mat4& other) const {
+        glm::mat4 m1 = toGlm(*this);
+        glm::mat4 m2 = toGlm(other);
+        return fromGlm(m1 * m2);
     }
 }

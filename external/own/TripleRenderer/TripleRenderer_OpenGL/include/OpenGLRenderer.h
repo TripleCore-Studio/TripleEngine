@@ -10,12 +10,16 @@ namespace TripleEngineCore
 	{
         class RENDERER_API OpenGLRenderer : public IOpenGLRenderer {
 		public:
-			OpenGLRenderer() {}
+			OpenGLRenderer() = default;
 			virtual void Initialize() override;
-			virtual void RenderFrame(float time) override;
+			virtual void BeginFrame(float time) override;
+			virtual void RenderFrame(Graphics::FrameContext& ctx) override;
+			virtual void EndFrame() override;
 			virtual void Shutdown() override;
 			virtual bool initGlad(void* loader) override;
 			virtual void SetViewport(int x, int y, int width, int height) override;
+
+			float gTime = 0.0f;
         };
 	}
 }

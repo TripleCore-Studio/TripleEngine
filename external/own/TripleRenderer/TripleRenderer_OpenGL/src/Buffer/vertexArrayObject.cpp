@@ -1,6 +1,9 @@
+#include <cstddef>
 #include <glad/glad.h>
 #include "Buffer/vertexArrayObject.h"
-#include "Struct/Vertex.h"
+#include "Graphics/Vertex.h"
+
+using namespace TripleEngineCore::Graphics;
 
 namespace TripleEngineCore {
 	namespace TripleRenderer {
@@ -31,7 +34,7 @@ namespace TripleEngineCore {
 			glEnableVertexAttribArray(0);
 
 			// uv
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
 			glEnableVertexAttribArray(1);
 
 			this->unbind();

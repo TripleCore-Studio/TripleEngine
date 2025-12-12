@@ -17,8 +17,8 @@ target_compile_features(${EDITOR_PROJECT_NAME} PUBLIC cxx_std_17)
 target_link_libraries(${EDITOR_PROJECT_NAME} 
 	PRIVATE 
 		TripleEngineCore
-		TripleRenderer_OpenGL
 		TripleLogger
+		TripleMath
 )
 
 set_target_properties(${EDITOR_PROJECT_NAME} PROPERTIES

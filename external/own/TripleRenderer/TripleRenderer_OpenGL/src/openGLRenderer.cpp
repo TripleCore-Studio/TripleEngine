@@ -1,16 +1,15 @@
 #include "OpenGLRenderer.h"
 #include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <math.h>
+#include <unordered_map>
 
 #include "ShaderProgram.h"
-#include "Struct/Vertex.h"
 #include "Buffer/IndexBufferObject.h"
 #include "Buffer/VertexArrayObject.h"
 #include "Buffer/VertexBufferObject.h"
+
+using namespace TripleEngineCore::TripleMath;
 
 void TripleEngineCore::TripleRenderer::OpenGLRenderer::Initialize() {}
 
@@ -22,116 +21,113 @@ void TripleEngineCore::TripleRenderer::OpenGLRenderer::SetViewport(int x, int y,
     glViewport(x, y, width, height);
 }
 
+void TripleEngineCore::TripleRenderer::OpenGLRenderer::BeginFrame(float time)
+{
+	this->gTime = time;
+}
+
 const char* vertexShaderSrc = R"(
 #version 330 core
 
-uniform mat4 u_MVP;
-
 layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec2 aUV;
+layout(location = 1) in vec3 aColor;
 
-out vec2 vUV;
+uniform mat4 u_MVP;
+uniform float u_Time;
 
-void main() {
+out vec3 vColor;
+out vec3 vPosition;
+
+void main()
+{
     gl_Position = u_MVP * vec4(aPos, 1.0);
-    vUV = aUV;
+    vColor = aColor;
+    vPosition = aPos;
 }
 )";
 
 const char* fragmentShaderSrc = R"(
 #version 330 core
-in vec2 vUV;
+
+in vec3 vColor;
+in vec3 vPosition;
+uniform float u_Time;
 out vec4 FragColor;
 
-void main() {
-    FragColor = vec4(vUV, 0.5, 1.0); // просто градиент по UV
+void main()
+{
+    float heightFactor = clamp(vPosition.y * 0.5 + 0.5, 0.0, 1.0);
+    float pulse = sin(u_Time) * cos(u_Time) * 0.25 + 0.75;
+    vec3 color = vColor * heightFactor * pulse;
+
+    FragColor = vec4(color, 1.0);
 }
 )";
 
-void TripleEngineCore::TripleRenderer::OpenGLRenderer::RenderFrame(float time) {
+void TripleEngineCore::TripleRenderer::OpenGLRenderer::RenderFrame(Graphics::FrameContext& ctx)
+{
+    glEnable(GL_DEPTH_TEST);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	static bool isCompiled = false;
-	static ShaderProgram shaderProgram;
-	static VertexArrayObject vao;
-	static VertexBufferObject vbo;
-	static IndexBufferObject ibo;
+    using namespace TripleEngineCore::TripleRenderer;
 
-    if (!isCompiled) {
-		shaderProgram.compileProgram(vertexShaderSrc, fragmentShaderSrc);
-        if (!shaderProgram.isCompiled()) {
-            std::cout << "Shader program is not compiled!\n at: " << shaderProgram.getErrorLog() << std::endl;
-			exit(EXIT_FAILURE);
-        }
-		isCompiled = true;
+    static ShaderProgram shader;
+    static bool shaderInitialized = false;
+    if (!shaderInitialized) {
+        shader.compileProgram(vertexShaderSrc, fragmentShaderSrc);
+        shaderInitialized = true;
     }
 
-    Vertex vertices[] = {
-        {{-0.5f,  0.5f, 0.0f}, {0.5f, 1.0f}}, 
-        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
-        {{ 0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-        {{ 0.5f,  0.5f, 0.0f}, {1.0f, 0.0f}},
-
-        {{0.0f, 1.0f, 0.0f}, {0.5f, 1.0f}},
-		{{0.0f, -1.0f, 0.0f}, {0.5f, 1.0f}},
-
-        {{-0.25f, 0.8f, 0.0f}, {0.5f, 1.0f}},
-        {{0.25f, 0.8f, 0.0f}, {0.5f, 1.0f}},
-
-        {{-0.25f, -0.8f, 0.0f}, {0.5f, 1.0f}},
-        {{0.25f, -0.8f, 0.0f}, {0.5f, 1.0f}},
-
-        {{-0.65f * sin(time * 1.5), cos(time), 0.0f}, {0.5f, 1.0f}},
-        {{0.65f * sin(time * 1.5), cos(time), 0.0f}, {0.5f, 1.0f}},
+    struct MeshGPU {
+        VertexArrayObject vao;
+        VertexBufferObject vbo;
+        IndexBufferObject ibo;
     };
+    static std::unordered_map<const Graphics::Mesh*, std::unique_ptr<MeshGPU>> meshCache;
 
-    uint32_t indices[] = {
-        0, 1, 2,
-        0, 2, 3,
-        0, 3, 4,
-        1, 2, 5,
-        0, 4, 6,
-        3, 4, 7,
-        1, 5, 8,
-        2, 5, 9,
-        0, 1, 10,
-        3, 2, 11
-    };
+    for (auto& cam : ctx.cameras)
+    {
+        Mat4 VP = cam.proj * cam.view;
 
-	vbo.setData(vertices, sizeof(vertices), VertexBufferObject::Usage::DYNAMIC_DRAW);
-	ibo.setData(indices, sizeof(indices), IndexBufferObject::Usage::DYNAMIC_DRAW);
+        for (auto& cmd : ctx.commands)
+        {
+            Mat4 MVP = VP * cmd.worldMat;
 
-    vao.setData(vbo);
-	vao.setIndexData(ibo);
+            for (auto* mesh : cmd.meshes)
+            {
+                if (!mesh) continue;
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(45.0f), glm::vec3(0, 1, 0));
-    model = glm::scale(model, glm::vec3(1, 2, 1));
+                if (meshCache.find(mesh) == meshCache.end())
+                {
+                    auto gpuMesh = std::make_unique<MeshGPU>();
+                    gpuMesh->vbo.setData(mesh->vertices.data(), mesh->vertices.size() * sizeof(TripleEngineCore::Graphics::Vertex));
+                    gpuMesh->ibo.setData(mesh->indices.data(), mesh->indices.size() * sizeof(uint32_t));
+                    gpuMesh->vao.setData(gpuMesh->vbo);
+                    gpuMesh->vao.setIndexData(gpuMesh->ibo);
 
-    glm::mat4 view = glm::lookAt(
-        glm::vec3(0, 0, 3),   // позиция камеры
-        glm::vec3(0, 0, 0),   // куда смотрим
-        glm::vec3(0, 1, 0)    // вверх
-    );
+                    meshCache[mesh] = std::move(gpuMesh);
+                }
 
-    glm::mat4 projection = glm::perspective(
-        glm::radians(70.0f), // FOV
-        1920.0f / 1080.0f,   // aspect ratio
-        0.1f,                // near plane
-        100.0f               // far plane
-    );
+                MeshGPU* gpu = meshCache[mesh].get();
+                shader.use();
+                shader.setUniformMat4("u_MVP", MVP.data);
+                shader.setUniform1f("u_Time", this->gTime);
 
-    glm::mat4 mvp = projection * view * model;
-
-	shaderProgram.setUniformMat4("u_MVP", glm::value_ptr(mvp));
-	shaderProgram.use();
-    vao.bind();
-    glDrawElements(GL_TRIANGLES, 30, GL_UNSIGNED_INT, 0);
-    vao.unbind();
+                gpu->vao.bind();
+                gpu->ibo.bind();
+                glDrawElements(GL_TRIANGLES, mesh->indices.size(), GL_UNSIGNED_INT, 0);
+                gpu->vao.unbind();
+                gpu->ibo.unbind();
+            }
+        }
+    }
 }
 
+
+void TripleEngineCore::TripleRenderer::OpenGLRenderer::EndFrame()
+{
+}
 
 void TripleEngineCore::TripleRenderer::OpenGLRenderer::Shutdown() {}
 

@@ -6,12 +6,19 @@
 #include "Interfaces/IRenderer.h"
 #include "TLogger.h"
 
+#include <thread>
+#include <chrono>
+
+#include "Scene/CameraComponent.h"
+#include "Scene/MeshComponent.h"
+
 namespace TripleEngineCore {
 	Application::Application()
 	{
 		TripleLogger::TLogger::Info("Application starting...");
 		this->_pEventDispatcher = std::make_unique<EventDispatcher>();
 		this->_pModuleLoader = std::make_unique<System::ModuleLoader>("modules");
+		this->_pScene = std::make_unique<Scene::Scene>();
 
 		this->_pModuleLoader->loadModule(ModuleType::OpenGLRenderer);
 		this->_isRunning = false;
@@ -62,6 +69,11 @@ namespace TripleEngineCore {
 		this->loadCallbacks();
 		this->_isRunning = true;
 
+		std::unique_ptr<Scene::SceneObject> obj = std::make_unique<Scene::SceneObject>();
+		obj->addComponent<Scene::TransformComponent>(TripleMath::Vec3(0, 2, 5), TripleMath::Vec3(0, 0, 0), TripleMath::Vec3(1, 1, 1));
+		obj->addComponent<Scene::CameraComponent>(70.0f, 0.1f, 100.0f, 16.0f / 9.0f, obj->getComponent<Scene::TransformComponent>());
+		this->_pScene->addRootObject(std::move(obj));
+
 		while (_isRunning) {
 			this->onUpdate();
 			this->onRender();
@@ -73,12 +85,53 @@ namespace TripleEngineCore {
 
 	void Application::onUpdate()
 	{
+		float t = this->_pWindow->getTime();
+		this->_pScene->rootObjects[0]->getComponent<Scene::TransformComponent>()->rotationEuler 
+			= TripleMath::Vec3((sin(t) * 0.5 + 0.5) * 360.0f,cos(t) * 0.5 + 0.5, sin(t) * 0.5 + 0.5);
 
+		this->_pScene->rootObjects[1]->getComponent<Scene::TransformComponent>()->rotationEuler
+			= TripleMath::Vec3((sin(t) * 0.5 + 0.5) * 360.0f, tan(t) * 0.5 + 0.5, (sin(t) * 0.5 + 0.5) * 360.0f);
+
+		this->_pScene->rootObjects[2]->getComponent<Scene::TransformComponent>()->rotationEuler
+			= TripleMath::Vec3((sin(t) * 0.5 + 0.5), (cos(t) * 0.5 + 0.5) * 360.0f, sin(t) * 0.5 + 0.5);
+
+
+		this->_pScene->rootObjects[1]->getComponent<Scene::TransformComponent>()->position
+			= TripleMath::Vec3(sin(t) * 0.5 + 0.5, cos(t) * 2.5, sin(t) * 2.5f);
+
+		float radius = 6.0f;
+		TripleMath::Vec3 camPos(sin(t * 0.5f) * radius, 3.0f, (cos(t * 0.5f) * radius) * ((sin(t) * 0.5 + 0.5) * 5.0));
+		this->_pScene->rootObjects[3]->getComponent<Scene::TransformComponent>()->position = camPos;
+
+		this->_pScene->rootObjects[3]->getComponent<Scene::CameraComponent>()->lookAt(TripleMath::Vec3(0,0,0));
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
 	void Application::onRender()
 	{
-		this->_pRenderer->RenderFrame(this->_pWindow->getTime());
+		float time = this->_pWindow->getTime();
+		Graphics::FrameContext ctx;
+		for (auto& com : this->_pScene->getAllComponents<Scene::CameraComponent>()) {
+			ctx.cameras.push_back(CameraData{com->getViewMatrix(), com->getProjectionMatrix()});
+		}
+		this->_pScene->gatherRenderCommands(ctx.commands);
+		ctx.time = time;
+
+		this->_pRenderer->BeginFrame(time);
+		this->_pRenderer->RenderFrame(ctx);
+		this->_pRenderer->EndFrame();
+	}
+
+	void Application::AddCubeToScene(TripleMath::Vec3 pos, TripleMath::Vec3 size)
+	{
+		using namespace TripleMath;
+		for (int i = 1; i <= 3; i++) {
+			std::unique_ptr<Scene::SceneObject> obj = std::make_unique<Scene::SceneObject>();
+			obj->addComponent<Scene::TransformComponent>(Vec3(-4 + (i * 2.5), i * 0.1f, 0), Vec3(20, 45, 0), Vec3(1, 1, 1));
+			obj->addComponent<Scene::MeshComponent>(Graphics::Model::CreateCube());
+			_pScene->addRootObject(std::move(obj));
+		}
 	}
 
 	void Application::loadCallbacks()

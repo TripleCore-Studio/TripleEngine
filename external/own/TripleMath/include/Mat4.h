@@ -2,6 +2,7 @@
 #define MAT4_H
 
 #include "TripleMathExports.h"
+#include "Vec4.h"
 
 namespace TripleEngineCore::TripleMath {
 
@@ -18,6 +19,9 @@ namespace TripleEngineCore::TripleMath {
             float m30, float m31, float m32, float m33);
 
         static Mat4 identity();
+
+        Vec4 operator*(const Vec4& v) const;
+        Mat4 operator*(const Mat4& other) const;
     };
 }
 

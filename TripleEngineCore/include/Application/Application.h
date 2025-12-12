@@ -5,6 +5,7 @@
 #include <ExportMacros.h>
 #include "Interfaces/IRenderer.h"
 #include "ModuleLoader.h"
+#include "Scene/Scene.h"
 
 namespace TripleEngineCore {
 	class CORE_API Application {
@@ -22,6 +23,8 @@ namespace TripleEngineCore {
 		virtual void onUpdate();
 		virtual void onRender();
 
+		void AddCubeToScene(TripleMath::Vec3 pos, TripleMath::Vec3 size);
+
 		IRenderer* getRenderer() { return _pRenderer; }
 		const IRenderer* getRenderer() const { return _pRenderer; }
 	private:
@@ -36,6 +39,7 @@ namespace TripleEngineCore {
 		std::unique_ptr<System::ModuleLoader> _pModuleLoader;
 		std::unique_ptr<struct GLWindow> _pWindow;
 		std::unique_ptr<struct EventDispatcher> _pEventDispatcher;
+		std::unique_ptr<Scene::Scene> _pScene;
 
 		IRenderer* _pRenderer;
 		bool _isRunning;

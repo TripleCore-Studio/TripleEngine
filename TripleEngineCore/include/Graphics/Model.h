@@ -11,6 +11,8 @@ namespace TripleEngineCore::Graphics
     public:
         std::vector<Mesh> meshes;
         std::vector<Material> materials;
+
+        static Model CreateCube();
     };
 }
 

@@ -34,14 +34,11 @@ target_sources(${LIB_NAME} PRIVATE
 	${HEADER_FILES}
 )
 
-# ───── TripleEngineCore ─────
-target_link_libraries(${LIB_NAME} PRIVATE TripleEngineCore)
-
-# ───── GLAD ─────
-target_link_libraries(${LIB_NAME} PRIVATE glad)
-
-# ───── GLM ─────
-target_link_libraries(${LIB_NAME} PRIVATE glm)
+target_link_libraries(${LIB_NAME} PRIVATE 
+	glad
+	TripleEngineCore
+	TripleMath
+)
 
 # ───── Characters Exports For Windows ─────
 if(WIN32)
