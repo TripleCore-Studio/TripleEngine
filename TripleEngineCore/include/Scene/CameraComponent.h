@@ -19,13 +19,9 @@ namespace TripleEngineCore::Scene {
 
         TransformComponent* transform;
 
-        void lookAt(const TripleMath::Vec3& target);
-
         TripleMath::Mat4 getProjectionMatrix() const;
 
         TripleMath::Mat4 getViewMatrix() const;
-
-        void onUpdate(float dt) override;
     };
 
 } // namespace TripleEngineCore::Scene

@@ -1,7 +1,8 @@
 #include <Application/EventSystem.h>
+#include <vector>
 
 namespace TripleEngineCore {
-	void EventDispatcher::addListener(Event::Type type, const EventCallbackFn callback)
+	void EventDispatcher::addListener(Event::Type type, const EventCallbackFn& callback)
 	{
 		listeners[type].push_back(callback);
 	}

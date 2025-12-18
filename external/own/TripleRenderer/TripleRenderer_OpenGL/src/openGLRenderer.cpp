@@ -57,8 +57,7 @@ out vec4 FragColor;
 void main()
 {
     float heightFactor = clamp(vPosition.y * 0.5 + 0.5, 0.0, 1.0);
-    float pulse = sin(u_Time) * cos(u_Time) * 0.25 + 0.75;
-    vec3 color = vColor * heightFactor * pulse;
+    vec3 color = vColor * heightFactor;
 
     FragColor = vec4(color, 1.0);
 }

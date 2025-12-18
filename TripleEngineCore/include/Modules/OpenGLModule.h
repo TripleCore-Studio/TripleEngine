@@ -1,4 +1,3 @@
-// OpenGLRenderModule.h
 #ifndef OPENGL_RENDER_MODULE_H
 #define OPENGL_RENDER_MODULE_H
 
@@ -31,7 +30,6 @@ namespace TripleEngineCore {
 		std::string _path;
 		std::string _name;
 
-		// Запрещаем копирование
 		OpenGLRenderModule(const OpenGLRenderModule&) = delete;
 		OpenGLRenderModule& operator=(const OpenGLRenderModule&) = delete;
 	};

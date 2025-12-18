@@ -3,8 +3,52 @@
 #include <GLFW/glfw3.h>
 #include "Application/EventSystem.h"
 #include <TLogger.h>
+#include "Application/EventSystem.h"
 
 namespace TripleEngineCore {
+
+	static Event::KeyCode ConvertKey(int glfwKey)
+	{
+		switch (glfwKey)
+		{
+		case GLFW_KEY_W: return Event::KeyCode::W;
+		case GLFW_KEY_A: return Event::KeyCode::A;
+		case GLFW_KEY_S: return Event::KeyCode::S;
+		case GLFW_KEY_D: return Event::KeyCode::D;
+		case GLFW_KEY_SPACE: return Event::KeyCode::Space;
+		case GLFW_KEY_ESCAPE: return Event::KeyCode::Escape;
+		case GLFW_KEY_LEFT_SHIFT: return Event::KeyCode::LeftShift;
+		case GLFW_KEY_LEFT: return Event::KeyCode::Left;
+		case GLFW_KEY_RIGHT: return Event::KeyCode::Right;
+		case GLFW_KEY_UP: return Event::KeyCode::Up;
+		case GLFW_KEY_DOWN: return Event::KeyCode::Down;
+		case GLFW_KEY_F1: return Event::KeyCode::F1;
+		case GLFW_KEY_F2: return Event::KeyCode::F2;
+		case GLFW_KEY_F3: return Event::KeyCode::F3;
+		case GLFW_KEY_F4: return Event::KeyCode::F4;
+		case GLFW_KEY_F5: return Event::KeyCode::F5;
+		case GLFW_KEY_F6: return Event::KeyCode::F6;
+		case GLFW_KEY_F7: return Event::KeyCode::F7;
+		case GLFW_KEY_F8: return Event::KeyCode::F8;
+		case GLFW_KEY_F9: return Event::KeyCode::F9;
+		case GLFW_KEY_F10: return Event::KeyCode::F10;
+		case GLFW_KEY_F11: return Event::KeyCode::F11;
+		case GLFW_KEY_F12: return Event::KeyCode::F12;
+		default: return Event::KeyCode::Unknown;
+		}
+	}
+
+	static Event::KeyAction ConvertAction(int glfwAction)
+	{
+		switch (glfwAction)
+		{
+		case GLFW_PRESS:   return Event::KeyAction::Press;
+		case GLFW_RELEASE: return Event::KeyAction::Release;
+		case GLFW_REPEAT:  return Event::KeyAction::Repeat;
+		default:           return Event::KeyAction::Release;
+		}
+	}
+
 	static bool s_glfwInit = false;
     GLWindow::GLWindow(const char* title, int width, int height)
     {
@@ -65,6 +109,20 @@ namespace TripleEngineCore {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			MouseMoveEvent event(static_cast<float>(xpos), static_cast<float>(ypos));
 			data.eventCallback(event);
+			});
+
+		glfwSetKeyCallback(this->_pWindow,
+			[](GLFWwindow* window, int key, int scancode, int action, int mods)
+			{
+				WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+
+				KeyboardInputEvent event(
+					ConvertKey(key),
+					ConvertAction(action),
+					mods
+				);
+
+				data.eventCallback(event);
 			});
 	}
 

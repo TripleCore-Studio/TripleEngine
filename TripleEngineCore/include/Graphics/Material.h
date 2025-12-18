@@ -12,10 +12,15 @@ namespace TripleEngineCore::Graphics {
         float metallic = 0.0f;
         float roughness = 1.0f;
 
-        std::string albedoTexturePath;
-        std::string normalTexturePath;
-        std::string metallicTexturePath;
-        std::string roughnessTexturePath;
+        uint32_t albedoTextureIndex = UINT32_MAX;
+        uint32_t normalTextureIndex = UINT32_MAX;
+        uint32_t metallicTextureIndex = UINT32_MAX;
+        uint32_t roughnessTextureIndex = UINT32_MAX;
+
+        uint32_t shaderIndex = UINT32_MAX;
+
+        Material(const Material& other) = default;
+        Material& operator=(const Material& other) = default;
     };
 }
 

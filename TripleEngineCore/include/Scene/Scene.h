@@ -9,7 +9,7 @@ namespace TripleEngineCore::Scene
 {
 	class Scene
 	{
-		public:
+	public:
 		Scene();
 		~Scene() = default;
 
@@ -28,9 +28,14 @@ namespace TripleEngineCore::Scene
 
 		void removeRootObject(SceneObject* object);
 
-		void update(float dt);
+        SceneObject* findObjectById(uint32_t id);
 
-		void gatherRenderCommands(std::vector<Graphics::RenderCommand>& commands) const;
+        std::vector<SceneObject*> findObjectsByName(const std::string& name);
+
+    private:
+		SceneObject* findInChildrenById(SceneObject* obj, uint32_t id);
+
+		void findInChildrenByName(SceneObject* obj, const std::string& name, std::vector<SceneObject*>& out);
 	};
 }
 

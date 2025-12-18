@@ -3,16 +3,15 @@
 
 #include "Component.h"
 #include "Graphics/Model.h"
+#include <memory>
 
 namespace TripleEngineCore::Scene {
     class MeshComponent : public Component {
     public:
-        Graphics::Model model;
+		MeshComponent(uint32_t modelIdx) : modelIndex(modelIdx) {}
+        uint32_t modelIndex = UINT32_MAX;
 
         MeshComponent() = default;
-        MeshComponent(const Graphics::Model& m) : model(m) {}
-
-        void onUpdate(float dt) override {}
     };
 }
 

@@ -11,6 +11,6 @@ class EditorApp : public TripleEngineCore::Application {
 
 int main() {
 	std::unique_ptr<EditorApp> app = std::make_unique<EditorApp>();
-	app->AddCubeToScene(Vec3(0, 0, 0), Vec3(1, 1, 1));
-	return (int)app->start("Triple Editor v(0.0.1)", 600, 400);
+	app->AddModelToScene();
+	return (int)app->start("Triple Editor v(0.0.1)", 800, 600);
 }

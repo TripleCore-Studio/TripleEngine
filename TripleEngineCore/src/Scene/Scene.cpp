@@ -24,19 +24,35 @@ namespace TripleEngineCore::Scene {
 		);
 	}
 
-	void Scene::update(float dt)
-	{
-		for (auto& obj : rootObjects)
-		{
-			obj->update(dt);
+	SceneObject* Scene::findObjectById(uint32_t id) {
+		for (auto& root : rootObjects) {
+			if (auto obj = findInChildrenById(root.get(), id))
+				return obj;
 		}
+		return nullptr;
 	}
 
-	void Scene::gatherRenderCommands(std::vector<Graphics::RenderCommand>& commands) const
-	{
-		for (auto& obj : rootObjects)
-		{
-			obj->gatherRenderCommands(commands);
+	std::vector<SceneObject*> Scene::findObjectsByName(const std::string& name) {
+		std::vector<SceneObject*> result;
+		for (auto& root : rootObjects) {
+			findInChildrenByName(root.get(), name, result);
+		}
+		return result;
+	}
+
+	SceneObject* Scene::findInChildrenById(SceneObject* obj, uint32_t id) {
+		if (obj->id == id) return obj;
+		for (auto& child : obj->children) {
+			if (auto found = findInChildrenById(child.get(), id))
+				return found;
+		}
+		return nullptr;
+	}
+
+	void Scene::findInChildrenByName(SceneObject* obj, const std::string& name, std::vector<SceneObject*>& out) {
+		if (obj->name == name) out.push_back(obj);
+		for (auto& child : obj->children) {
+			findInChildrenByName(child.get(), name, out);
 		}
 	}
 }

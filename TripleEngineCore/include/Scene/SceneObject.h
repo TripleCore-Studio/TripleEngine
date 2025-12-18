@@ -11,8 +11,11 @@ namespace TripleEngineCore::Scene {
 
     class SceneObject {
     public:
-        SceneObject();
+        SceneObject(const std::string& name_ = "");
         ~SceneObject() = default;
+
+        uint32_t id;
+        std::string name;
 
         SceneObject* parent = nullptr;
         std::vector<std::unique_ptr<SceneObject>> children;
@@ -68,10 +71,8 @@ namespace TripleEngineCore::Scene {
             children.push_back(std::move(child));
         }
 
-        void update(float dt);
-
-        void SceneObject::gatherRenderCommands(std::vector<Graphics::RenderCommand>& commands,
-            const TripleMath::Mat4& parentWorld = TripleMath::Mat4::identity()) const;
+    private:
+        static inline uint32_t nextId = 1;
     };
 
 } // namespace TripleEngineCore::Scene

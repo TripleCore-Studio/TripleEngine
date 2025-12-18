@@ -13,7 +13,6 @@ namespace TripleEngineCore::Scene {
 
         virtual void onAttach() {}
         virtual void onDetach() {}
-        virtual void onUpdate(float dt) {}
     };
 }
 
