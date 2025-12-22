@@ -2,55 +2,53 @@
 #define ASSETS_SYSTEM_H
 
 #include "Interfaces/IServiceSystem.h"
-
-#include <vector>
-#include <unordered_map>
 #include <string>
-#include <memory>
+#include "Asset/AssetStorage.h"
 
-#include "Graphics/Model.h"
-#include "Graphics/Shader.h"
-#include "Graphics/Material.h"
-#include "Graphics/Texture.h"
+#include "Asset/Model.h"
+#include "Asset/Shader.h"
+#include "Asset/Material.h"
+#include "Asset/Texture.h"
 
 namespace TripleEngineCore::System {
+    using AssetID = Asset::AssetID;
+    using ModelID = AssetID;
+    using ShaderID = AssetID;
+    using MaterialID = AssetID;
+    using TextureID = AssetID;
+    inline constexpr AssetID INVALID_ASSET_ID = TripleEngineCore::INVALID_INDEX;
+
     class AssetsSystem : public IServiceSystem {
     public:
         AssetsSystem() = default;
         ~AssetsSystem() = default;
 
         virtual void init() {}
-
         virtual void shutdown() {}
 
-        uint32_t loadModel(const std::string& path);
+        ModelID loadModelFromFile(const std::string& name, const std::string& path);
+        ModelID loadModelFromModel(const std::string& name, Asset::Model&& model);
+        ModelID getModelIndex(const std::string& name) const;
+        const Asset::Model* getModel(ModelID id) const;
+        Asset::Model* getModelMutable(ModelID id);
 
-        uint32_t loadModel(const std::string& name, Graphics::Model&& model);
+        ShaderID loadShaderFromFile(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath);
+        ShaderID getShaderIndex(const std::string& name) const;
+        const Asset::Shader* getShader(ShaderID id) const;
 
-        const Graphics::Model* getModel(uint32_t index) const;
+        MaterialID createMaterial(const std::string& name, const Asset::Material& material);
+        MaterialID getMaterialIndex(const std::string& name) const;
+        const Asset::Material* getMaterial(MaterialID id) const;
 
-        uint32_t loadShader(const std::string& vertexPath, const std::string& fragmentPath);
-
-        const Graphics::Shader* getShader(uint32_t index) const;
-
-        uint32_t createMaterial(const Graphics::Material& mat, const std::string& name);
-
-        const Graphics::Material* getMaterial(uint32_t index) const;
-
-        uint32_t loadTexture(const std::string& path);
-
-        const Graphics::Texture* getTexture(uint32_t index) const;
+        TextureID loadTexture(const std::string& name, const std::string& path);
+        TextureID getTextureIndex(const std::string& name) const;
+        const Asset::Texture* getTexture(TextureID id) const;
 
     private:
-        std::vector<std::unique_ptr<Graphics::Model>> models;
-        std::vector<std::unique_ptr<Graphics::Shader>> shaders;
-        std::vector<std::unique_ptr<Graphics::Material>> materials;
-        std::vector<std::unique_ptr<Graphics::Texture>> textures;
-
-        std::unordered_map<std::string, uint32_t> modelMap;
-        std::unordered_map<std::string, uint32_t> shaderMap;
-        std::unordered_map<std::string, uint32_t> materialMap;
-        std::unordered_map<std::string, uint32_t> textureMap;
+        Asset::AssetStorage<Asset::Model> models;
+        Asset::AssetStorage<Asset::Shader> shaders;
+        Asset::AssetStorage<Asset::Material> materials;
+        Asset::AssetStorage<Asset::Texture> textures;
     };
 }
 

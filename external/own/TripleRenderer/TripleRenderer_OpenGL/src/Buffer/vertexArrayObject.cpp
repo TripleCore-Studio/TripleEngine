@@ -33,14 +33,29 @@ namespace TripleEngineCore {
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
 			glEnableVertexAttribArray(0);
 
-			// uv
-			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+			// normal
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 			glEnableVertexAttribArray(1);
+
+			// tangent
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+			glEnableVertexAttribArray(2);
+
+			// bitangent
+			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
+			glEnableVertexAttribArray(3);
+
+			// color
+			glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+			glEnableVertexAttribArray(4);
+
+			// uv
+			glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+			glEnableVertexAttribArray(5);
 
 			this->unbind();
 			vbo.unbind();
 		}
-
 		void VertexArrayObject::setIndexData(const IndexBufferObject& ibo)
 		{
 			this->bind();

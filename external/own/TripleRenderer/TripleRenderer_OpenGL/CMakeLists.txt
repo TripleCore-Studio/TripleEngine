@@ -38,6 +38,7 @@ target_link_libraries(${LIB_NAME} PRIVATE
 	glad
 	TripleEngineCore
 	TripleMath
+	TripleLogger
 )
 
 # ───── Characters Exports For Windows ─────

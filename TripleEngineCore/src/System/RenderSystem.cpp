@@ -27,14 +27,12 @@ namespace TripleEngineCore::System {
 					return;
 				}
 
-                for (auto& mesh : model->meshes)
-                    cmd.meshes.push_back(mesh.get());
+				cmd.items.reserve(model->meshes.size());
 
-                for (auto& mesh : model->meshes) {
-                    if (mesh->materialIndex != INVALID_INDEX) {
-                        const auto* mat = assets->getMaterial(mesh->materialIndex);
-                        if (mat) cmd.materials.push_back(mat);
-                    }
+                for (const auto& mesh : model->meshes) {
+					Graphics::RenderItem item;
+					buildRenderItemFromMesh(item, mesh);
+					cmd.items.push_back(std::move(item));
                 }
             }
 
@@ -46,9 +44,50 @@ namespace TripleEngineCore::System {
         }
     }
 
+    void RenderSystem::buildRenderItemFromMesh(Graphics::RenderItem& item, const Asset::Mesh& mesh)
+    {
+        const Asset::Material* meshMaterial = assets->getMaterial(mesh.materialIndex);
+        const Asset::Shader* meshShader = meshMaterial ? assets->getShader(meshMaterial->shaderIndex) : nullptr;
+
+        if(meshMaterial == nullptr || meshShader == nullptr) {
+            TripleLogger::TLogger::ModuleWarn("Application",
+                "Material or Shader not found for mesh during render item build.");
+            return;
+		}
+
+        auto abtex = assets->getTexture(meshMaterial->albedoTextureIndex);
+        Runtime::RuntimeTexture abTexture{ abtex->width, abtex->height, abtex->channels, abtex->data.data(), abtex->contentHash };
+
+        auto normtex = assets->getTexture(meshMaterial->normalTextureIndex);
+        Runtime::RuntimeTexture normTexture{ normtex->width, normtex->height, normtex->channels, normtex->data.data(), normtex->contentHash };
+
+        auto metallictex = assets->getTexture(meshMaterial->metallicTextureIndex);
+        Runtime::RuntimeTexture metallicTexture{ metallictex->width, metallictex->height, metallictex->channels, metallictex->data.data(), metallictex->contentHash };
+
+        auto roughnesstex = assets->getTexture(meshMaterial->roughnessTextureIndex);
+        Runtime::RuntimeTexture roughnessTexture{ roughnesstex->width, roughnesstex->height, roughnesstex->channels, roughnesstex->data.data(), roughnesstex->contentHash };
+
+        Runtime::RuntimeShader runtimeShader{
+            meshShader->vertexSource.c_str(),
+            meshShader->fragmentSource.c_str(),
+            meshShader->vertexHash,
+			meshShader->fragmentHash
+        };
+        Runtime::RuntimeMaterial runtimeMaterial{ meshMaterial->albedoColor,
+            meshMaterial->metallic, meshMaterial->roughness,
+            abTexture, normTexture, metallicTexture,
+            roughnessTexture, runtimeShader
+        };
+
+		item.mesh = Runtime::RuntimeMesh{ mesh.vertices.data(), mesh.vertices.size(), mesh.indices.data(), mesh.indices.size(), runtimeMaterial, mesh.geometryHash };
+    }
+
     void RenderSystem::buildRenderCommands(const Scene::Scene& scene,
         std::vector<Graphics::RenderCommand>& commands)
     {
+		commands.clear();
+		commands.reserve(scene.getRenderableObjectCount());
+
         for (auto& root : scene.rootObjects) {
             gatherFromObject(*root, commands, TripleMath::Mat4::identity());
         }

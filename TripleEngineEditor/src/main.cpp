@@ -11,6 +11,7 @@ class EditorApp : public TripleEngineCore::Application {
 
 int main() {
 	std::unique_ptr<EditorApp> app = std::make_unique<EditorApp>();
-	app->AddModelToScene();
+	app->BootstrapResources();
+	app->DemoScene();
 	return (int)app->start("Triple Editor v(0.0.1)", 800, 600);
 }

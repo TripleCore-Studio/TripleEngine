@@ -60,6 +60,28 @@ namespace TripleEngineCore {
 				}
 			}
 		}
+		void ShaderProgram::setUniform3fv(const std::string& name, const float* vec3) {
+			if (_compiled && _programID != 0) {
+				GLint loc = glGetUniformLocation(_programID, name.c_str());
+				if (loc != -1) {
+					glUniform3fv(loc, 1, vec3);
+				}
+			}
+		}
+		void ShaderProgram::setUniform1i(const std::string& name, int value) {
+			if (_compiled && _programID != 0) {
+				GLint loc = glGetUniformLocation(_programID, name.c_str());
+				if (loc != -1) {
+					glUniform1i(loc, value);
+				}
+			}
+		}
+		void ShaderProgram::setTexture(const std::string& name, unsigned int textureID, int slot)
+		{
+			glActiveTexture(GL_TEXTURE0 + slot);
+			glBindTexture(GL_TEXTURE_2D, textureID);
+			setUniform1i(name, slot);
+		}
 		bool ShaderProgram::deleteProgram()
 		{
 			if (_programID != 0) {

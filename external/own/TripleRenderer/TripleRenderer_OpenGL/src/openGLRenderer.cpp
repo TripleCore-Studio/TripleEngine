@@ -1,20 +1,27 @@
 #include "OpenGLRenderer.h"
 #include <glad/glad.h>
-#include <iostream>
 #include <math.h>
 #include <unordered_map>
-
-#include "ShaderProgram.h"
-#include "Buffer/IndexBufferObject.h"
-#include "Buffer/VertexArrayObject.h"
-#include "Buffer/VertexBufferObject.h"
+#include "TLogger.h"
 
 using namespace TripleEngineCore::TripleMath;
 
-void TripleEngineCore::TripleRenderer::OpenGLRenderer::Initialize() {}
+void TripleEngineCore::TripleRenderer::OpenGLRenderer::Initialize() {
+    if(!_initGlad) {
+        TripleLogger::TLogger::ModuleCritical("OpenGLRenderer", "GLAD not initialized. Call initGlad() before Initialize().");
+        return;
+	}
+
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+
+    _pResourceManager = std::make_unique<Resources::RenderResourceManager>();
+}
 
 bool TripleEngineCore::TripleRenderer::OpenGLRenderer::initGlad(void* loader) {
-    return gladLoadGLLoader((GLADloadproc)loader) != 0;
+	bool result = gladLoadGLLoader((GLADloadproc)loader) != 0;
+	_initGlad = result;
+    return result;
 }
 
 void TripleEngineCore::TripleRenderer::OpenGLRenderer::SetViewport(int x, int y, int width, int height) {
@@ -23,104 +30,48 @@ void TripleEngineCore::TripleRenderer::OpenGLRenderer::SetViewport(int x, int y,
 
 void TripleEngineCore::TripleRenderer::OpenGLRenderer::BeginFrame(float time)
 {
-	this->gTime = time;
 }
-
-const char* vertexShaderSrc = R"(
-#version 330 core
-
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec3 aColor;
-
-uniform mat4 u_MVP;
-uniform float u_Time;
-
-out vec3 vColor;
-out vec3 vPosition;
-
-void main()
-{
-    gl_Position = u_MVP * vec4(aPos, 1.0);
-    vColor = aColor;
-    vPosition = aPos;
-}
-)";
-
-const char* fragmentShaderSrc = R"(
-#version 330 core
-
-in vec3 vColor;
-in vec3 vPosition;
-uniform float u_Time;
-out vec4 FragColor;
-
-void main()
-{
-    float heightFactor = clamp(vPosition.y * 0.5 + 0.5, 0.0, 1.0);
-    vec3 color = vColor * heightFactor;
-
-    FragColor = vec4(color, 1.0);
-}
-)";
 
 void TripleEngineCore::TripleRenderer::OpenGLRenderer::RenderFrame(Graphics::FrameContext& ctx)
 {
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (ctx.cameras.empty()) return;
+    auto cam = ctx.cameras[ctx.cameraIndex];
+    Mat4 VP = cam.proj * cam.view;
 
-    using namespace TripleEngineCore::TripleRenderer;
+    ShaderProgram* currentShader = nullptr;
+    VertexArrayObject* currentVAO = nullptr;
 
-    static ShaderProgram shader;
-    static bool shaderInitialized = false;
-    if (!shaderInitialized) {
-        shader.compileProgram(vertexShaderSrc, fragmentShaderSrc);
-        shaderInitialized = true;
-    }
+    for (const auto& cmd : ctx.commands) {
+        if (cmd.items.empty())
+            continue;
 
-    struct MeshGPU {
-        VertexArrayObject vao;
-        VertexBufferObject vbo;
-        IndexBufferObject ibo;
-    };
-    static std::unordered_map<const Graphics::Mesh*, std::unique_ptr<MeshGPU>> meshCache;
+        Mat4 MVP = VP * cmd.worldMat;
 
-    for (auto& cam : ctx.cameras)
-    {
-        Mat4 VP = cam.proj * cam.view;
+        for (size_t i = 0; i < cmd.items.size(); i++) {
+			const Runtime::RuntimeMesh& mesh = cmd.items[i].mesh;
+			const Runtime::RuntimeMaterial& mat = mesh.material;
 
-        for (auto& cmd : ctx.commands)
-        {
-            Mat4 MVP = VP * cmd.worldMat;
+            Resources::MeshGPU* meshGpu = _pResourceManager->getMeshGPU(mesh);
+            ShaderProgram* program = _pResourceManager->getShaderProgram(mat.shader);
+			program->setUniformMat4("u_MVP", MVP.data);
+			_pResourceManager->bindMaterial(mat);
 
-            for (auto* mesh : cmd.meshes)
-            {
-                if (!mesh) continue;
-
-                if (meshCache.find(mesh) == meshCache.end())
-                {
-                    auto gpuMesh = std::make_unique<MeshGPU>();
-                    gpuMesh->vbo.setData(mesh->vertices.data(), mesh->vertices.size() * sizeof(TripleEngineCore::Graphics::Vertex));
-                    gpuMesh->ibo.setData(mesh->indices.data(), mesh->indices.size() * sizeof(uint32_t));
-                    gpuMesh->vao.setData(gpuMesh->vbo);
-                    gpuMesh->vao.setIndexData(gpuMesh->ibo);
-
-                    meshCache[mesh] = std::move(gpuMesh);
-                }
-
-                MeshGPU* gpu = meshCache[mesh].get();
-                shader.use();
-                shader.setUniformMat4("u_MVP", MVP.data);
-                shader.setUniform1f("u_Time", this->gTime);
-
-                gpu->vao.bind();
-                gpu->ibo.bind();
-                glDrawElements(GL_TRIANGLES, mesh->indices.size(), GL_UNSIGNED_INT, 0);
-                gpu->vao.unbind();
-                gpu->ibo.unbind();
+            if (program != currentShader) {
+                program->use();
+                currentShader = program;
             }
+
+            if (&meshGpu->vao != currentVAO) {
+                meshGpu->vao.bind();
+                currentVAO = &meshGpu->vao;
+            }
+
+            glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, nullptr);
         }
     }
+
+    if (currentVAO) currentVAO->unbind();
 }
 
 

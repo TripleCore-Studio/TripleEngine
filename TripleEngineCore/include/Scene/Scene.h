@@ -4,6 +4,7 @@
 #include "Scene/SceneObject.h"
 #include <memory>
 #include <vector>
+#include <string>
 
 namespace TripleEngineCore::Scene
 {
@@ -32,6 +33,8 @@ namespace TripleEngineCore::Scene
 
         std::vector<SceneObject*> findObjectsByName(const std::string& name);
 
+		size_t getTotalObjectCount() const;
+		size_t getRenderableObjectCount() const;
     private:
 		SceneObject* findInChildrenById(SceneObject* obj, uint32_t id);
 
