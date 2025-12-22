@@ -25,6 +25,7 @@ namespace TripleEngineCore::TripleMath {
 
         float length() const;
         Vec3 normalized() const;
+        const float* data() const { return &x; }
     };
 
 }

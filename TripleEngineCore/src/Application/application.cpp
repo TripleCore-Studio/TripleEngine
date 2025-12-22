@@ -1,5 +1,8 @@
 #include "Application/Application.h"
 
+#include <thread>
+#include <chrono>
+
 #include "Core/CoreTypes.h"
 
 #include "Application/GlWindow.h"
@@ -8,12 +11,10 @@
 #include "Interfaces/IRenderer.h"
 #include "TLogger.h"
 
-#include <thread>
-#include <chrono>
-#include <iostream>
-
 #include "Scene/CameraComponent.h"
 #include "Scene/MeshComponent.h"
+
+#include "Asset/Mesh.h"
 
 namespace TripleEngineCore {
 	Application::Application()
@@ -71,13 +72,10 @@ namespace TripleEngineCore {
 			return ErrorCode::FailedInitRenderer;
 		}
 
+		pGLRenderer->Initialize();
+
 		this->loadCallbacks();
 		this->_isRunning = true;
-
-		std::unique_ptr<Scene::SceneObject> obj = std::make_unique<Scene::SceneObject>("camera");
-		obj->addComponent<Scene::TransformComponent>(TripleMath::Vec3(0, 3, 20), TripleMath::Vec3(0, 0, 0), TripleMath::Vec3(1, 1, 1));
-		obj->addComponent<Scene::CameraComponent>(70.0f, 0.1f, 100.0f, 16.0f / 9.0f, obj->getComponent<Scene::TransformComponent>());
-		this->_pScene->addRootObject(std::move(obj));
 
 		while (_isRunning) {
 			this->onUpdate();
@@ -90,28 +88,12 @@ namespace TripleEngineCore {
 
 	void Application::onUpdate()
 	{
-		Scene::SceneObject* carObj = this->_pScene->findObjectsByName("model1")[0];
-		Scene::TransformComponent* transform1 = carObj->getComponent<Scene::TransformComponent>();
-		if (!transform1) return;
-
-		static float angle = 0.0f;
-		static const float radius = 10.0f;
-		static const TripleMath::Vec3 center{ 0, 0, 0 };
-		static const float speed = 2.5f;
-
-		angle += speed * 0.01f;
-		if (angle > 2 * 3.14159265f) angle -= 2 * 3.14159265f;
-
-		transform1->position.x = center.x + radius * cos(angle);
-		transform1->position.z = center.z + radius * sin(angle);
-		transform1->position.y = center.y;
-
-		TripleMath::Vec3 forward1 = { -sin(angle), 0.0f, cos(angle) };
-		transform1->rotationEuler.y = atan2(forward1.x, forward1.z) * 180.0f / 3.14159265f;
-
-
 		float t = this->_pWindow->getTime();
 		Scene::SceneObject* cameraObj = this->_pScene->findObjectsByName("camera")[0];
+
+		Scene::SceneObject* cube = this->_pScene->findObjectsByName("model1")[0];
+		cube->getComponent<Scene::TransformComponent>()->position.y = (sin(t * 0.5) * 0.5 + 0.5) * 10.5 + 10;
+		cube->getComponent<Scene::TransformComponent>()->rotationEuler.y = t * 20.0f;
 
 		Scene::TransformComponent* transform = cameraObj->getComponent<Scene::TransformComponent>();
 
@@ -163,15 +145,25 @@ namespace TripleEngineCore {
 		this->_pRenderer->EndFrame();
 	}
 
-	void Application::AddModelToScene()
+	void Application::DemoScene()
 	{
 		using namespace TripleMath;
+		using namespace Graphics;
+
+		std::unique_ptr<Scene::SceneObject> cameraObj = std::make_unique<Scene::SceneObject>("camera");
+		cameraObj->addComponent<Scene::TransformComponent>(Vec3(0, 2, 23), Vec3(0, 0, 0), Vec3(1, 1, 1));
+		cameraObj->addComponent<Scene::CameraComponent>(70.0f, 0.1f, 1000.0f, 16.0f / 9.0f, cameraObj->getComponent<Scene::TransformComponent>());
+		this->_pScene->addRootObject(std::move(cameraObj));
 
 		std::unique_ptr<Scene::SceneObject> obj = std::make_unique<Scene::SceneObject>("model1");
-		obj->addComponent<Scene::TransformComponent>(Vec3(0, 0, 0), Vec3(0, 0, 0), Vec3(2.0, 2.0, 2.0));
-		Index model = this->_pAssetsSystem->loadModel("cube", Graphics::Model::CreateCube());
-		obj->addComponent<Scene::MeshComponent>(model);
+		obj->addComponent<Scene::TransformComponent>(Vec3(0, 10, 15), Vec3(0, 30, 0), Vec3(5.0, 5.0, 5.0));
+		obj->addComponent<Scene::MeshComponent>(_pAssetsSystem->getModelIndex("cube"));
 		this->_pScene->addRootObject(std::move(obj));
+
+		std::unique_ptr<Scene::SceneObject> obj2 = std::make_unique<Scene::SceneObject>("model2");
+		obj2->addComponent<Scene::TransformComponent>(Vec3(0, 0, 0), Vec3(-90, 0, 0), Vec3(60.0, 60.0, 2.0));
+		obj2->addComponent<Scene::MeshComponent>(_pAssetsSystem->getModelIndex("cube2"));
+		this->_pScene->addRootObject(std::move(obj2));
 	}
 
 	void Application::loadCallbacks()
@@ -211,6 +203,65 @@ namespace TripleEngineCore {
 		else if (key == Event::KeyCode::F2) {
 			_cameraSpeed -= 1.0;
 			if (_cameraSpeed < 1.0f) _cameraSpeed = 1.0f;
+		}
+	}
+
+	void Application::BootstrapResources()
+	{
+		this->_pAssetsSystem->loadShaderFromFile("basic_shader",
+			"assets/shaders/default/basic_vertex.vs",
+			"assets/shaders/default/basic_fragment.fs");
+
+		Asset::AssetID abtex = this->_pAssetsSystem->loadTexture("default_albedo",
+			"assets/textures/default/default_albedo.jpg");
+
+		Asset::AssetID abtex2 = this->_pAssetsSystem->loadTexture("brick_albedo",
+			"assets/textures/default/default_albedo2.jpeg");
+
+		Asset::AssetID ntex = this->_pAssetsSystem->loadTexture("default_normal",
+			"assets/textures/default/default_albedo.jpg");
+
+		Asset::AssetID mttex = this->_pAssetsSystem->loadTexture("default_metallic",
+			"assets/textures/default/default_albedo.jpg");
+
+		Asset::AssetID rgtex = this->_pAssetsSystem->loadTexture("default_roughness",
+			"assets/textures/default/default_albedo.jpg");
+
+		Asset::Material m;
+		m.shaderIndex = this->_pAssetsSystem->getShaderIndex("basic_shader");
+		m.albedoColor = TripleMath::Vec3(1.0f, 1.0f, 1.0f);
+		m.albedoTextureIndex = abtex;
+		m.normalTextureIndex = ntex;
+		m.metallicTextureIndex = mttex;
+		m.roughnessTextureIndex = rgtex;
+
+		Asset::Material m2;
+		m2.shaderIndex = this->_pAssetsSystem->getShaderIndex("basic_shader");
+		m2.albedoColor = TripleMath::Vec3(1.0f, 1.0f, 1.0f);
+		m2.albedoTextureIndex = abtex2;
+		m2.normalTextureIndex = ntex;
+		m2.metallicTextureIndex = mttex;
+		m2.roughnessTextureIndex = rgtex;
+
+		this->_pAssetsSystem->createMaterial("basic_material", m);
+		this->_pAssetsSystem->createMaterial("brick_albedo", m2);
+
+		this->_pAssetsSystem->loadModelFromModel("cube", Asset::Model::CreateCube());
+		this->_pAssetsSystem->loadModelFromModel("cube2", Asset::Model::CreateCube());
+
+		auto model = this->_pAssetsSystem->getModelMutable(_pAssetsSystem->getModelIndex("cube"));
+		auto model2 = this->_pAssetsSystem->getModelMutable(_pAssetsSystem->getModelIndex("cube2"));
+		auto matId = this->_pAssetsSystem->getMaterialIndex("basic_material");
+		auto matId2 = this->_pAssetsSystem->getMaterialIndex("brick_albedo");
+
+		for(auto& mesh : model->meshes) {
+			if(mesh.materialIndex != System::INVALID_ASSET_ID) continue;
+			mesh.materialIndex = matId;
+		}
+
+		for (auto& mesh : model2->meshes) {
+			if (mesh.materialIndex != System::INVALID_ASSET_ID) continue;
+			mesh.materialIndex = matId2;
 		}
 	}
 

@@ -3,19 +3,16 @@
 
 #include <vector>
 #include "Mesh.h"
-#include "Material.h"
-#include <memory>
 
-namespace TripleEngineCore::Graphics
+namespace TripleEngineCore::Asset
 {
     class Model {
     public:
         Model() = default;
 
-        std::vector<std::unique_ptr<Mesh>> meshes;
+        std::vector<Mesh> meshes;
 
         static Model CreateCube();
-        static Model LoadOBJ(const std::string& path);
 
         Model(const Model&) = delete;
         Model& operator=(const Model&) = delete;

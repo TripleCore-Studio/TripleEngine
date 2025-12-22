@@ -2,7 +2,7 @@
 #define MESH_COMPONENT_H
 
 #include "Component.h"
-#include "Graphics/Model.h"
+#include "Asset/Model.h"
 #include <memory>
 
 namespace TripleEngineCore::Scene {

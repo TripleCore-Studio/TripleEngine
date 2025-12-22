@@ -3,10 +3,12 @@
 
 #include <string>
 #include "Vec3.h"
+#include "Shader.h"
 
-namespace TripleEngineCore::Graphics {
+namespace TripleEngineCore::Asset {
     struct Material {
-        std::string name;
+    public:
+        Material() {}
 
         TripleMath::Vec3 albedoColor = { 1, 1, 1 };
         float metallic = 0.0f;

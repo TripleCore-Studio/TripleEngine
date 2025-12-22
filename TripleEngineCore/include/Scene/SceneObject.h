@@ -6,6 +6,7 @@
 #include <type_traits>
 #include "Component.h"
 #include "Graphics/RenderCommand.h"
+#include <string>
 
 namespace TripleEngineCore::Scene {
 
@@ -71,6 +72,8 @@ namespace TripleEngineCore::Scene {
             children.push_back(std::move(child));
         }
 
+        size_t getSubtreeSize() const;
+        size_t getRenderableCount() const;
     private:
         static inline uint32_t nextId = 1;
     };

@@ -5,6 +5,7 @@
 #include "Scene/Scene.h"
 #include "Graphics/RenderCommand.h"
 #include "AssetsSystem.h"
+#include "Graphics/RenderItem.h"
 
 #include <vector>
 
@@ -26,6 +27,7 @@ namespace TripleEngineCore::System {
 		void RenderSystem::gatherFromObject(const Scene::SceneObject& obj,
 			std::vector<Graphics::RenderCommand>& commands,
 			const TripleMath::Mat4& parentWorld);
+		void buildRenderItemFromMesh(Graphics::RenderItem& item, const Asset::Mesh& mesh);
 
 		AssetsSystem* assets = nullptr;
 	};

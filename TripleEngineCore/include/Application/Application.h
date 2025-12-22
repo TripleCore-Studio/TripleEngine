@@ -27,7 +27,8 @@ namespace TripleEngineCore {
 		virtual void onUpdate();
 		virtual void onRender();
 
-		void AddModelToScene();
+		void DemoScene();
+		void BootstrapResources();
 
 		IRenderer* getRenderer() { return _pRenderer; }
 		const IRenderer* getRenderer() const { return _pRenderer; }

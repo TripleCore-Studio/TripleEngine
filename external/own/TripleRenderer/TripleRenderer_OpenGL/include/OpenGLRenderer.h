@@ -3,6 +3,9 @@
 
 #include "Interfaces/IOpenGLRenderer.h"
 #include "ExportMacros.h"
+#include "Resources/RenderResourceManager.h"
+
+#include <memory>
 
 namespace TripleEngineCore
 {
@@ -18,8 +21,9 @@ namespace TripleEngineCore
 			virtual void Shutdown() override;
 			virtual bool initGlad(void* loader) override;
 			virtual void SetViewport(int x, int y, int width, int height) override;
-
-			float gTime = 0.0f;
+		private:
+			bool _initGlad = false;
+			std::unique_ptr<Resources::RenderResourceManager> _pResourceManager;
         };
 	}
 }

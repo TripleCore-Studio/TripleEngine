@@ -2,130 +2,126 @@
 #include "TLogger.h"
 #include <fstream>
 #include <sstream>
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+using namespace TripleEngineCore::Asset;
+
 namespace TripleEngineCore::System {
-    uint32_t AssetsSystem::loadModel(const std::string& path) {
-        auto it = modelMap.find(path);
-        if (it != modelMap.end()) return it->second;
+    ModelID AssetsSystem::loadModelFromFile(const std::string& name, const std::string& path) {
+        if (models.exists(name))
+            return models.getID(name);
 
-        auto model = std::make_unique<Graphics::Model>(Graphics::Model::LoadOBJ(path));
-        uint32_t index = static_cast<uint32_t>(models.size());
-        models.push_back(std::move(model));
-        modelMap[path] = index;
-        return index;
+		Model model = Model::CreateCube(); // Placeholder for actual model loading logic
+        for(auto& mesh : model.meshes) {
+			mesh.computeHash();
+		}
+        auto ptr = std::make_unique<Model>(std::move(model));
+        return models.add(name, std::move(ptr));
     }
 
-    uint32_t AssetsSystem::loadModel(const std::string& name, Graphics::Model&& model) {
-        if (modelMap.find(name) != modelMap.end()) {
-            return modelMap[name];
+    ModelID AssetsSystem::loadModelFromModel(const std::string& name, Model&& model) {
+        if (models.exists(name))
+            return models.getID(name);
+
+        for (auto& mesh : model.meshes) {
+            mesh.computeHash();
         }
 
-        auto ptr = std::make_unique<Graphics::Model>(std::move(model));
-        uint32_t index = static_cast<uint32_t>(models.size());
-        models.push_back(std::move(ptr));
-        modelMap[name] = index;
-        return index;
+        auto ptr = std::make_unique<Model>(std::move(model));
+        return models.add(name, std::move(ptr));
     }
 
-    const Graphics::Model* AssetsSystem::getModel(uint32_t index) const {
-        if (index >= models.size()) return nullptr;
-        return models[index].get();
+    ModelID AssetsSystem::getModelIndex(const std::string& name) const {
+        return models.getID(name);
     }
 
-    uint32_t AssetsSystem::loadShader(const std::string& vertexPath, const std::string& fragmentPath) {
-        std::string key = vertexPath + "|" + fragmentPath;
-        auto it = shaderMap.find(key);
-        if (it != shaderMap.end())
-            return it->second;
-
-        std::ifstream vertexFile(vertexPath);
-        if (!vertexFile.is_open()) {
-			TripleLogger::TLogger::ModuleError("AssetsSystem", "Failed to open vertex shader: {}", vertexPath);
-            return UINT32_MAX;
-        }
-        std::stringstream vertexStream;
-        vertexStream << vertexFile.rdbuf();
-        std::string vertexSource = vertexStream.str();
-        vertexFile.close();
-
-        std::ifstream fragmentFile(fragmentPath);
-        if (!fragmentFile.is_open()) {
-			TripleLogger::TLogger::ModuleError("AssetsSystem", "Failed to open fragment shader: {}", fragmentPath);
-            return UINT32_MAX;
-        }
-        std::stringstream fragmentStream;
-        fragmentStream << fragmentFile.rdbuf();
-        std::string fragmentSource = fragmentStream.str();
-        fragmentFile.close();
-
-        auto shader = std::make_unique<Graphics::Shader>();
-        shader->vertexPath = vertexPath;
-        shader->fragmentPath = fragmentPath;
-        shader->vertexSource = std::move(vertexSource);
-        shader->fragmentSource = std::move(fragmentSource);
-
-        uint32_t index = static_cast<uint32_t>(shaders.size());
-        shaders.push_back(std::move(shader));
-        shaderMap[key] = index;
-
-        return index;
+    const Model* AssetsSystem::getModel(ModelID id) const {
+        return models.get(id);
     }
 
-    const Graphics::Shader* AssetsSystem::getShader(uint32_t index) const {
-        if (index >= shaders.size()) return nullptr;
-        return shaders[index].get();
+    Asset::Model* AssetsSystem::getModelMutable(ModelID id)
+    {
+        return models.getMutable(id);
     }
 
-    uint32_t AssetsSystem::createMaterial(const Graphics::Material& mat, const std::string& name = "") {
-        if (!name.empty() && materialMap.find(name) != materialMap.end()) {
-            return materialMap[name];
+    ShaderID AssetsSystem::loadShaderFromFile(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath) {
+        if (shaders.exists(name))
+            return shaders.getID(name);
+
+        std::ifstream vsFile(vertexPath);
+        std::ifstream fsFile(fragmentPath);
+        if (!vsFile.is_open() || !fsFile.is_open()) {
+            TripleLogger::TLogger::ModuleError("AssetsSystem", "Failed to open shader '{}'", name);
+            return INVALID_ASSET_ID;
         }
 
-        auto material = std::make_unique<Graphics::Material>(mat);
-        uint32_t index = static_cast<uint32_t>(materials.size());
-        materials.push_back(std::move(material));
+        std::stringstream vsStream, fsStream;
+        vsStream << vsFile.rdbuf();
+        fsStream << fsFile.rdbuf();
 
-        if (!name.empty()) materialMap[name] = index;
-        return index;
+        auto shader = std::make_unique<Shader>();
+        shader->vertexSource = vsStream.str();
+        shader->fragmentSource = fsStream.str();
+		shader->computeHash();
+
+        return shaders.add(name, std::move(shader));
     }
 
-    const Graphics::Material* AssetsSystem::getMaterial(uint32_t index) const {
-        if (index >= materials.size()) return nullptr;
-        return materials[index].get();
+    ShaderID AssetsSystem::getShaderIndex(const std::string& name) const {
+        return shaders.getID(name);
     }
 
-    uint32_t AssetsSystem::loadTexture(const std::string& path) {
-        auto it = textureMap.find(path);
-        if (it != textureMap.end())
-            return it->second;
+    const Shader* AssetsSystem::getShader(ShaderID id) const {
+        return shaders.get(id);
+    }
 
-        int width, height, channels_in_file;
-        unsigned char* pixels = stbi_load(path.c_str(), &width, &height, &channels_in_file, 4); // RGBA
+    MaterialID AssetsSystem::createMaterial(const std::string& name, const Material& material) {
+        if (materials.exists(name))
+            return materials.getID(name);
+
+        auto ptr = std::make_unique<Material>(material);
+        return materials.add(name, std::move(ptr));
+    }
+
+    MaterialID AssetsSystem::getMaterialIndex(const std::string& name) const {
+        return materials.getID(name);
+    }
+
+    const Material* AssetsSystem::getMaterial(MaterialID id) const {
+        return materials.get(id);
+    }
+
+    TextureID AssetsSystem::loadTexture(const std::string& name, const std::string& path) {
+        if (textures.exists(name))
+            return textures.getID(name);
+
+        stbi_set_flip_vertically_on_load(true);
+
+        int width, height, channels;
+        stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, 4);
         if (!pixels) {
-			TripleLogger::TLogger::ModuleError("AssetsSystem", "Failed to load texture: {}", path);
-            return UINT32_MAX;
+            TripleLogger::TLogger::ModuleError("AssetsSystem", "Failed to load texture '{}': {}", name, path);
+            return INVALID_ASSET_ID;
         }
 
-        auto texture = std::make_unique<Graphics::Texture>();
-        texture->path = path;
+        auto texture = std::make_unique<Texture>();
         texture->width = static_cast<uint16_t>(width);
         texture->height = static_cast<uint16_t>(height);
-        texture->data.assign(pixels, pixels + width * height * 4);
+        texture->channels = 4;
+        texture->data.assign(pixels, pixels + width * height * texture->channels);
+		texture->computeHash();
 
         stbi_image_free(pixels);
 
-        uint32_t index = static_cast<uint32_t>(textures.size());
-        textures.push_back(std::move(texture));
-        textureMap[path] = index;
-
-        return index;
+        return textures.add(name, std::move(texture));
     }
 
-    const Graphics::Texture* AssetsSystem::getTexture(uint32_t index) const {
-        if (index >= textures.size()) return nullptr;
-        return textures[index].get();
+    TextureID AssetsSystem::getTextureIndex(const std::string& name) const {
+        return textures.getID(name);
+    }
+
+    const Texture* AssetsSystem::getTexture(TextureID id) const {
+        return textures.get(id);
     }
 }
