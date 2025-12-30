@@ -14,7 +14,8 @@ namespace TripleEngineCore {
 			WindowClose,
 			WindowResize,
 			MouseMove,
-			KeyboardInput
+			KeyboardInput,
+			MouseButtonInput
 		};
 
 		enum class KeyAction {
@@ -38,6 +39,15 @@ namespace TripleEngineCore {
 			Right,
 			Up,
 			Down
+		};
+
+		enum class MouseButton {
+			Left = 0,
+			Right = 1,
+			Middle = 2,
+			Button4,
+			Button5,
+			Unknown
 		};
 
 		virtual Type getType() const = 0;
@@ -74,6 +84,28 @@ namespace TripleEngineCore {
 		bool isRepeat() const { return action == KeyAction::Repeat; }
 	private:
 		KeyCode key;
+		KeyAction action;
+		int mods;
+	};
+
+	class MouseButtonEvent : public Event {
+	public:
+		MouseButtonEvent(MouseButton button, KeyAction action, int mods)
+			: button(button), action(action), mods(mods) {
+		}
+
+		Type getType() const override { return Type::MouseButtonInput; }
+
+		MouseButton getButton() const { return button; }
+		KeyAction getAction() const { return action; }
+		int getMods() const { return mods; }
+
+		bool isPressed() const { return action == KeyAction::Press; }
+		bool isReleased() const { return action == KeyAction::Release; }
+		bool isRepeat() const { return action == KeyAction::Repeat; }
+
+	private:
+		MouseButton button;
 		KeyAction action;
 		int mods;
 	};

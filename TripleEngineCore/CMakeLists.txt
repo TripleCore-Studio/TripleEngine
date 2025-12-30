@@ -43,6 +43,7 @@ target_link_libraries(${LIB_NAME} PRIVATE
 	TripleLogger
 	TripleMath
 	glad
+	tinygltf
 )
 
 # ───── Characters Exports For Windows ─────

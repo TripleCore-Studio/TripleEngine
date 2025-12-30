@@ -1,12 +1,15 @@
 #ifndef RENDER_ITEM_H
 #define RENDER_ITEM_H
 
-#include "Runtime/RuntimeMesh.h"
-#include "Runtime/RuntimeShader.h"
+#include "Core/CoreTypes.h"
+#include "Graphics/RenderMaterial.h"
 
 namespace TripleEngineCore::Graphics {
     struct RenderItem {
-        Runtime::RuntimeMesh mesh;
+        GPUHandle geometry;
+        uint32_t indexOffset;
+        uint32_t indexCount;
+        RenderMaterial material;
     };
 }
 

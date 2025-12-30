@@ -1,31 +1,38 @@
 #ifndef RENDER_RESOURCE_MANAGER
 #define RENDER_RESOURCE_MANAGER
 
+#include "Core/CoreTypes.h"
+
 #include <unordered_map>
 #include <memory>
 
-#include "Resources/MeshGPU.h"
-#include "Resources/TextureGPU.h"
-#include "ShaderProgram.h"
-#include "RuntimeHash.h"
+#include "Resources/GLGeometry.h"
+#include "Resources/GLTexture.h"
+#include "Resources/GLShader.h"
+#include "Graphics/RenderMaterial.h"
 
-#include "Runtime/RuntimeMesh.h"
-#include "Runtime/RuntimeTexture.h"
-#include "Runtime/RuntimeShader.h"
+#include "Graphics/GeometryDesc.h"
+#include "Graphics/TextureDesc.h"
+#include "Graphics/ShaderDesc.h"
 
-namespace TripleEngineCore::TripleRenderer::Resources {
+namespace tec = TripleEngineCore;
+
+namespace TripleRenderer::GLRenderer::Resources {
 	class RenderResourceManager {
 	public:
-		MeshGPU* getMeshGPU(const Runtime::RuntimeMesh& mesh);
-		TextureGPU* getTextureGPU(const Runtime::RuntimeTexture& texture);
-		TextureID getTextureID(const Runtime::RuntimeTexture& texture);
-		ShaderProgram* getShaderProgram(const Runtime::RuntimeShader& shader);
+		GLGeometry* getGLGeometry(tec::GPUHandle geometry);
+		tec::GPUHandle createGLGeometry(const tec::Graphics::GeometryDesc& desc);
+		GLTexture* getGLTexture(tec::GPUHandle texture);
+		tec::GPUHandle createGLTexture(const tec::Graphics::TextureDesc& desc);
+		GLShader* getGLShader(tec::GPUHandle shader);
+		tec::GPUHandle createGLShader(const tec::Graphics::ShaderDesc& desc);
 
-		void bindMaterial(const Runtime::RuntimeMaterial& material);
+		void bindMaterial(tec::Graphics::RenderMaterial& material);
 	private:
-		std::unordered_map<RuntimeMeshKey, std::unique_ptr<MeshGPU>, RuntimeMeshHasher> meshCache;
-		std::unordered_map<RuntimeTextureKey, std::unique_ptr<TextureGPU>, RuntimeTextureHasher> textureCache;
-		std::unordered_map<RuntimeShaderKey, std::unique_ptr<ShaderProgram>, RuntimeShaderHasher> shaderCache;
+		std::unordered_map<tec::GPUHandle, GLGeometry> _primitiveCache;
+		std::unordered_map<tec::GPUHandle, GLTexture> _textureCache;
+		std::unordered_map<tec::GPUHandle, GLShader> _shaderCache;
+		tec::GPUHandle _nextHandle = 0;
 	};
 }
 

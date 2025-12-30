@@ -1,7 +1,7 @@
 #include "Buffer/IndexBufferObject.h"
 #include <glad/glad.h>
 
-namespace TripleEngineCore::TripleRenderer {
+namespace TripleRenderer::GLRenderer::Buffer {
 	constexpr GLenum usageToGLenum(IndexBufferObject::Usage usage) {
 		switch (usage) {
 		case IndexBufferObject::Usage::STATIC_DRAW:
@@ -18,6 +18,20 @@ namespace TripleEngineCore::TripleRenderer {
 	IndexBufferObject::IndexBufferObject()
 	{
 		glGenBuffers(1, &_iboId);
+	}
+
+	IndexBufferObject::IndexBufferObject(IndexBufferObject&& other) noexcept
+		: _iboId(other._iboId) {
+		other._iboId = 0;
+	}
+
+	IndexBufferObject& IndexBufferObject::operator=(IndexBufferObject&& other) noexcept {
+		if (this != &other) {
+			if (_iboId != 0) glDeleteBuffers(1, &_iboId);
+			_iboId = other._iboId;
+			other._iboId = 0;
+		}
+		return *this;
 	}
 
 	IndexBufferObject::~IndexBufferObject()

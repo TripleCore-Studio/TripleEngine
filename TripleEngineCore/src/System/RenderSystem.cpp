@@ -1,10 +1,16 @@
 #include "System/RenderSystem.h"
 #include "Scene/TransformComponent.h"
 #include "Scene/MeshComponent.h"
+
 #include "Mat4.h"
 #include "TLogger.h"
 
-#include "Core/CoreTypes.h"
+#include "Asset/Model.h"
+#include "Asset/Material.h"
+
+#include "Graphics/RenderItem.h"
+
+using namespace TripleEngineCore::Graphics;
 
 namespace TripleEngineCore::System {
     void RenderSystem::gatherFromObject(const Scene::SceneObject& obj,
@@ -19,24 +25,13 @@ namespace TripleEngineCore::System {
             Graphics::RenderCommand cmd;
             cmd.worldMat = world;
 
-            if (meshComp->modelIndex != INVALID_INDEX && assets != nullptr) {
-                const auto* model = assets->getModel(meshComp->modelIndex);
-                if(model == nullptr) {
-                    TripleLogger::TLogger::ModuleWarn("Application",
-                        "Model with index {} not found in assets.", std::to_string(meshComp->modelIndex));
-					return;
-				}
-
-				cmd.items.reserve(model->meshes.size());
-
-                for (const auto& mesh : model->meshes) {
-					Graphics::RenderItem item;
-					buildRenderItemFromMesh(item, mesh);
-					cmd.items.push_back(std::move(item));
-                }
+            if (meshComp->modelIndex != INVALID_INDEX && _pAssets != nullptr) {
+                const Asset::Model* model = _pAssets->getModel(meshComp->modelIndex);
+                buildRenderCmd(cmd, model);
             }
 
-            commands.push_back(cmd);
+            if(cmd.items.size() > 0)
+                commands.push_back(std::move(cmd));
         }
 
         for (auto& child : obj.children) {
@@ -44,51 +39,119 @@ namespace TripleEngineCore::System {
         }
     }
 
-    void RenderSystem::buildRenderItemFromMesh(Graphics::RenderItem& item, const Asset::Mesh& mesh)
-    {
-        const Asset::Material* meshMaterial = assets->getMaterial(mesh.materialIndex);
-        const Asset::Shader* meshShader = meshMaterial ? assets->getShader(meshMaterial->shaderIndex) : nullptr;
-
-        if(meshMaterial == nullptr || meshShader == nullptr) {
-            TripleLogger::TLogger::ModuleWarn("Application",
-                "Material or Shader not found for mesh during render item build.");
-            return;
-		}
-
-        auto abtex = assets->getTexture(meshMaterial->albedoTextureIndex);
-        Runtime::RuntimeTexture abTexture{ abtex->width, abtex->height, abtex->channels, abtex->data.data(), abtex->contentHash };
-
-        auto normtex = assets->getTexture(meshMaterial->normalTextureIndex);
-        Runtime::RuntimeTexture normTexture{ normtex->width, normtex->height, normtex->channels, normtex->data.data(), normtex->contentHash };
-
-        auto metallictex = assets->getTexture(meshMaterial->metallicTextureIndex);
-        Runtime::RuntimeTexture metallicTexture{ metallictex->width, metallictex->height, metallictex->channels, metallictex->data.data(), metallictex->contentHash };
-
-        auto roughnesstex = assets->getTexture(meshMaterial->roughnessTextureIndex);
-        Runtime::RuntimeTexture roughnessTexture{ roughnesstex->width, roughnesstex->height, roughnesstex->channels, roughnesstex->data.data(), roughnesstex->contentHash };
-
-        Runtime::RuntimeShader runtimeShader{
-            meshShader->vertexSource.c_str(),
-            meshShader->fragmentSource.c_str(),
-            meshShader->vertexHash,
-			meshShader->fragmentHash
-        };
-        Runtime::RuntimeMaterial runtimeMaterial{ meshMaterial->albedoColor,
-            meshMaterial->metallic, meshMaterial->roughness,
-            abTexture, normTexture, metallicTexture,
-            roughnessTexture, runtimeShader
-        };
-
-		item.mesh = Runtime::RuntimeMesh{ mesh.vertices.data(), mesh.vertices.size(), mesh.indices.data(), mesh.indices.size(), runtimeMaterial, mesh.geometryHash };
+    bool RenderSystem::getGPU(ResourceType type, Asset::AssetID id, GPUHandle& out) {
+        switch (type) {
+        case ResourceType::Texture:
+        {
+            auto it = _uploadedTextures.find(id);
+            if (it == _uploadedTextures.end()) return false;
+            out = it->second;
+            return true;
+        }
+        case ResourceType::Model:
+        {
+            auto it = _uploadedModels.find(id);
+            if (it == _uploadedModels.end()) return false;
+            out = it->second;
+            return true;
+        }
+        case ResourceType::Shader:
+        {
+            auto it = _uploadedShaders.find(id);
+            if (it == _uploadedShaders.end()) return false;
+            out = it->second;
+            return true;
+        }
+        }
+        return false;
     }
 
-    void RenderSystem::buildRenderCommands(const Scene::Scene& scene,
+    void RenderSystem::buildRenderCmd(Graphics::RenderCommand& cmd, const Asset::Model* obj)
+    {
+        if (obj) {
+            GPUHandle gpuGeometry;
+            if (!getGPU(ResourceType::Model, obj->id, gpuGeometry)) return;
+
+            for (auto& mesh : obj->meshes) {
+                for (auto& p : mesh.primitives) {
+                    RenderItem item;
+
+                    const Asset::Material* mat = _pAssets->getMaterial(p.materialId);
+                    if (!mat) mat = _pAssets->getMaterial(_pAssets->getMaterialId("__default_material"));
+                    if (!mat) {
+                        TripleLogger::TLogger::ModuleWarn("Core::RenderSystem", "Primitive in mesh({}) skipped", mesh.name);
+                        continue;
+                    }
+
+                    RenderMaterial rMat;
+                    rMat.albedoColor = mat->albedoColor;
+                    rMat.metallic = mat->metallic;
+                    rMat.roughness = mat->roughness;
+
+                    if (!getGPU(ResourceType::Texture, mat->albedoTextureId, rMat.albedoTexHandle)) continue;
+                    if (!getGPU(ResourceType::Texture, mat->metallicTextureId, rMat.metallicTexHandle)) continue;
+                    if (!getGPU(ResourceType::Texture, mat->normalTextureId, rMat.normalTexHandle)) continue;
+                    if (!getGPU(ResourceType::Texture, mat->roughnessTextureId, rMat.roughnessTexHandle)) continue;
+                    if (!getGPU(ResourceType::Shader, mat->shaderId, rMat.shaderHandle)) continue;
+
+                    item.material = rMat;
+                    item.geometry = gpuGeometry;
+                    item.indexCount = p.indexCount;
+                    item.indexOffset = p.indexOffset;
+
+                    cmd.items.push_back(std::move(item));
+                }
+            }
+        }
+    }
+
+    void RenderSystem::uploadTexture(const Asset::Texture* texture) {
+        if (texture && _pRenderer) {
+            auto it = _uploadedTextures.find(texture->id);
+            if (it == _uploadedTextures.end()) {
+                Graphics::TextureDesc desc;
+                desc.width = texture->width;
+                desc.height = texture->height;
+                desc.channels = texture->channels;
+                desc.data = texture->data.data();
+                GPUHandle h = _pRenderer->UploadTexture(desc);
+                _uploadedTextures[texture->id] = h;
+            }
+        }
+    }
+
+    void RenderSystem::uploadGeometry(const Asset::Model* model) {
+        auto it = _uploadedModels.find(model->id);
+        if (it != _uploadedModels.end()) return;
+        Graphics::GeometryDesc desc;
+        desc.vertices = model->vertices.data();
+        desc.vertexCount = model->vertices.size();
+        desc.indices = model->indices.data();
+        desc.indexCount = model->indices.size();
+        GPUHandle h = _pRenderer->UploadGeometry(desc);
+        _uploadedModels[model->id] = h;
+    }
+
+    void RenderSystem::uploadShader(const Asset::Shader* shader) {
+        if (shader && _pRenderer) {
+            auto it = _uploadedShaders.find(shader->id);
+            if (it == _uploadedShaders.end()) {
+                Graphics::ShaderDesc desc;
+                desc.vCode = shader->vertexSource.c_str();
+                desc.fCode = shader->fragmentSource.c_str();
+                GPUHandle h = _pRenderer->UploadShader(desc);
+                _uploadedShaders[shader->id] = h;
+            }
+        }
+    }
+
+    void RenderSystem::buildRenderCommands(const Scene::Scene* scene,
         std::vector<Graphics::RenderCommand>& commands)
     {
 		commands.clear();
-		commands.reserve(scene.getRenderableObjectCount());
+		commands.reserve(scene->getRenderableObjectCount());
 
-        for (auto& root : scene.rootObjects) {
+        for (auto& root : scene->rootObjects) {
             gatherFromObject(*root, commands, TripleMath::Mat4::identity());
         }
     }

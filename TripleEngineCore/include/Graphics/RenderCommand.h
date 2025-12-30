@@ -1,9 +1,9 @@
 #ifndef RENDER_COMMAND_H
 #define RENDER_COMMAND_H
 
-#include <vector>
 #include "Mat4.h"
 #include "RenderItem.h"
+#include <vector>
 
 namespace TripleEngineCore::Graphics {
 	struct RenderCommand

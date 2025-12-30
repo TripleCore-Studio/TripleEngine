@@ -1,0 +1,192 @@
+#include "Resources/GLShader.h"
+#include <glad/glad.h>
+
+namespace TripleRenderer::GLRenderer::Resources {
+	GLShader::GLShader()
+	{
+		_compiled = false;
+		_programID = 0;
+	}
+	bool GLShader::compileProgram(const std::string& verSource, const std::string& fragSource)
+	{
+		if (!this->isCompiled()) {
+			unsigned int vertexShader = compileShader(verSource, GL_VERTEX_SHADER, this->_errorLog);
+			if (vertexShader == 0) {
+				return false;
+			}
+			unsigned int fragmentShader = compileShader(fragSource, GL_FRAGMENT_SHADER, this->_errorLog);
+			if (fragmentShader == 0) {
+				glDeleteShader(vertexShader);
+				return false;
+			}
+			_programID = linkProgram(vertexShader, fragmentShader, this->_errorLog);
+			if (_programID == 0) {
+				glDeleteShader(vertexShader);
+				glDeleteShader(fragmentShader);
+				return false;
+			}
+			glDeleteShader(vertexShader);
+			glDeleteShader(fragmentShader);
+			this->_compiled = true;
+			return true;
+		}
+		else {
+			_errorLog = "Shader program already compiled.";
+			return false;
+		}
+	}
+	void GLShader::bind()
+	{
+		if (this->_compiled && this->_programID != 0) {
+			glUseProgram(this->_programID);
+		}
+	}
+	void GLShader::setUniformMat4(const std::string& name, const float* matrix)
+	{
+		if (this->_compiled && this->_programID != 0) {
+			GLint location = glGetUniformLocation(this->_programID, name.c_str());
+			if (location != -1) {
+				glUniformMatrix4fv(location, 1, GL_FALSE, matrix);
+			}
+		}
+	}
+	void GLShader::setUniform1f(const std::string& name, float f)
+	{
+		if (this->_compiled && this->_programID != 0) {
+			GLint location = glGetUniformLocation(this->_programID, name.c_str());
+			if (location != -1) {
+				glUniform1f(location, f);
+			}
+		}
+	}
+	void GLShader::setUniform3fv(const std::string& name, const float* vec3) {
+		if (_compiled && _programID != 0) {
+			GLint loc = glGetUniformLocation(_programID, name.c_str());
+			if (loc != -1) {
+				glUniform3fv(loc, 1, vec3);
+			}
+		}
+	}
+	void GLShader::setUniform1i(const std::string& name, int value) {
+		if (_compiled && _programID != 0) {
+			GLint loc = glGetUniformLocation(_programID, name.c_str());
+			if (loc != -1) {
+				glUniform1i(loc, value);
+			}
+		}
+	}
+	void GLShader::setTexture(const std::string& name, unsigned int textureID, int slot)
+	{
+		glActiveTexture(GL_TEXTURE0 + slot);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		setUniform1i(name, slot);
+	}
+	bool GLShader::deleteProgram()
+	{
+		if (_programID != 0) {
+			glDeleteProgram(_programID);
+			_programID = 0;
+			_compiled = false;
+			_errorLog.clear();
+			return true;
+		}
+		else {
+			_errorLog = "Shader program not initialized or already deleted.";
+			return false;
+		}
+	}
+	GLShader::~GLShader()
+	{
+		if (_programID != 0) {
+			glDeleteProgram(_programID);
+		}
+		_programID = 0;
+		_compiled = false;
+		_errorLog.clear();
+	}
+	unsigned int GLShader::compileShader(const std::string& source, unsigned int shaderType, std::string& outLog)
+	{
+		GLuint id = glCreateShader(shaderType);
+		const char* verSourcePtr = source.c_str();
+		glShaderSource(id, 1, &verSourcePtr, nullptr);
+		glCompileShader(id);
+
+		GLint success;
+		glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+		if (!success) {
+			GLint logLength;
+			glGetShaderiv(id, GL_INFO_LOG_LENGTH, &logLength);
+			if (logLength > 0) {
+				std::string log(logLength, '\0');
+				glGetShaderInfoLog(id, logLength, nullptr, log.data());
+				outLog = std::move(log);
+			}
+			else {
+				outLog.clear();
+			}
+			glDeleteShader(id);
+			return 0; // Compilation failed
+		}
+		outLog.clear();
+		return id; // Compilation succeeded
+	}
+	unsigned int GLShader::linkProgram(unsigned int vertexShader, unsigned int fragmentShader, std::string& outLog)
+	{
+		unsigned int id = glCreateProgram();
+		glAttachShader(id, vertexShader);
+		glAttachShader(id, fragmentShader);
+		glLinkProgram(id);
+		GLint success;
+		glGetProgramiv(id, GL_LINK_STATUS, &success);
+		if (!success) {
+			GLint logLength;
+			glGetProgramiv(id, GL_INFO_LOG_LENGTH, &logLength);
+			if (logLength > 0) {
+				std::string log(logLength, '\0');
+				glGetProgramInfoLog(id, logLength, nullptr, log.data());
+				outLog = std::move(log);
+			}
+			else {
+				outLog.clear();
+			}
+			glDeleteProgram(id);
+			return 0;
+		}
+		outLog.clear();
+		return id;
+	}
+	bool GLShader::operator==(const GLShader& other) const
+	{
+		return _programID == other._programID &&
+			_compiled == other._compiled &&
+			_errorLog == other._errorLog;
+	}
+	bool GLShader::operator!=(const GLShader& other) const
+	{
+		return !(*this == other);
+	}
+	GLShader::GLShader(GLShader&& other) noexcept
+		: _programID(other._programID),
+		_compiled(other._compiled),
+		_errorLog(std::move(other._errorLog))
+	{
+		other._programID = 0;
+		other._compiled = false;
+	}
+	GLShader& GLShader::operator=(GLShader&& other) noexcept
+	{
+		if (this != &other) {
+			if (_programID != 0) {
+				glDeleteProgram(_programID);
+			}
+
+			_programID = other._programID;
+			_compiled = other._compiled;
+			_errorLog = std::move(other._errorLog);
+
+			other._programID = 0;
+			other._compiled = false;
+		}
+		return *this;
+	}
+}

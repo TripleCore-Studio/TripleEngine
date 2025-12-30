@@ -7,25 +7,33 @@
 
 #include <memory>
 
-namespace TripleEngineCore
+namespace tec = TripleEngineCore;
+namespace tecg = TripleEngineCore::Graphics;
+
+namespace TripleRenderer::GLRenderer
 {
-	namespace TripleRenderer
-	{
-        class RENDERER_API OpenGLRenderer : public IOpenGLRenderer {
-		public:
-			OpenGLRenderer() = default;
-			virtual void Initialize() override;
-			virtual void BeginFrame(float time) override;
-			virtual void RenderFrame(Graphics::FrameContext& ctx) override;
-			virtual void EndFrame() override;
-			virtual void Shutdown() override;
-			virtual bool initGlad(void* loader) override;
-			virtual void SetViewport(int x, int y, int width, int height) override;
-		private:
-			bool _initGlad = false;
-			std::unique_ptr<Resources::RenderResourceManager> _pResourceManager;
-        };
-	}
+	class RENDERER_API OpenGLRenderer : public tec::IOpenGLRenderer {
+	public:
+		OpenGLRenderer() = default;
+		virtual void Initialize() override;
+		virtual void BeginFrame(float time) override;
+		virtual void RenderFrame(tecg::FrameContext& ctx) override;
+		virtual void EndFrame() override;
+		virtual void Shutdown() override;
+		virtual bool initGlad(void* loader) override;
+		virtual void SetViewport(int x, int y, int width, int height) override;
+
+		virtual tec::GPUHandle UploadTexture(const tecg::TextureDesc& texture);
+		virtual tec::GPUHandle UploadShader(const tecg::ShaderDesc& shader);
+		virtual tec::GPUHandle UploadGeometry(const tecg::GeometryDesc& geometry);
+
+		virtual bool UnloadTexture(tec::GPUHandle handle);
+		virtual bool UnloadShader(tec::GPUHandle handle);
+		virtual bool UnloadGeometry(tec::GPUHandle handle);
+	private:
+		bool _initGlad = false;
+		std::unique_ptr<Resources::RenderResourceManager> _pResourceManager;
+	};
 }
 
 #ifdef __cplusplus
