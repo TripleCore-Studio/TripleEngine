@@ -4,85 +4,96 @@
 #include <unordered_map>
 #include "TLogger.h"
 
+#include "Graphics/CameraData.h"
+
 using namespace TripleEngineCore::TripleMath;
 
-void TripleEngineCore::TripleRenderer::OpenGLRenderer::Initialize() {
-    if(!_initGlad) {
-        TripleLogger::TLogger::ModuleCritical("OpenGLRenderer", "GLAD not initialized. Call initGlad() before Initialize().");
-        return;
-	}
+namespace TripleRenderer::GLRenderer {
+    void OpenGLRenderer::Initialize() {
+        if (!_initGlad) {
+            TripleLogger::TLogger::ModuleCritical("OpenGLRenderer", "GLAD not initialized. Call initGlad() before Initialize().");
+            return;
+        }
 
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glEnable(GL_DEPTH_TEST);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-    _pResourceManager = std::make_unique<Resources::RenderResourceManager>();
-}
+        _pResourceManager = std::make_unique<Resources::RenderResourceManager>();
+    }
 
-bool TripleEngineCore::TripleRenderer::OpenGLRenderer::initGlad(void* loader) {
-	bool result = gladLoadGLLoader((GLADloadproc)loader) != 0;
-	_initGlad = result;
-    return result;
-}
+    bool OpenGLRenderer::initGlad(void* loader) {
+        bool result = gladLoadGLLoader((GLADloadproc)loader) != 0;
+        _initGlad = result;
+        return result;
+    }
 
-void TripleEngineCore::TripleRenderer::OpenGLRenderer::SetViewport(int x, int y, int width, int height) {
-    glViewport(x, y, width, height);
-}
+    void OpenGLRenderer::BeginFrame(float time)
+    {
+    }
 
-void TripleEngineCore::TripleRenderer::OpenGLRenderer::BeginFrame(float time)
-{
-}
+    void OpenGLRenderer::RenderFrame(tecg::FrameContext& ctx)
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-void TripleEngineCore::TripleRenderer::OpenGLRenderer::RenderFrame(Graphics::FrameContext& ctx)
-{
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    if (ctx.cameras.empty()) return;
-    auto cam = ctx.cameras[ctx.cameraIndex];
-    Mat4 VP = cam.proj * cam.view;
+        tecg::CameraData camera = ctx.cameras[ctx.cameraIndex];
 
-    ShaderProgram* currentShader = nullptr;
-    VertexArrayObject* currentVAO = nullptr;
+        Mat4 VP = camera.proj * camera.view;
 
-    for (const auto& cmd : ctx.commands) {
-        if (cmd.items.empty())
-            continue;
+        for (auto& cmd : ctx.commands) {
+            Mat4 MVP = VP * cmd.worldMat;
+            for (auto& item : cmd.items) {
+                const Resources::GLGeometry* geom = _pResourceManager->getGLGeometry(item.geometry);
+                Resources::GLShader* shader = _pResourceManager->getGLShader(item.material.shaderHandle);
 
-        Mat4 MVP = VP * cmd.worldMat;
-
-        for (size_t i = 0; i < cmd.items.size(); i++) {
-			const Runtime::RuntimeMesh& mesh = cmd.items[i].mesh;
-			const Runtime::RuntimeMaterial& mat = mesh.material;
-
-            Resources::MeshGPU* meshGpu = _pResourceManager->getMeshGPU(mesh);
-            ShaderProgram* program = _pResourceManager->getShaderProgram(mat.shader);
-			program->setUniformMat4("u_MVP", MVP.data);
-			_pResourceManager->bindMaterial(mat);
-
-            if (program != currentShader) {
-                program->use();
-                currentShader = program;
+                shader->bind();
+                shader->setUniformMat4("u_MVP", MVP.data);
+                shader->setUniform3fv("u_CameraPos", camera.pos.data());
+                shader->setUniform1f("u_Time", ctx.time);
+                
+                geom->vao.bind();
+                glDrawElements(GL_TRIANGLES, item.indexCount, GL_UNSIGNED_INT, (void*)(item.indexOffset * sizeof(uint32_t)));
+                geom->vao.unbind();
             }
-
-            if (&meshGpu->vao != currentVAO) {
-                meshGpu->vao.bind();
-                currentVAO = &meshGpu->vao;
-            }
-
-            glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, nullptr);
         }
     }
 
-    if (currentVAO) currentVAO->unbind();
+
+    void OpenGLRenderer::EndFrame()
+    {
+    }
+
+    void OpenGLRenderer::SetViewport(int x, int y, int width, int height) {
+        glViewport(x, y, width, height);
+    }
+
+    tec::GPUHandle OpenGLRenderer::UploadTexture(const tecg::TextureDesc& texture) {
+        return _pResourceManager->createGLTexture(texture);
+    }
+
+    tec::GPUHandle OpenGLRenderer::UploadShader(const tecg::ShaderDesc& shader) {
+        return _pResourceManager->createGLShader(shader);
+    }
+
+    tec::GPUHandle OpenGLRenderer::UploadGeometry(const tecg::GeometryDesc& geometry) {
+        return _pResourceManager->createGLGeometry(geometry);
+    }
+
+    bool OpenGLRenderer::UnloadTexture(tec::GPUHandle handle) {
+        return false;
+    }
+
+    bool OpenGLRenderer::UnloadShader(tec::GPUHandle handle) {
+        return false;
+    }
+
+    bool OpenGLRenderer::UnloadGeometry(tec::GPUHandle handle) {
+        return false;
+    }
+
+    void OpenGLRenderer::Shutdown() {}
 }
-
-
-void TripleEngineCore::TripleRenderer::OpenGLRenderer::EndFrame()
-{
-}
-
-void TripleEngineCore::TripleRenderer::OpenGLRenderer::Shutdown() {}
-
 RENDERER_API TripleEngineCore::IRenderer* CreateRenderer() {
-    return new TripleEngineCore::TripleRenderer::OpenGLRenderer();
+    return new TripleRenderer::GLRenderer::OpenGLRenderer();
 }
 
 RENDERER_API void DestroyRenderer(TripleEngineCore::IRenderer* renderer) {

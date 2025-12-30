@@ -5,18 +5,17 @@
 #include <string>
 #include "Asset/AssetStorage.h"
 
+#include "Asset/Asset.h"
 #include "Asset/Model.h"
 #include "Asset/Shader.h"
 #include "Asset/Material.h"
 #include "Asset/Texture.h"
 
 namespace TripleEngineCore::System {
-    using AssetID = Asset::AssetID;
-    using ModelID = AssetID;
-    using ShaderID = AssetID;
-    using MaterialID = AssetID;
-    using TextureID = AssetID;
-    inline constexpr AssetID INVALID_ASSET_ID = TripleEngineCore::INVALID_INDEX;
+    using ModelID = Asset::AssetID;
+    using ShaderID = Asset::AssetID;
+    using MaterialID = Asset::AssetID;
+    using TextureID = Asset::AssetID;
 
     class AssetsSystem : public IServiceSystem {
     public:
@@ -28,20 +27,21 @@ namespace TripleEngineCore::System {
 
         ModelID loadModelFromFile(const std::string& name, const std::string& path);
         ModelID loadModelFromModel(const std::string& name, Asset::Model&& model);
-        ModelID getModelIndex(const std::string& name) const;
+        ModelID getModelId(const std::string& name) const;
         const Asset::Model* getModel(ModelID id) const;
         Asset::Model* getModelMutable(ModelID id);
 
         ShaderID loadShaderFromFile(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath);
-        ShaderID getShaderIndex(const std::string& name) const;
+        ShaderID getShaderId(const std::string& name) const;
         const Asset::Shader* getShader(ShaderID id) const;
 
         MaterialID createMaterial(const std::string& name, const Asset::Material& material);
-        MaterialID getMaterialIndex(const std::string& name) const;
+        MaterialID getMaterialId(const std::string& name) const;
         const Asset::Material* getMaterial(MaterialID id) const;
 
         TextureID loadTexture(const std::string& name, const std::string& path);
-        TextureID getTextureIndex(const std::string& name) const;
+        TextureID getTextureId(const std::string& name) const;
+        TextureID genSolidTexture(const std::string& name, uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255);
         const Asset::Texture* getTexture(TextureID id) const;
 
     private:

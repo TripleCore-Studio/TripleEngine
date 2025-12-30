@@ -23,6 +23,10 @@ namespace TripleEngineCore {
 
 		void setEventCallback(const EventCallbackFn& callback) { _data.eventCallback = callback; }
 
+		void setFullscreen();
+		void setWindowed();
+		void toggleFullscreen();
+
 		const char* getModuleName() const { return "GLWindow"; }
 		double getTime() const;
 
@@ -40,6 +44,12 @@ namespace TripleEngineCore {
 			int width = 0;
 			int height = 0;
 			EventCallbackFn eventCallback = nullptr;
+
+			int windowedX = 100;
+			int windowedY = 100;
+			int windowedWidth = 800;
+			int windowedHeight = 600;
+			bool isFullscreen = false;
 		};
 
 		WindowData _data;

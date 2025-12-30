@@ -16,6 +16,7 @@ add_subdirectory(external/third_party/spdlog)
 add_subdirectory(external/third_party/fmt)
 add_subdirectory(external/third_party/glm)
 add_subdirectory(external/third_party/googletest)
+add_subdirectory(external/third_party/tinygltf)
 
 add_subdirectory(external/own/TripleLogger)
 add_subdirectory(external/own/TripleRenderer)

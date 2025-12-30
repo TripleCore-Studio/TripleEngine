@@ -3,16 +3,17 @@
 
 #include <vector>
 #include "Mesh.h"
+#include "Asset/Asset.h"
 
 namespace TripleEngineCore::Asset
 {
-    class Model {
+    struct Model : public Asset {
     public:
         Model() = default;
 
         std::vector<Mesh> meshes;
-
-        static Model CreateCube();
+        std::vector<Graphics::Vertex> vertices;
+        std::vector<uint32_t> indices;
 
         Model(const Model&) = delete;
         Model& operator=(const Model&) = delete;

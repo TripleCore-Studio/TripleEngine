@@ -1,9 +1,9 @@
-#include "Application/GlWindow.h"
+#include "Engine/GlWindow.h"
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
-#include "Application/EventSystem.h"
+#include "Engine/EventSystem.h"
 #include <TLogger.h>
-#include "Application/EventSystem.h"
+#include "Engine/EventSystem.h"
 
 namespace TripleEngineCore {
 
@@ -18,6 +18,7 @@ namespace TripleEngineCore {
 		case GLFW_KEY_SPACE: return Event::KeyCode::Space;
 		case GLFW_KEY_ESCAPE: return Event::KeyCode::Escape;
 		case GLFW_KEY_LEFT_SHIFT: return Event::KeyCode::LeftShift;
+		case GLFW_KEY_LEFT_CONTROL: return Event::KeyCode::LeftCtrl;
 		case GLFW_KEY_LEFT: return Event::KeyCode::Left;
 		case GLFW_KEY_RIGHT: return Event::KeyCode::Right;
 		case GLFW_KEY_UP: return Event::KeyCode::Up;
@@ -46,6 +47,19 @@ namespace TripleEngineCore {
 		case GLFW_RELEASE: return Event::KeyAction::Release;
 		case GLFW_REPEAT:  return Event::KeyAction::Repeat;
 		default:           return Event::KeyAction::Release;
+		}
+	}
+
+	static Event::MouseButton ConvertMouseButton(int button)
+	{
+		switch (button)
+		{
+		case GLFW_MOUSE_BUTTON_LEFT:   return Event::MouseButton::Left;
+		case GLFW_MOUSE_BUTTON_RIGHT:  return Event::MouseButton::Right;
+		case GLFW_MOUSE_BUTTON_MIDDLE: return Event::MouseButton::Middle;
+		case GLFW_MOUSE_BUTTON_4:      return Event::MouseButton::Button4;
+		case GLFW_MOUSE_BUTTON_5:      return Event::MouseButton::Button5;
+		default:                       return Event::MouseButton::Unknown;
 		}
 	}
 
@@ -82,6 +96,8 @@ namespace TripleEngineCore {
 			TripleLogger::TLogger::ModuleInfo(this->getModuleName(), "GLFW window created successfully");
 		}
 
+		glfwSetInputMode(this->_pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 		*proc = glfwGetProcAddress;
 		glfwSetWindowUserPointer(this->_pWindow, &this->_data);
 		this->initGLFWCallbacks();
@@ -97,38 +113,78 @@ namespace TripleEngineCore {
 			data.height = height;
 			WindowResizeEvent event(width, height);
 			data.eventCallback(event);
-			});
+		});
 
 		glfwSetWindowCloseCallback(this->_pWindow, [](GLFWwindow* window) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			WindowCloseEvent event(data.title);
 			data.eventCallback(event);
-			});
+		});
 
 		glfwSetCursorPosCallback(this->_pWindow, [](GLFWwindow* window, double xpos, double ypos) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			MouseMoveEvent event(static_cast<float>(xpos), static_cast<float>(ypos));
 			data.eventCallback(event);
-			});
+		});
 
-		glfwSetKeyCallback(this->_pWindow,
-			[](GLFWwindow* window, int key, int scancode, int action, int mods)
-			{
-				WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+		glfwSetKeyCallback(this->_pWindow, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
-				KeyboardInputEvent event(
-					ConvertKey(key),
-					ConvertAction(action),
-					mods
-				);
+			KeyboardInputEvent event(
+				ConvertKey(key),
+				ConvertAction(action),
+				mods
+			);
 
-				data.eventCallback(event);
-			});
+			data.eventCallback(event);
+		});
+
+		glfwSetMouseButtonCallback(this->_pWindow, [](GLFWwindow* window, int button, int action, int mods) {
+			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+
+			MouseButtonEvent event(
+				ConvertMouseButton(button),
+				ConvertAction(action),
+				mods
+			);
+
+			data.eventCallback(event);
+		});
 	}
 
 	void GLWindow::onUpdate() {
 		glfwPollEvents();
 		glfwSwapBuffers(_pWindow);
+	}
+
+	void GLWindow::setFullscreen()
+	{
+		if (!_pWindow || _data.isFullscreen) return;
+
+		glfwGetWindowPos(_pWindow, &_data.windowedX, &_data.windowedY);
+		glfwGetWindowSize(_pWindow, &_data.windowedWidth, &_data.windowedHeight);
+
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+		glfwSetWindowMonitor(_pWindow, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+		_data.isFullscreen = true;
+	}
+
+	void GLWindow::setWindowed()
+	{
+		if (!_pWindow || !_data.isFullscreen) return;
+
+		glfwSetWindowMonitor(_pWindow, nullptr, _data.windowedX, _data.windowedY, _data.windowedWidth, _data.windowedHeight, 0);
+		_data.isFullscreen = false;
+	}
+
+	void GLWindow::toggleFullscreen()
+	{
+		if (_data.isFullscreen)
+			setWindowed();
+		else
+			setFullscreen();
 	}
 
 	double GLWindow::getTime() const

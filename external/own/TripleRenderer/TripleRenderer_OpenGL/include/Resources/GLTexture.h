@@ -4,7 +4,7 @@
 #include <cstdint>
 #include "Core/CoreTypes.h"
 
-namespace TripleEngineCore::TripleRenderer::Resources
+namespace TripleRenderer::GLRenderer::Resources
 {
     using TextureID = TripleEngineCore::Index;
     using TextureTarget = uint32_t; // GL_TEXTURE_2D, CUBE_MAP...
@@ -16,7 +16,7 @@ namespace TripleEngineCore::TripleRenderer::Resources
 
     inline constexpr TextureID INVALID_TEXTURE_ID = TripleEngineCore::INVALID_INDEX;
 
-    struct TextureGPU
+    struct GLTexture
     {
         TextureID     id;        // GPU texture handle
         TextureTarget target;    // texture type (2D, cube...)

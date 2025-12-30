@@ -4,11 +4,9 @@
 #include <memory>
 #include <unordered_map>
 #include "Core/CoreTypes.h"
+#include "Asset/Asset.h"
 
 namespace TripleEngineCore::Asset {
-    using AssetID = TripleEngineCore::Index;
-	inline constexpr AssetID INVALID_ASSET_ID = TripleEngineCore::INVALID_INDEX;
-
     template<typename T>
     class AssetStorage {
     public:
@@ -18,6 +16,8 @@ namespace TripleEngineCore::Asset {
                 return it->second;
 
             AssetID id = static_cast<AssetID>(assets.size());
+            asset->id = id;
+            asset->name = name;
             assets.push_back(std::move(asset));
             nameToId[name] = id;
             return id;

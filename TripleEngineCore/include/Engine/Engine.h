@@ -3,16 +3,19 @@
 
 #include <memory>
 #include <unordered_map>
+
 #include <ExportMacros.h>
-#include "Interfaces/IRenderer.h"
 #include "ModuleLoader.h"
 #include "Scene/Scene.h"
-#include "Application/EventSystem.h"
+
+#include "Engine/EventSystem.h"
+
 #include "System/AssetsSystem.h"
 #include "System/RenderSystem.h"
+#include "System/InputSystem.h"
 
 namespace TripleEngineCore {
-	class CORE_API Application {
+	class CORE_API Engine {
 	public:
 		enum class ErrorCode {
 			None = 0,
@@ -21,25 +24,23 @@ namespace TripleEngineCore {
 			FailedInitRenderer
 		};
 
-		Application();
-		virtual ~Application();
+		Engine();
+		virtual ~Engine();
 		virtual ErrorCode start(const char* title, unsigned int width, unsigned int height);
-		virtual void onUpdate();
-		virtual void onRender();
+		virtual void onUpdate(float dt);
+		virtual void onRender(float t);
 
 		void DemoScene();
 		void BootstrapResources();
 
-		IRenderer* getRenderer() { return _pRenderer; }
-		const IRenderer* getRenderer() const { return _pRenderer; }
 	private:
-		Application(const Application&) = delete;
-		Application(Application&&) = delete;
-		Application& operator=(const Application&) = delete;
-		Application& operator=(Application&&) = delete;
+		Engine(const Engine&) = delete;
+		Engine(Engine&&) = delete;
+		Engine& operator=(const Engine&) = delete;
+		Engine& operator=(Engine&&) = delete;
 
 		void loadCallbacks();
-		const char* getModuleName() const { return "Application"; }
+		const char* getModuleName() const { return "Engine"; }
 		void KeyClicked(Event::KeyCode key);
 
 		std::unique_ptr<System::ModuleLoader> _pModuleLoader;
@@ -48,14 +49,13 @@ namespace TripleEngineCore {
 
 		std::unique_ptr<System::AssetsSystem> _pAssetsSystem;
 		std::unique_ptr<System::RenderSystem> _pRenderSystem;
+		std::unique_ptr<System::InputSystem> _pInputSystem;
 
 		std::unique_ptr<Scene::Scene> _pScene;
 
-		IRenderer* _pRenderer;
 		bool _isRunning;
-
-		std::unordered_map<Event::KeyCode, bool> _keys;
-		float _cameraSpeed = 8.0f;
+		float _cameraSpeed;
+		float lastTime;
 	};
 }
 #endif // APPLICATION_H
