@@ -16,6 +16,6 @@
 [submodule "external/third_party/stb"]
 	path = external/third_party/stb
 	url = https://github.com/nothings/stb
-[submodule "external/third_party/tinygltf"]
-	path = external/third_party/tinygltf
-	url = https://github.com/syoyo/tinygltf.git
+[submodule "external/third_party/assimp"]
+	path = external/third_party/assimp
+	url = https://github.com/assimp/assimp.git
