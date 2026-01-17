@@ -1,45 +1,56 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include "Scene/SceneObject.h"
-#include <memory>
-#include <vector>
+#include "Core/CoreTypes.h"
+#include "ExportMacros.h"
+
 #include <string>
+
+#include "Engine/ComponentManager.h"
 
 namespace TripleEngineCore::Scene
 {
-	class Scene
-	{
-	public:
-		Scene();
-		~Scene() = default;
+    using Entity = Index;
 
-		std::vector<std::unique_ptr<SceneObject>> rootObjects;
+    class CORE_API Scene {
+    public:
+        Scene(ComponentManager* compMgr);
+        ~Scene();
 
-		template<typename T>
-		std::vector<T*> getAllComponents() {
-			std::vector<T*> result;
-			for (auto& root : rootObjects) {
-				root->getAllComponents<T>(result);
-			}
-			return result;
-		}
+        Entity createEntity();
+        Entity createEntity(const std::string& name);
+        void destroyEntity(Entity e);
 
-		void addRootObject(std::unique_ptr<SceneObject> object);
+        std::vector<Entity> getEntities() const;
 
-		void removeRootObject(SceneObject* object);
+        bool addChild(Entity parent, Entity child);
 
-        SceneObject* findObjectById(uint32_t id);
+        void* addComponent(Entity e, ComponentTypeID type);
+        void* getComponent(Entity e, ComponentTypeID type);
 
-        std::vector<SceneObject*> findObjectsByName(const std::string& name);
+        uint32_t getEntityCount() const;
 
-		size_t getTotalObjectCount() const;
-		size_t getRenderableObjectCount() const;
+        template<typename T>
+        T* addComponent(Entity e) {
+            ComponentTypeID id = getComponentTypeID(typeid(T));
+            if (id == INVALID_COMPONENT_TYPE_ID) return nullptr;
+            return static_cast<T*>(addComponent(e, id));
+        }
+
+        template<typename T>
+        T* getComponent(Entity e) {
+            ComponentTypeID id = getComponentTypeID(typeid(T));
+            if (id == INVALID_COMPONENT_TYPE_ID) return nullptr;
+            return static_cast<T*>(getComponent(e, id));
+        }
+
     private:
-		SceneObject* findInChildrenById(SceneObject* obj, uint32_t id);
+        ComponentTypeID getComponentTypeID(const std::type_info& type) const;
 
-		void findInChildrenByName(SceneObject* obj, const std::string& name, std::vector<SceneObject*>& out);
-	};
-}
+        struct Impl;
+        Impl* _impl;
+    };
+
+} // namespace TripleEngineCore::Scene
 
 #endif // SCENE_H

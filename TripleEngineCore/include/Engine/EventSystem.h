@@ -6,7 +6,7 @@
 #include <ExportMacros.h>
 
 namespace TripleEngineCore {
-	class Event {
+	class CORE_API Event {
 	public:
 		enum class Type
 		{
@@ -15,16 +15,17 @@ namespace TripleEngineCore {
 			WindowResize,
 			MouseMove,
 			KeyboardInput,
-			MouseButtonInput
+			MouseButtonInput,
+			EngineLoaded
 		};
 
-		enum class KeyAction {
+		enum class CORE_API KeyAction {
 			Press,
 			Release,
 			Repeat
 		};
 
-		enum class KeyCode : int {
+		enum class CORE_API KeyCode : int {
 			Unknown = -1,
 
 			A, B, C, D, W, S,
@@ -41,7 +42,7 @@ namespace TripleEngineCore {
 			Down
 		};
 
-		enum class MouseButton {
+		enum class CORE_API MouseButton {
 			Left = 0,
 			Right = 1,
 			Middle = 2,
@@ -132,6 +133,12 @@ namespace TripleEngineCore {
 	private:
 		int width;
 		int height;
+	};
+
+	class CORE_API EngineLoadedEvent : public Event {
+	public:
+		EngineLoadedEvent(){}
+		Type getType() const override { return Type::EngineLoaded; }
 	};
 
 	class CORE_API EventDispatcher {

@@ -1,29 +1,15 @@
 #ifndef CAMERA_COMPONENT_H
 #define CAMERA_COMPONENT_H
 
-#include "Scene/Component.h"
-#include "TransformComponent.h"
-#include "Mat4.h"
+#include "ExportMacros.h"
 
 namespace TripleEngineCore::Scene {
-
-    class CameraComponent : public Component {
-    public:
-        CameraComponent();
-        CameraComponent(float fov, float nearPlane, float farPlane, float aspectRatio, TransformComponent* transform);
-
+    struct CameraComponent {
         float fov;
         float nearPlane;
         float farPlane;
         float aspectRatio;
-
-        TransformComponent* transform;
-
-        TripleMath::Mat4 getProjectionMatrix() const;
-
-        TripleMath::Mat4 getViewMatrix() const;
     };
-
 } // namespace TripleEngineCore::Scene
 
 #endif // CAMERA_COMPONENT_H

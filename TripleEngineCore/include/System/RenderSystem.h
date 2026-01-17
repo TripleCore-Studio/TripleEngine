@@ -30,14 +30,16 @@ namespace TripleEngineCore::System {
 		void uploadGeometry(const Asset::Model* model);
 		void uploadShader(const Asset::Shader* shader);
 
-		void buildRenderCommands(const Scene::Scene* scene, std::vector<Graphics::RenderCommand>& cmd);
+		void buildRenderCommands(Scene::Scene* scene, std::vector<Graphics::RenderCommand>& cmd);
 		void setRenderer(IRenderer* renderer) { this->_pRenderer = renderer; }
 		IRenderer* getRenderer() { return this->_pRenderer; }
 	private:
 		enum class ResourceType { Texture, Model, Shader };
 		bool getGPU(ResourceType type, Asset::AssetID id, GPUHandle& out);
 
-		void gatherFromObject(const Scene::SceneObject& obj,
+		void gatherFromEntity(
+			Scene::Scene* scene,
+			Scene::Entity e,
 			std::vector<Graphics::RenderCommand>& commands,
 			const TripleMath::Mat4& parentWorld);
 

@@ -9,8 +9,7 @@
 namespace TripleEngineCore::Graphics {
     struct FrameContext {
         std::vector<Graphics::RenderCommand> commands;
-        std::vector<CameraData> cameras;
-        int cameraIndex = 0;
+        CameraData camera;
         float time = 0.0f;
     };
 }

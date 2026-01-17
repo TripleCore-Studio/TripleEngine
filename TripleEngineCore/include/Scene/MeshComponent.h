@@ -1,17 +1,11 @@
 #ifndef MESH_COMPONENT_H
 #define MESH_COMPONENT_H
 
-#include "Component.h"
-#include "Asset/Model.h"
-#include <memory>
+#include "ExportMacros.h"
 
 namespace TripleEngineCore::Scene {
-    class MeshComponent : public Component {
-    public:
-		MeshComponent(uint32_t modelIdx) : modelIndex(modelIdx) {}
+    struct MeshComponent {
         uint32_t modelIndex = UINT32_MAX;
-
-        MeshComponent() = default;
     };
 }
 

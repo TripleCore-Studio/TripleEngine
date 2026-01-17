@@ -16,14 +16,18 @@ add_subdirectory(external/third_party/spdlog)
 add_subdirectory(external/third_party/fmt)
 add_subdirectory(external/third_party/glm)
 add_subdirectory(external/third_party/googletest)
-add_subdirectory(external/third_party/tinygltf)
+
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
+add_subdirectory(external/third_party/assimp)
 
 add_subdirectory(external/own/TripleLogger)
 add_subdirectory(external/own/TripleRenderer)
 add_subdirectory(external/own/TripleMath)
 
 add_subdirectory(TripleEngineCore)
-
 add_subdirectory(TripleEngineEditor)
 add_subdirectory(TripleEngineTests)
 

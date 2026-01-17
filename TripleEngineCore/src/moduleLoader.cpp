@@ -7,7 +7,7 @@ namespace TripleEngineCore {
 	namespace System {
 		ModuleLoader::ModuleLoader(std::string modulesPath)
 		{
-			this->_modulesPath = std::move(modulesPath);
+			this->_modulesPath = modulesPath;
 		}
 		ModuleLoader::ErrorCode ModuleLoader::loadModule(ModuleType type)
 		{
@@ -19,7 +19,7 @@ namespace TripleEngineCore {
 					TripleLogger::TLogger::ModuleError(this->getLoaderClassName(), "Module already loaded: OpenGLRenderer");
 					return ErrorCode::ModuleAlreadyLoaded;
 				}
-				auto module = std::make_unique<OpenGLRenderModule>(this->_modulesPath, "TripleRenderer_OpenGL");
+				auto module = std::make_unique<OpenGLRenderModule>(this->_modulesPath, TRIPLE_OPENGL_MODULE_FILENAME);
 				if (!module->load()) {
 					return ErrorCode::FailedToLoadOpenGL;
 				}
