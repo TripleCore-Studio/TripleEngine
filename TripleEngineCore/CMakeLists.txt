@@ -16,7 +16,7 @@ add_library(${LIB_NAME} SHARED
 
 target_include_directories(${LIB_NAME}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-	PRIVATE ${CMAKE_SOURCE_DIR}/external/third_party/stb/include
+	PRIVATE ${CMAKE_SOURCE_DIR}/external/third_party/stb
 )
 
 file(GLOB_RECURSE HEADER_FILES
