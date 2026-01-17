@@ -43,7 +43,7 @@ target_link_libraries(${LIB_NAME} PRIVATE
 	TripleLogger
 	TripleMath
 	glad
-	tinygltf
+	assimp
 )
 
 # ───── Characters Exports For Windows ─────
@@ -51,7 +51,9 @@ if(WIN32)
     target_compile_definitions(${LIB_NAME} PUBLIC CORE_EXPORTS)
 endif()
 
-copy_dll_to_bin(TripleEngineCore)
+target_compile_definitions(${LIB_NAME}
+    PRIVATE
+        TRIPLE_OPENGL_MODULE_FILENAME="$<TARGET_FILE_NAME:TripleRenderer_OpenGL>"
+)
 
-# get_target_property(dirs ${LIB_NAME} INCLUDE_DIRECTORIES)
-# message(STATUS "Include dirs for ${LIB_NAME}: ${dirs}")
+copy_dll_to_bin(TripleEngineCore)

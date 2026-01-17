@@ -6,9 +6,9 @@ namespace TripleEngineCore {
     {
 		this->_name = moduleName;
 #ifdef _WIN32
-		this->_path = modulesPath + "\\" + moduleName + ".dll";
+		this->_path = modulesPath + "\\" + moduleName;
 #else
-		this->_path = modulesPath + "/" + moduleName + ".so";
+		this->_path = modulesPath + "/" + moduleName;
 #endif // _WIN32
     }
 

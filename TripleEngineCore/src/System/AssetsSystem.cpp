@@ -2,83 +2,50 @@
 #include "TLogger.h"
 #include <fstream>
 #include <sstream>
-
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "Utils/GltfTool.h"
+#include "stb_image.h"
+#include "Utils/AssimpHelper.h"
 
 using namespace TripleEngineCore::Asset;
 
 namespace TripleEngineCore::System {
-    ModelID AssetsSystem::loadModelFromFile(const std::string& name, const std::string& path) {
+    ModelID AssetsSystem::loadModelFromFile(const std::string& name, const std::string& path)
+    {
         if (models.exists(name))
             return models.getID(name);
 
-        tinygltf::TinyGLTF loader;
-        tinygltf::Model model;
-        std::string err, warn;
-
-        bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
-        if (!warn.empty()) TripleLogger::TLogger::ModuleWarn("Application", warn);
-        if (!err.empty()) TripleLogger::TLogger::ModuleError("Application", err);
-        if (!ret) return INVALID_ASSET_ID;
-
-        Model engineModel;
-        engineModel.meshes.reserve(model.meshes.size());
-        engineModel.vertices.clear();
-        engineModel.indices.clear();
-
-        for (const auto& mesh : model.meshes) {
-            Asset::Mesh engineMesh;
-            engineMesh.name = mesh.name;
-            engineMesh.primitives.reserve(mesh.primitives.size());
-
-            for (const auto& primitive : mesh.primitives) {
-                Asset::Primitive enginePrimitive;
-
-                uint32_t baseVertex = static_cast<uint32_t>(engineModel.vertices.size());
-                uint32_t baseIndex = static_cast<uint32_t>(engineModel.indices.size());
-
-                std::vector<TripleMath::Vec3> positions, normals;
-                std::vector<TripleMath::Vec2> uvs;
-                std::vector<uint32_t> indices;
-
-                if (primitive.attributes.count("POSITION"))
-                    Tool::GLTF::ReadVec3(model, primitive.attributes.at("POSITION"), positions);
-
-                if (primitive.attributes.count("NORMAL"))
-                    Tool::GLTF::ReadVec3(model, primitive.attributes.at("NORMAL"), normals);
-
-                if (primitive.attributes.count("TEXCOORD_0"))
-                    Tool::GLTF::ReadVec2(model, primitive.attributes.at("TEXCOORD_0"), uvs);
-
-                if (primitive.indices >= 0)
-                    Tool::GLTF::ReadIndices(model, primitive.indices, indices);
-
-                size_t vertexCount = positions.size();
-                std::vector<Graphics::Vertex> localVertices(vertexCount);
-                for (size_t i = 0; i < vertexCount; ++i) {
-                    localVertices[i].position = positions[i];
-                    if (i < normals.size()) localVertices[i].normal = normals[i];
-                    if (i < uvs.size())     localVertices[i].uv = uvs[i];
-                }
-
-                engineModel.vertices.insert(engineModel.vertices.end(), localVertices.begin(), localVertices.end());
-
-                for (auto idx : indices)
-                    engineModel.indices.push_back(idx + baseVertex);
-
-                enginePrimitive.indexOffset = baseIndex;
-                enginePrimitive.indexCount = static_cast<uint32_t>(indices.size());
-
-                engineMesh.primitives.push_back(enginePrimitive);
-            }
-
-            engineModel.meshes.push_back(std::move(engineMesh));
+        Utils::AssimpHelper::LoadedModel model = Utils::AssimpHelper::LoadModel(path);
+        if (model.meshes.size() <= 0) {
+            TripleLogger::TLogger::ModuleWarn("AssetsSystem", "(model: {}) the model has no meshes and as a result was not loaded", name);
+            return INVALID_ASSET_ID;
         }
 
-        return models.add(name, std::make_unique<Model>(std::move(engineModel)));
+        auto engineModel = std::make_unique<Asset::Model>();
+        engineModel->meshes.reserve(model.meshes.size());
+
+        for (const auto& m : model.meshes) {
+            Asset::Mesh mesh;
+            mesh.name = m.name;
+
+            uint32_t baseVertex = engineModel->vertices.size();
+            uint32_t baseIndex = engineModel->indices.size();
+
+            engineModel->vertices.insert(
+                engineModel->vertices.end(),
+                m.vertices.begin(),
+                m.vertices.end()
+            );
+
+            for (uint32_t idx : m.indices)
+                engineModel->indices.push_back(idx + baseVertex);
+
+            Primitive prim;
+            prim.indexOffset = baseIndex;
+            prim.indexCount = m.indices.size();
+            mesh.primitives.push_back(std::move(prim));
+            engineModel->meshes.push_back(std::move(mesh));
+        }
+
+        return models.add(name, std::move(engineModel));
     }
 
     ModelID AssetsSystem::loadModelFromModel(const std::string& name, Model&& model) {

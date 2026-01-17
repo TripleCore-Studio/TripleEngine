@@ -1,9 +1,13 @@
 #include "System/RenderSystem.h"
+
 #include "Scene/TransformComponent.h"
 #include "Scene/MeshComponent.h"
+#include "Scene/ChildrenComponent.h"
+#include "Scene/ParentComponent.h"
 
 #include "Mat4.h"
 #include "TLogger.h"
+#include "Utils/TransformUtils.h"
 
 #include "Asset/Model.h"
 #include "Asset/Material.h"
@@ -13,15 +17,16 @@
 using namespace TripleEngineCore::Graphics;
 
 namespace TripleEngineCore::System {
-    void RenderSystem::gatherFromObject(const Scene::SceneObject& obj,
+    void RenderSystem::gatherFromEntity(Scene::Scene* scene,
+        Scene::Entity e,
         std::vector<Graphics::RenderCommand>& commands,
         const TripleMath::Mat4& parentWorld)
     {
-        auto transform = obj.getComponent<Scene::TransformComponent>();
-        TripleMath::Mat4 local = transform ? transform->getModelMatrix() : TripleMath::Mat4::identity();
+        auto transform = static_cast<Scene::TransformComponent*>(scene->getComponent<Scene::TransformComponent>(e));
+        TripleMath::Mat4 local = transform ? Utils::getModelMatrix(*transform) : TripleMath::Mat4::identity();
         TripleMath::Mat4 world = parentWorld * local;
 
-        if (auto meshComp = obj.getComponent<Scene::MeshComponent>()) {
+        if (auto meshComp = static_cast<Scene::MeshComponent*>(scene->getComponent<Scene::MeshComponent>(e))) {
             Graphics::RenderCommand cmd;
             cmd.worldMat = world;
 
@@ -30,12 +35,14 @@ namespace TripleEngineCore::System {
                 buildRenderCmd(cmd, model);
             }
 
-            if(cmd.items.size() > 0)
+            if (!cmd.items.empty())
                 commands.push_back(std::move(cmd));
         }
 
-        for (auto& child : obj.children) {
-            gatherFromObject(*child, commands, world);
+        if (auto childrenComp = static_cast<Scene::ChildrenComponent*>(scene->getComponent<Scene::ChildrenComponent>(e))) {
+            for (Scene::Entity child : childrenComp->children) {
+                gatherFromEntity(scene, child, commands, world);
+            }
         }
     }
 
@@ -145,14 +152,18 @@ namespace TripleEngineCore::System {
         }
     }
 
-    void RenderSystem::buildRenderCommands(const Scene::Scene* scene,
+
+    void RenderSystem::buildRenderCommands(Scene::Scene* scene,
         std::vector<Graphics::RenderCommand>& commands)
     {
-		commands.clear();
-		commands.reserve(scene->getRenderableObjectCount());
+        commands.clear();
+        commands.reserve(scene->getEntityCount());
 
-        for (auto& root : scene->rootObjects) {
-            gatherFromObject(*root, commands, TripleMath::Mat4::identity());
+        for (Scene::Entity e : scene->getEntities()) {
+            auto parentComp = static_cast<Scene::ParentComponent*>(scene->getComponent<Scene::ParentComponent>(e));
+            if (!parentComp || parentComp->parent == 0) {
+                gatherFromEntity(scene, e, commands, TripleMath::Mat4::identity());
+            }
         }
     }
 }

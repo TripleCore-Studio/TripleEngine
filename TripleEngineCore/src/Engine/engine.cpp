@@ -5,33 +5,35 @@
 
 #include "Core/CoreTypes.h"
 
-#include "Engine/GlWindow.h"
 #include "Modules/OpenGLModule.h"
 #include "Interfaces/IOpenGLRenderer.h"
 #include "TLogger.h"
-#include "MathCommon.h"
-#include "Quat.h"
+#include "Utils/CameraUtils.h"
 
-#include "Scene/CameraComponent.h"
 #include "Scene/MeshComponent.h"
+#include "Scene/ParentComponent.h"
+#include "Scene/ChildrenComponent.h"
+#include "Scene/NameComponent.h"
 
 namespace TripleEngineCore {
 	Engine::Engine()
 	{
 		TripleLogger::TLogger::Info("Engine starting...");
 		this->_pEventDispatcher = std::make_unique<EventDispatcher>();
+		this->_pComponentManager = std::make_unique<ComponentManager>();
+
 		this->_pModuleLoader = std::make_unique<System::ModuleLoader>("modules");
 
 		this->_pAssetsSystem = std::make_unique<System::AssetsSystem>();
 		this->_pRenderSystem = std::make_unique<System::RenderSystem>(this->_pAssetsSystem.get());
 		this->_pInputSystem = std::make_unique<System::InputSystem>();
 
-		this->_pScene = std::make_unique<Scene::Scene>();
+		this->_pScene = std::make_unique<Scene::Scene>(_pComponentManager.get());
 
 		this->_pModuleLoader->loadModule(ModuleType::OpenGLRenderer);
+
 		this->_isRunning = false;
-		this->lastTime = 0.0f;
-		this->_cameraSpeed = 8.0f;
+		this->_lastTime = 0.0f;
 	}
 
 	Engine::ErrorCode Engine::start(const char* title, unsigned int width, unsigned int height)
@@ -79,122 +81,43 @@ namespace TripleEngineCore {
 		_pInputSystem->init();
 
 		loadCallbacks();
-		BootstrapResources();
-		DemoScene();
+		if (!bootstrapResources()) {
+			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Error: bootstrapResources");
+			return ErrorCode::FailedBootstrapDefaultResources;
+		}
+		if (!bootstrapComponents()) {
+			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Error: bootstrapComponents");
+			return ErrorCode::FailedBootstrapDefaultResources;
+		}
+		_pEventDispatcher->dispatch(EngineLoadedEvent());
 
-		lastTime = _pWindow->getTime();
+		_lastTime = _pWindow->getTime();
 		this->_isRunning = true;
 		while (_isRunning) {
 			float currentTime = _pWindow->getTime();
-			float dt = currentTime - lastTime;
-			lastTime = currentTime;
+			float dt = currentTime - _lastTime;
+			_lastTime = currentTime;
 
 			this->_pWindow->onUpdate();
 			this->onUpdate(dt);
 			this->_pInputSystem->update(dt);
-			this->onRender(lastTime);
+			this->onRender(_lastTime);
 		}
 
 		return ErrorCode::None;
 	}
-	bool isWeapon = true;
+
 	void Engine::onUpdate(float dt)
 	{
-		Scene::SceneObject* cameraObj = this->_pScene->findObjectsByName("camera")[0];
-		Scene::TransformComponent* cTransform = cameraObj->getComponent<Scene::TransformComponent>();
-
-		TripleMath::Vec3 delta(0, 0, 0);
-		if (_pInputSystem->isKeyDown(Event::KeyCode::W)) delta += cTransform->forward();
-		if (_pInputSystem->isKeyDown(Event::KeyCode::S)) delta -= cTransform->forward();
-		if (_pInputSystem->isKeyDown(Event::KeyCode::A)) delta -= cTransform->right();
-		if (_pInputSystem->isKeyDown(Event::KeyCode::D)) delta += cTransform->right();
-		if (_pInputSystem->isKeyDown(Event::KeyCode::Space)) delta += cTransform->up();
-		if (_pInputSystem->isKeyDown(Event::KeyCode::LeftShift)) delta -= cTransform->up();
-		cTransform->position += delta * _cameraSpeed * dt;
-
-		auto mdelta = _pInputSystem->getMouseDelta();
-		cTransform->rotationEuler.y -= mdelta.x * 0.3;
-		cTransform->rotationEuler.x += mdelta.y * 0.3;
-
-		cTransform->rotationEuler.x = TripleMath::clamp(
-			cTransform->rotationEuler.x,
-			-89.0f,
-			89.0f
-		);
-
-		Scene::SceneObject* weapon = this->_pScene->findObjectsByName("obj")[0];
-		Scene::TransformComponent* tWeapon = weapon->getComponent<Scene::TransformComponent>();
-
-		if (_pInputSystem->isKeyPressed(Event::KeyCode::LeftCtrl)) {
-			isWeapon = !isWeapon;
-			if (isWeapon) {
-				weapon->getComponent<Scene::MeshComponent>()->modelIndex = _pAssetsSystem->getModelId("demo_model3");
-				tWeapon->scale = TripleMath::Vec3(0.02, 0.02, 0.02);
-			}
-			else {
-				weapon->getComponent<Scene::MeshComponent>()->modelIndex = _pAssetsSystem->getModelId("demo_model");
-				tWeapon->scale = TripleMath::Vec3(0.1, 0.1, 0.1);
-			}
-		}
-
-		TripleMath::Vec3 localOffset;
-		if (!_pInputSystem->isMouseButtonDown(Event::MouseButton::Right)) {
-			if (isWeapon) {
-				localOffset = TripleMath::Vec3(0.6f, -1.2f, 0.8f);
-			}
-			else {
-				localOffset = TripleMath::Vec3(1.4f, -1.2f, 2.2f);
-			}
-		}
-		else {
-			if (isWeapon) {
-				localOffset = TripleMath::Vec3(0.1f, -1.2f, 0.4f);
-			}
-			else {
-				localOffset = TripleMath::Vec3(0.0f, -0.8f, 1.8f);
-			}
-		}
-
-		if (_pInputSystem->isMouseButtonDown(Event::MouseButton::Button5)) {
-			if (_cameraSpeed < 100) {
-				_cameraSpeed++;
-			}
-		}
-		else if (_pInputSystem->isMouseButtonDown(Event::MouseButton::Button4)) {
-			if (_cameraSpeed > 1) {
-				_cameraSpeed--;
-			}
-		}
-
-		TripleMath::Vec3 worldOffset = cTransform->right() * localOffset.x +
-			cTransform->up() * localOffset.y +
-			cTransform->forward() * localOffset.z;
-
-		tWeapon->position = cTransform->position + worldOffset;
-
-		TripleMath::Quat weaponLocalRot;
-		if (isWeapon) {
-			weaponLocalRot = TripleMath::Quat::fromEulerAngles(TripleMath::Vec3(0.0f, 90.0f, 0.0f));
-		}
-		else {
-			weaponLocalRot = TripleMath::Quat::fromEulerAngles(TripleMath::Vec3(0.0f, 180.0f, 0.0f));
-		}
-		TripleMath::Quat camRot = TripleMath::Quat::fromEulerAngles(cTransform->rotationEuler);
-		TripleMath::Quat weaponWorldRot = camRot * weaponLocalRot;
-		tWeapon->rotationEuler = weaponWorldRot.toEulerAngles();
-
-		if (_pInputSystem->isKeyPressed(Event::KeyCode::F11)) {
-			_pWindow->toggleFullscreen();
-		}
 	}
 
-
-	void Engine::onRender(float t)
+	void Engine::onRender(float t) const
 	{
 		Graphics::FrameContext ctx;
-		for (auto& camera : this->_pScene->getAllComponents<Scene::CameraComponent>()) {
-			ctx.cameras.push_back(Graphics::CameraData{ camera->getViewMatrix(), camera->getProjectionMatrix(), camera->transform->position });
-		}
+
+		ctx.camera = Graphics::CameraData{ Utils::getViewMatrix(_camera._transformComponent),
+			Utils::getProjectionMatrix(_camera._cameraComponent), _camera._transformComponent.position };
+
 		this->_pRenderSystem->buildRenderCommands(this->_pScene.get(), ctx.commands);
 		ctx.time = t;
 
@@ -203,36 +126,29 @@ namespace TripleEngineCore {
 		_pRenderSystem->getRenderer()->EndFrame();
 	}
 
-	void Engine::DemoScene()
+	bool Engine::bootstrapComponents()
 	{
-		using namespace TripleMath;
-		using namespace Graphics;
+		std::vector<ComponentTypeID> ids;
+		ids.push_back(_pComponentManager->registerComponent<Scene::TransformComponent>());
+		ids.push_back(_pComponentManager->registerComponent<Scene::MeshComponent>());
+		ids.push_back(_pComponentManager->registerComponent<Scene::CameraComponent>());
+		ids.push_back(_pComponentManager->registerComponent<Scene::ParentComponent>());
+		ids.push_back(_pComponentManager->registerComponent<Scene::ChildrenComponent>());
+		ids.push_back(_pComponentManager->registerComponent<Scene::NameComponent>());
 
-		std::unique_ptr<Scene::SceneObject> cameraObj = std::make_unique<Scene::SceneObject>("camera");
-		cameraObj->addComponent<Scene::TransformComponent>(Vec3(0, 0, 5), Vec3(0, 0, 0), Vec3(1, 1, 1));
-		cameraObj->addComponent<Scene::CameraComponent>(70.0f, 0.1f, 1000.0f, 16.0f / 9.0f, cameraObj->getComponent<Scene::TransformComponent>());
+		for (auto& id : ids) {
+			if (id == INVALID_COMPONENT_TYPE_ID) {
+				return false;
+			}
+		}
 
-		std::unique_ptr<Scene::SceneObject> weaponObj = std::make_unique<Scene::SceneObject>("obj");
-		weaponObj->addComponent<Scene::TransformComponent>(Vec3(0, 0, 0), Vec3(0, 0, 0), Vec3(0.02, 0.02, 0.02));
-		weaponObj->addComponent<Scene::MeshComponent>(_pAssetsSystem->getModelId("demo_model3"));
+		return true;
+	}
 
-		std::unique_ptr<Scene::SceneObject> charObj = std::make_unique<Scene::SceneObject>("obj2");
-		charObj->addComponent<Scene::TransformComponent>(Vec3(0, 0, 0), Vec3(0, 0, 0), Vec3(1, 1, 1));
-		charObj->addComponent<Scene::MeshComponent>(_pAssetsSystem->getModelId("demo_model2"));
-
-		std::unique_ptr<Scene::SceneObject> tank = std::make_unique<Scene::SceneObject>("tank");
-		tank->addComponent<Scene::TransformComponent>(Vec3(0, 0, 70), Vec3(-90, 0, 0), Vec3(0.8, 0.8, 0.8));
-		tank->addComponent<Scene::MeshComponent>(_pAssetsSystem->getModelId("tank"));
-
-		std::unique_ptr<Scene::SceneObject> tank2 = std::make_unique<Scene::SceneObject>("tank2");
-		tank2->addComponent<Scene::TransformComponent>(Vec3(0, 0, -70), Vec3(-90, 0, 0), Vec3(0.8, 0.8, 0.8));
-		tank2->addComponent<Scene::MeshComponent>(_pAssetsSystem->getModelId("tank"));
-
-		this->_pScene->addRootObject(std::move(weaponObj));
-		this->_pScene->addRootObject(std::move(cameraObj));
-		this->_pScene->addRootObject(std::move(charObj));
-		this->_pScene->addRootObject(std::move(tank));
-		this->_pScene->addRootObject(std::move(tank2));
+	void Engine::setActiveCamera(Scene::CameraComponent cameraComponent, Scene::TransformComponent transformComponent)
+	{
+		_camera._cameraComponent = cameraComponent;
+		_camera._transformComponent = transformComponent;
 	}
 
 	void Engine::loadCallbacks()
@@ -266,18 +182,7 @@ namespace TripleEngineCore {
 		});
 	}
 
-	void Engine::KeyClicked(Event::KeyCode key)
-	{
-		if (key == Event::KeyCode::F1) {
-			_cameraSpeed += 1.0;
-		}
-		else if (key == Event::KeyCode::F2) {
-			_cameraSpeed -= 1.0;
-			if (_cameraSpeed < 1.0f) _cameraSpeed = 1.0f;
-		}
-	}
-
-	void Engine::BootstrapResources()
+	bool Engine::bootstrapResources()
 	{
 		using namespace TripleMath;
 		System::TextureID ard = _pAssetsSystem->genSolidTexture("__default_white", 255, 255, 255, 255); // albedo, roughness
@@ -290,7 +195,7 @@ namespace TripleEngineCore {
 
 		if (ard == Asset::INVALID_ASSET_ID || mtd == Asset::INVALID_ASSET_ID || nd == Asset::INVALID_ASSET_ID || sd == Asset::INVALID_ASSET_ID) {
 			TripleLogger::TLogger::Critical("The default resources were not loaded properly, and the program cannot continue working normally.");
-			exit(-1);
+			return false;
 		}
 
 		_pRenderSystem->uploadTexture(_pAssetsSystem->getTexture(ard));
@@ -310,20 +215,10 @@ namespace TripleEngineCore {
 		System::MaterialID mdid = _pAssetsSystem->createMaterial("__default_material", mtdd);
 		if (mdid == Asset::INVALID_ASSET_ID) {
 			TripleLogger::TLogger::Critical("The default resources were not loaded properly, and the program cannot continue working normally.");
-			exit(-1);
+			return false;
 		}
 
-		System::ModelID demo_model = _pAssetsSystem->loadModelFromFile("demo_model", "assets\\models\\weapon.glb");
-		if (demo_model != Asset::INVALID_ASSET_ID) _pRenderSystem->uploadGeometry(_pAssetsSystem->getModel(demo_model));
-
-		System::ModelID demo_model3 = _pAssetsSystem->loadModelFromFile("demo_model3", "assets\\models\\weapon_1.glb");
-		if (demo_model3 != Asset::INVALID_ASSET_ID) _pRenderSystem->uploadGeometry(_pAssetsSystem->getModel(demo_model3));
-
-		System::ModelID demo_model2 = _pAssetsSystem->loadModelFromFile("demo_model2", "assets\\models\\spec.glb");
-		if (demo_model2 != Asset::INVALID_ASSET_ID) _pRenderSystem->uploadGeometry(_pAssetsSystem->getModel(demo_model2));
-
-		System::ModelID town_square = _pAssetsSystem->loadModelFromFile("tank", "assets\\models\\tank.glb");
-		if (town_square != Asset::INVALID_ASSET_ID) _pRenderSystem->uploadGeometry(_pAssetsSystem->getModel(town_square));
+		return true;
 	}
 
 	Engine::~Engine()

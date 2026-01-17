@@ -35,9 +35,7 @@ namespace TripleRenderer::GLRenderer {
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        tecg::CameraData camera = ctx.cameras[ctx.cameraIndex];
-
-        Mat4 VP = camera.proj * camera.view;
+        Mat4 VP = ctx.camera.proj * ctx.camera.view;
 
         for (auto& cmd : ctx.commands) {
             Mat4 MVP = VP * cmd.worldMat;
@@ -47,7 +45,7 @@ namespace TripleRenderer::GLRenderer {
 
                 shader->bind();
                 shader->setUniformMat4("u_MVP", MVP.data);
-                shader->setUniform3fv("u_CameraPos", camera.pos.data());
+                shader->setUniform3fv("u_CameraPos", ctx.camera.pos.data());
                 shader->setUniform1f("u_Time", ctx.time);
                 
                 geom->vao.bind();

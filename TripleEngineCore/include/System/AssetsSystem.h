@@ -1,8 +1,9 @@
 #ifndef ASSETS_SYSTEM_H
 #define ASSETS_SYSTEM_H
 
-#include "Interfaces/IServiceSystem.h"
 #include <string>
+
+#include "Interfaces/IServiceSystem.h"
 #include "Asset/AssetStorage.h"
 
 #include "Asset/Asset.h"
