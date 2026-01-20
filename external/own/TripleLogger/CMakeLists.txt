@@ -4,7 +4,7 @@ set(LIB_NAME TripleLogger)
 
 project(${LIB_NAME} VERSION 1.0)
 
-include(${CMAKE_SOURCE_DIR}/cmake/CopyDlls.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
 
 add_library(${LIB_NAME} SHARED
     src/tLogger.cpp

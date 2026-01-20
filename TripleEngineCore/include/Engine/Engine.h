@@ -15,6 +15,7 @@
 #include "System/AssetsSystem.h"
 #include "System/RenderSystem.h"
 #include "System/InputSystem.h"
+#include "System/InputActionSystem.h"
 
 #include "Scene/CameraComponent.h"
 #include "Scene/TransformComponent.h"
@@ -27,23 +28,24 @@ namespace TripleEngineCore {
 			FailedToLoadWindow,
 			ModuleLoadError,
 			FailedInitRenderer,
-			FailedBootstrapDefaultResources
+			FailedBootstrapResources,
+			FailedBootstrapComponents
 		};
 
 		Engine();
 		virtual ~Engine();
 		virtual ErrorCode start(const char* title, unsigned int width, unsigned int height);
 		virtual void onUpdate(float dt);
-		virtual void onRender(float t) const;
+		virtual void onRender(float t);
 
 		bool bootstrapResources();
 		bool bootstrapComponents();
 
-		void setActiveCamera(Scene::CameraComponent cameraComponent, Scene::TransformComponent transformComponent);
+		void setActiveCamera(const Scene::Entity entity);
 
 		System::InputSystem* getInputSys() { return _pInputSystem.get(); }
+		System::InputActionSystem* getInputActionSys() { return _pInputActionSystem.get(); }
 		System::AssetsSystem* getAssetSys() { return _pAssetsSystem.get(); }
-		System::RenderSystem* getRenderSys() { return _pRenderSystem.get(); }
 		Scene::Scene* getActiveScene() { return _pScene.get(); }
 		EventDispatcher* getEventDispatcher() { return _pEventDispatcher.get(); }
 		GLWindow* getWindow() { return _pWindow.get(); }
@@ -53,7 +55,8 @@ namespace TripleEngineCore {
 		Engine& operator=(const Engine&) = delete;
 		Engine& operator=(Engine&&) = delete;
 
-		void loadCallbacks();
+		void loadSystemCallbacks();
+		void loadAssetsCallbacks();
 		const char* getModuleName() const { return "Engine"; }
 
 		std::unique_ptr<GLWindow> _pWindow;
@@ -63,13 +66,10 @@ namespace TripleEngineCore {
 		std::unique_ptr<System::AssetsSystem> _pAssetsSystem;
 		std::unique_ptr<System::RenderSystem> _pRenderSystem;
 		std::unique_ptr<System::InputSystem> _pInputSystem;
+		std::unique_ptr<System::InputActionSystem> _pInputActionSystem;
 		std::unique_ptr<Scene::Scene> _pScene;
 
-		struct Camera {
-			Scene::CameraComponent _cameraComponent;
-			Scene::TransformComponent _transformComponent;
-		};
-		Camera _camera;
+		Scene::Entity _cameraEntity;
 
 		bool _isRunning;
 		float _lastTime;
