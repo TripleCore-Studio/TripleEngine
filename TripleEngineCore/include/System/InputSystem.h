@@ -1,13 +1,19 @@
 #ifndef INPUT_SYSTEM_H
 #define INPUT_SYSTEM_H
 
+#include <string>
+
 #include "Interfaces/ISystem.h"
+#include "ExportMacros.h"
 #include "Engine/EventSystem.h"
 #include "Vec2.h"
 
 namespace TripleEngineCore::System {
-    class InputSystem : public ISystem {
+    class CORE_API InputSystem : public ISystem {
     public:
+        InputSystem();
+        ~InputSystem();
+
         void init() override;
         void update(float dt) override;
 
@@ -15,18 +21,16 @@ namespace TripleEngineCore::System {
 
         bool isKeyDown(Event::KeyCode key) const;
         bool isKeyPressed(Event::KeyCode key) const;
+        bool isKeyReleased(Event::KeyCode key) const;
 
         bool isMouseButtonDown(Event::MouseButton btn) const;
         bool isMouseButtonPressed(Event::MouseButton btn) const;
+        bool isMouseButtonReleased(Event::MouseButton btn) const;
 
         TripleMath::Vec2 getMouseDelta() const;
-
     private:
-        std::unordered_map<Event::KeyCode, bool> _keys;
-        std::unordered_map<Event::KeyCode, bool> _keysPressed;
-
-        std::unordered_map<Event::MouseButton, bool> _mouseButtons;
-        std::unordered_map<Event::MouseButton, bool> _mouseButtonsPressed;
+        struct Impl;
+        Impl* _impl;
 
         float _mouseX;
         float _mouseY;

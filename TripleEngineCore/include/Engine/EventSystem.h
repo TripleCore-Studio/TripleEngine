@@ -149,8 +149,9 @@ namespace TripleEngineCore {
 		void dispatch(Event& event);
 	private:
 		EventDispatcher(const EventDispatcher&) = delete;
-		EventDispatcher(EventDispatcher&&) = delete;
 		EventDispatcher& operator=(const EventDispatcher&) = delete;
+
+		EventDispatcher(EventDispatcher&&) = delete;
 		EventDispatcher& operator=(EventDispatcher&&) = delete;
 
 		std::unordered_map<Event::Type, std::vector<EventCallbackFn>> listeners;

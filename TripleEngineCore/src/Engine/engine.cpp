@@ -27,6 +27,7 @@ namespace TripleEngineCore {
 		this->_pAssetsSystem = std::make_unique<System::AssetsSystem>();
 		this->_pRenderSystem = std::make_unique<System::RenderSystem>(this->_pAssetsSystem.get());
 		this->_pInputSystem = std::make_unique<System::InputSystem>();
+		this->_pInputActionSystem = std::make_unique<System::InputActionSystem>(this->_pInputSystem.get());
 
 		this->_pScene = std::make_unique<Scene::Scene>(_pComponentManager.get());
 
@@ -34,6 +35,7 @@ namespace TripleEngineCore {
 
 		this->_isRunning = false;
 		this->_lastTime = 0.0f;
+		this->_cameraEntity = Scene::INVALID_ENTITY;
 	}
 
 	Engine::ErrorCode Engine::start(const char* title, unsigned int width, unsigned int height)
@@ -80,14 +82,18 @@ namespace TripleEngineCore {
 		pGLRenderer->Initialize();
 		_pInputSystem->init();
 
-		loadCallbacks();
+		loadSystemCallbacks();
+		loadAssetsCallbacks();
+
 		if (!bootstrapResources()) {
 			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Error: bootstrapResources");
-			return ErrorCode::FailedBootstrapDefaultResources;
+			_pWindow->shutdown();
+			return ErrorCode::FailedBootstrapResources;
 		}
 		if (!bootstrapComponents()) {
 			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Error: bootstrapComponents");
-			return ErrorCode::FailedBootstrapDefaultResources;
+			_pWindow->shutdown();
+			return ErrorCode::FailedBootstrapComponents;
 		}
 		_pEventDispatcher->dispatch(EngineLoadedEvent());
 
@@ -100,7 +106,10 @@ namespace TripleEngineCore {
 
 			this->_pWindow->onUpdate();
 			this->onUpdate(dt);
+
+			this->_pInputActionSystem->update(dt);
 			this->_pInputSystem->update(dt);
+
 			this->onRender(_lastTime);
 		}
 
@@ -111,12 +120,20 @@ namespace TripleEngineCore {
 	{
 	}
 
-	void Engine::onRender(float t) const
+	void Engine::onRender(float t)
 	{
+		auto* transform = getActiveScene()->getComponent<Scene::TransformComponent>(_cameraEntity);
+		auto* cameraComp = getActiveScene()->getComponent<Scene::CameraComponent>(_cameraEntity);
+
+		if (!transform || !cameraComp) {
+			TripleLogger::TLogger::ModuleWarn("Engine", "Active camera missing on render");
+			return;
+		}
+
 		Graphics::FrameContext ctx;
 
-		ctx.camera = Graphics::CameraData{ Utils::getViewMatrix(_camera._transformComponent),
-			Utils::getProjectionMatrix(_camera._cameraComponent), _camera._transformComponent.position };
+		ctx.camera = Graphics::CameraData{ Utils::getViewMatrix(*transform),
+			Utils::getProjectionMatrix(*cameraComp), transform->position };
 
 		this->_pRenderSystem->buildRenderCommands(this->_pScene.get(), ctx.commands);
 		ctx.time = t;
@@ -145,13 +162,12 @@ namespace TripleEngineCore {
 		return true;
 	}
 
-	void Engine::setActiveCamera(Scene::CameraComponent cameraComponent, Scene::TransformComponent transformComponent)
+	void Engine::setActiveCamera(const Scene::Entity entity)
 	{
-		_camera._cameraComponent = cameraComponent;
-		_camera._transformComponent = transformComponent;
+		_cameraEntity = entity;
 	}
 
-	void Engine::loadCallbacks()
+	void Engine::loadSystemCallbacks()
 	{
 		this->_pWindow->setEventCallback([this](Event& event) {
 			this->_pEventDispatcher->dispatch(event);
@@ -182,6 +198,21 @@ namespace TripleEngineCore {
 		});
 	}
 
+	void Engine::loadAssetsCallbacks()
+	{
+		_pAssetsSystem->setTextureLoadedCallback([this](const Asset::Texture* tex) {
+			_pRenderSystem->uploadTexture(tex);
+		});
+
+		_pAssetsSystem->setModelLoadedCallback([this](const Asset::Model* model) {
+			_pRenderSystem->uploadGeometry(model);
+		});
+
+		_pAssetsSystem->setShaderLoadedCallback([this](const Asset::Shader* shader) {
+			_pRenderSystem->uploadShader(shader);
+		});
+	}
+
 	bool Engine::bootstrapResources()
 	{
 		using namespace TripleMath;
@@ -194,14 +225,9 @@ namespace TripleEngineCore {
 			"assets\\shaders\\__default_shader.frag");
 
 		if (ard == Asset::INVALID_ASSET_ID || mtd == Asset::INVALID_ASSET_ID || nd == Asset::INVALID_ASSET_ID || sd == Asset::INVALID_ASSET_ID) {
-			TripleLogger::TLogger::Critical("The default resources were not loaded properly, and the program cannot continue working normally.");
+			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "The default resources were not loaded properly, and the program cannot continue working normally.");
 			return false;
 		}
-
-		_pRenderSystem->uploadTexture(_pAssetsSystem->getTexture(ard));
-		_pRenderSystem->uploadTexture(_pAssetsSystem->getTexture(mtd));
-		_pRenderSystem->uploadTexture(_pAssetsSystem->getTexture(nd));
-		_pRenderSystem->uploadShader(_pAssetsSystem->getShader(sd));
 
 		Asset::Material mtdd;
 		mtdd.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -214,7 +240,7 @@ namespace TripleEngineCore {
 		mtdd.roughness = 1.0;
 		System::MaterialID mdid = _pAssetsSystem->createMaterial("__default_material", mtdd);
 		if (mdid == Asset::INVALID_ASSET_ID) {
-			TripleLogger::TLogger::Critical("The default resources were not loaded properly, and the program cannot continue working normally.");
+			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "The default resources were not loaded properly, and the program cannot continue working normally.");
 			return false;
 		}
 

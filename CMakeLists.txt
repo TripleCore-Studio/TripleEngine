@@ -4,7 +4,7 @@ set(PROJECT_NAME TripleEngine)
 
 project(${PROJECT_NAME} VERSION 1.0)
 
-include(${CMAKE_SOURCE_DIR}/cmake/CopyDlls.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
 
 if(MSVC)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)

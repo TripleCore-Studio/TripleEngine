@@ -4,7 +4,7 @@ set(LIB_NAME TripleMath)
 
 project(${LIB_NAME} VERSION 1.0)
 
-include(${CMAKE_SOURCE_DIR}/cmake/CopyDlls.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
 
 file(GLOB_RECURSE SOURCES_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp

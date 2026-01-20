@@ -11,6 +11,7 @@
 namespace TripleEngineCore::Scene
 {
     using Entity = Index;
+	inline constexpr Entity INVALID_ENTITY = (std::numeric_limits<Entity>::max)();;
 
     class CORE_API Scene {
     public:
