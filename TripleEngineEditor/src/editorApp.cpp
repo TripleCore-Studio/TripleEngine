@@ -3,12 +3,15 @@
 #include <Scene/TransformComponent.h>
 #include <Scene/CameraComponent.h>
 #include <Scene/MeshComponent.h>
+#include "Scene/Scene.h"
 
-#include "MathCommon.h"
-#include "Utils/TransformUtils.h"
+#include <TLogger.h>
+#include <MathCommon.h>
+#include <Utils/TransformUtils.h>
 
 using namespace TripleEngineCore;
 using namespace TripleMath;
+using namespace TripleEngineCore::Scene;
 
 namespace TripleEngineEditor {
 	void EditorApp::onUpdate(float dt)
@@ -18,7 +21,7 @@ namespace TripleEngineEditor {
 
 	void EditorApp::cameraUpdate(float dt)
 	{
-		Scene::TransformComponent* cameraTransform = getActiveScene()->getComponent<Scene::TransformComponent>(1);
+		TransformComponent* cameraTransform = getActiveScene()->getComponent<TransformComponent>(1);
 		if (!cameraTransform) return;
 
 		System::InputSystem* input = getInputSys();
@@ -64,14 +67,16 @@ namespace TripleEngineEditor {
 
 	void EditorApp::demoScene()
 	{
-		Scene::Entity camera = getActiveScene()->createEntity("camera");
-		Scene::CameraComponent* cameraComp = getActiveScene()->addComponent<Scene::CameraComponent>(camera);
+		TripleEngineCore::Scene::Scene* scene = getActiveScene();
+
+		Entity camera = scene->createEntity("camera");
+		CameraComponent* cameraComp = scene->addComponent<CameraComponent>(camera);
 		cameraComp->aspectRatio = 1920.0f / 1080.0f;
 		cameraComp->nearPlane = 0.1f;
 		cameraComp->farPlane = 1000.0f;
 		cameraComp->fov = 70.0f;
 
-		Scene::TransformComponent* transformComp = getActiveScene()->addComponent<Scene::TransformComponent>(camera);
+		TransformComponent* transformComp = scene->addComponent<TransformComponent>(camera);
 		transformComp->position = TripleMath::Vec3(0, 30, 50);
 		transformComp->rotationEuler = TripleMath::Vec3(0, 0, 0);
 		transformComp->scale = TripleMath::Vec3(1, 1, 1);
@@ -81,11 +86,11 @@ namespace TripleEngineEditor {
 		System::AssetsSystem* assets = getAssetSys();
 		System::ModelID modelId = assets->loadModelFromFile("demo_model", "assets/models/demo.glb");
 
-		Scene::Entity modelEntity = getActiveScene()->createEntity();
-		Scene::MeshComponent* meshComp = getActiveScene()->addComponent<Scene::MeshComponent>(modelEntity);
+		Entity modelEntity = scene->createEntity();
+		auto meshComp = scene->addComponent<MeshComponent>(modelEntity);
 		meshComp->modelIndex = modelId;
 
-		Scene::TransformComponent* modelTransform = getActiveScene()->addComponent<Scene::TransformComponent>(modelEntity);
+		TransformComponent* modelTransform = scene->addComponent<TransformComponent>(modelEntity);
 		modelTransform->position = TripleMath::Vec3(0, 0, 0);
 		modelTransform->rotationEuler = TripleMath::Vec3(0, 0, 0);
 		modelTransform->scale = TripleMath::Vec3(1, 1, 1);

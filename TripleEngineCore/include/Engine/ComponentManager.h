@@ -2,33 +2,38 @@
 #define COMPONENT_MANAGER_H
 
 #include "Core/CoreTypes.h"
+#include "Scene/SceneTypes.h"
 #include <unordered_map>
 #include <typeindex>
+#include <utility>
 
 namespace TripleEngineCore {
-    using ComponentTypeID = Index;
-    inline constexpr ComponentTypeID INVALID_COMPONENT_TYPE_ID = (std::numeric_limits<ComponentTypeID>::max)();
-
     struct ComponentInfo {
         size_t size;
+        size_t align;
         void (*construct)(void*);
         void (*destruct)(void*);
+        void (*move)(void* dst, void* src);
     };
 
     class ComponentManager {
     public:
         template<typename T>
-        ComponentTypeID registerComponent() {
+        Scene::ComponentTypeID registerComponent() {
             std::type_index ti(typeid(T));
 
             auto it = _typeMap.find(ti);
             if (it != _typeMap.end())
                 return it->second;
 
-            ComponentTypeID id = registerComponent(
+            Scene::ComponentTypeID id = registerComponent(
                 sizeof(T),
+                alignof(T),
                 [](void* p) { new (p) T(); },
-                [](void* p) { static_cast<T*>(p)->~T(); }
+                [](void* p) { static_cast<T*>(p)->~T(); },
+                [](void* dst, void* src) noexcept {
+                    new (dst) T(std::move(*static_cast<T*>(src)));
+                }
             );
 
             _typeMap[ti] = id;
@@ -36,18 +41,18 @@ namespace TripleEngineCore {
         }
 
         template<typename T>
-        ComponentTypeID getType() const {
+        Scene::ComponentTypeID getType() const {
             auto it = _typeMap.find(std::type_index(typeid(T)));
-            return it != _typeMap.end() ? it->second : INVALID_COMPONENT_TYPE_ID;
+            return it != _typeMap.end() ? it->second : Scene::INVALID_COMPONENT_TYPE_ID;
         }
 
-        ComponentTypeID registerComponent(size_t size, void(*construct)(void*), void(*destruct)(void*));
-        const ComponentInfo& getInfo(ComponentTypeID id) const;
-        ComponentTypeID getTypeByIndex(const std::type_index& index) const;
+        Scene::ComponentTypeID registerComponent(size_t size, size_t align, void(*construct)(void*), void(*destruct)(void*), void(*move)(void*, void*));
+        const ComponentInfo& getInfo(Scene::ComponentTypeID id) const;
+        Scene::ComponentTypeID getTypeByIndex(const std::type_index& index) const;
     private:
-        std::unordered_map<ComponentTypeID, ComponentInfo> _registry;
-        std::unordered_map<std::type_index, ComponentTypeID> _typeMap;
-        ComponentTypeID _nextID = 1;
+        std::unordered_map<Scene::ComponentTypeID, ComponentInfo> _registry;
+        std::unordered_map<std::type_index, Scene::ComponentTypeID> _typeMap;
+        Scene::ComponentTypeID _nextID = 1;
     };
 }
 

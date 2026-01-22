@@ -14,6 +14,7 @@
 #include "Scene/ParentComponent.h"
 #include "Scene/ChildrenComponent.h"
 #include "Scene/NameComponent.h"
+#include "Scene/SceneTypes.h"
 
 namespace TripleEngineCore {
 	Engine::Engine()
@@ -145,7 +146,7 @@ namespace TripleEngineCore {
 
 	bool Engine::bootstrapComponents()
 	{
-		std::vector<ComponentTypeID> ids;
+		std::vector<Scene::ComponentTypeID> ids;
 		ids.push_back(_pComponentManager->registerComponent<Scene::TransformComponent>());
 		ids.push_back(_pComponentManager->registerComponent<Scene::MeshComponent>());
 		ids.push_back(_pComponentManager->registerComponent<Scene::CameraComponent>());
@@ -154,7 +155,7 @@ namespace TripleEngineCore {
 		ids.push_back(_pComponentManager->registerComponent<Scene::NameComponent>());
 
 		for (auto& id : ids) {
-			if (id == INVALID_COMPONENT_TYPE_ID) {
+			if (id == Scene::INVALID_COMPONENT_TYPE_ID) {
 				return false;
 			}
 		}
