@@ -1,21 +1,18 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include "Core/CoreTypes.h"
-#include "ExportMacros.h"
-
 #include <string>
+#include <vector>
+#include <typeinfo>
 
-#include "Engine/ComponentManager.h"
+#include "ExportMacros.h"
+#include "Scene/SceneTypes.h"
 
 namespace TripleEngineCore::Scene
 {
-    using Entity = Index;
-	inline constexpr Entity INVALID_ENTITY = (std::numeric_limits<Entity>::max)();;
-
     class CORE_API Scene {
     public:
-        Scene(ComponentManager* compMgr);
+        Scene(void* compMgr);
         ~Scene();
 
         Entity createEntity();
@@ -26,11 +23,12 @@ namespace TripleEngineCore::Scene
 
         bool addChild(Entity parent, Entity child);
 
-        void* addComponent(Entity e, ComponentTypeID type);
-        void* getComponent(Entity e, ComponentTypeID type);
-
         uint32_t getEntityCount() const;
 
+        // WARNING: The returned pointer is valid only until
+        // new components of the same type are added to the scene.
+        // After that, the memory may be reallocated and the pointer may become dangling.
+        // It is recommended to use `ComponentHandle<T>` instead for safe access.
         template<typename T>
         T* addComponent(Entity e) {
             ComponentTypeID id = getComponentTypeID(typeid(T));
@@ -38,6 +36,10 @@ namespace TripleEngineCore::Scene
             return static_cast<T*>(addComponent(e, id));
         }
 
+        // WARNING: The returned pointer is valid only until
+        // new components of the same type are added to the scene.
+        // After that, the memory may be reallocated and the pointer may become dangling.
+        // It is recommended to use `ComponentHandle<T>` instead for safe access.
         template<typename T>
         T* getComponent(Entity e) {
             ComponentTypeID id = getComponentTypeID(typeid(T));
@@ -47,6 +49,8 @@ namespace TripleEngineCore::Scene
 
     private:
         ComponentTypeID getComponentTypeID(const std::type_info& type) const;
+        void* addComponent(Entity e, ComponentTypeID type);
+        void* getComponent(Entity e, ComponentTypeID type);
 
         struct Impl;
         Impl* _impl;

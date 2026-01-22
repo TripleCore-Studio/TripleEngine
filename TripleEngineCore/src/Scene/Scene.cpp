@@ -1,4 +1,5 @@
 #include "Scene/Scene.h"
+
 #include <unordered_set>
 #include <cstring>
 
@@ -6,11 +7,18 @@
 #include "Scene/ChildrenComponent.h"
 #include "Scene/NameComponent.h"
 
+#include "TLogger.h"
+#include "Engine/ComponentManager.h"
+
 namespace TripleEngineCore::Scene {
+    static size_t alignUp(size_t size, size_t align) {
+        return (size + align - 1) & ~(align - 1);
+    }
 
     struct ComponentPool {
         ComponentTypeID type = 0;
-        std::vector<uint8_t> data;
+        size_t stride;
+        std::vector<std::byte> data;
         std::unordered_map<Entity, size_t> entityToIndex;
     };
 
@@ -21,7 +29,7 @@ namespace TripleEngineCore::Scene {
         Entity nextEntity = 1;
     };
 
-    Scene::Scene(ComponentManager* compMgr) : _impl(new Impl{ compMgr }) {}
+    Scene::Scene(void* compMgr) : _impl(new Impl{ static_cast<ComponentManager*>(compMgr) }) {}
     Scene::~Scene() { delete _impl; }
 
     Entity Scene::createEntity()
@@ -50,22 +58,32 @@ namespace TripleEngineCore::Scene {
 
         for (auto& [type, pool] : _impl->pools) {
             auto it = pool.entityToIndex.find(e);
-            if (it != pool.entityToIndex.end() && pool.data.size() >= _impl->componentManager->getInfo(type).size) {
-                size_t offset = it->second;
-                const auto& info = _impl->componentManager->getInfo(type);
-                info.destruct(pool.data.data() + offset);
+            if (it == pool.entityToIndex.end()) continue;
 
-                size_t lastOffset = pool.data.size() - info.size;
-                if (offset != lastOffset) {
+            const auto& info = _impl->componentManager->getInfo(type);
+            size_t offset = it->second;
+
+            info.destruct(pool.data.data() + offset);
+
+            size_t lastOffset = pool.data.size() - pool.stride;
+            if (offset != lastOffset) {
+                if (info.move) {
+                    info.move(pool.data.data() + offset, pool.data.data() + lastOffset);
+                }
+                else {
                     std::memcpy(pool.data.data() + offset, pool.data.data() + lastOffset, info.size);
-                    for (auto& [entity, idx] : pool.entityToIndex) {
-                        if (idx == lastOffset) { idx = offset; break; }
-                    }
                 }
 
-                pool.data.resize(pool.data.size() - info.size);
-                pool.entityToIndex.erase(it);
+                for (auto& [entity, idx] : pool.entityToIndex) {
+                    if (idx == lastOffset) {
+                        idx = offset;
+                        break;
+                    }
+                }
             }
+
+            pool.data.resize(pool.data.size() - pool.stride);
+            pool.entityToIndex.erase(it);
         }
     }
 
@@ -78,8 +96,8 @@ namespace TripleEngineCore::Scene {
         if (_impl->entities.find(parent) == _impl->entities.end()) return false;
         if (_impl->entities.find(child) == _impl->entities.end()) return false;
 
-        ComponentTypeID parentComponentID = _impl->componentManager->getType<TripleEngineCore::Scene::ParentComponent>();
-        ComponentTypeID childrenComponentID = _impl->componentManager->getType<TripleEngineCore::Scene::ChildrenComponent>();
+        ComponentTypeID parentComponentID = _impl->componentManager->getType<ParentComponent>();
+        ComponentTypeID childrenComponentID = _impl->componentManager->getType<ChildrenComponent>();
 
         auto existingParent = static_cast<ParentComponent*>(getComponent(child, parentComponentID));
         if (existingParent && existingParent->parent != 0) return false;
@@ -103,11 +121,20 @@ namespace TripleEngineCore::Scene {
         if (_impl->entities.find(e) == _impl->entities.end()) return nullptr;
 
         ComponentPool& pool = _impl->pools[type];
-        if (pool.data.empty()) pool.type = type;
-
         const auto& info = _impl->componentManager->getInfo(type);
+
+        if (pool.data.empty()) {
+            pool.type = type;
+            pool.stride = alignUp(info.size, info.align);
+        }
+
+        auto it = pool.entityToIndex.find(e);
+        if (it != pool.entityToIndex.end()) {
+            return pool.data.data() + it->second;
+        }
+
         size_t offset = pool.data.size();
-        pool.data.resize(offset + info.size);
+        pool.data.resize(offset + pool.stride);
         info.construct(pool.data.data() + offset);
         pool.entityToIndex[e] = offset;
 
