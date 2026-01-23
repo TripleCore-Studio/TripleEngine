@@ -3,11 +3,12 @@
 #include <Scene/TransformComponent.h>
 #include <Scene/CameraComponent.h>
 #include <Scene/MeshComponent.h>
-#include "Scene/Scene.h"
+#include <Scene/Scene.h>
 
 #include <TLogger.h>
 #include <MathCommon.h>
 #include <Utils/TransformUtils.h>
+#include <Event/EngineLoadedEvent.h>
 
 using namespace TripleEngineCore;
 using namespace TripleMath;
@@ -32,17 +33,17 @@ namespace TripleEngineEditor {
 		cameraTransform->rotationEuler.x = TripleMath::clamp(cameraTransform->rotationEuler.x, -89.0f, 89.0f);
 
 		TripleMath::Vec3 dir(0, 0, 0);
-		if (input->isKeyDown(Event::KeyCode::W)) dir.z += 1;
-		if (input->isKeyDown(Event::KeyCode::S)) dir.z -= 1;
-		if (input->isKeyDown(Event::KeyCode::A)) dir.x -= 1;
-		if (input->isKeyDown(Event::KeyCode::D)) dir.x += 1;
-		if (input->isKeyDown(Event::KeyCode::Space)) dir.y += 1;
-		if (input->isKeyDown(Event::KeyCode::LeftShift)) dir.y -= 1;
+		if (input->isKeyDown(Input::KeyCode::W)) dir.z += 1;
+		if (input->isKeyDown(Input::KeyCode::S)) dir.z -= 1;
+		if (input->isKeyDown(Input::KeyCode::A)) dir.x -= 1;
+		if (input->isKeyDown(Input::KeyCode::D)) dir.x += 1;
+		if (input->isKeyDown(Input::KeyCode::Space)) dir.y += 1;
+		if (input->isKeyDown(Input::KeyCode::LeftShift)) dir.y -= 1;
 
-		if (input->isMouseButtonDown(Event::MouseButton::Button5)) {
+		if (input->isMouseButtonDown(Input::MouseButton::Button5)) {
 			_cameraSettings.cameraSpeed += _cameraSettings.cameraSpeedChange * dt;
 		}
-		else if (input->isMouseButtonDown(Event::MouseButton::Button4)) {
+		else if (input->isMouseButtonDown(Input::MouseButton::Button4)) {
 			_cameraSettings.cameraSpeed -= _cameraSettings.cameraSpeedChange * dt;
 		}
 
@@ -98,17 +99,24 @@ namespace TripleEngineEditor {
 
 	void EditorApp::loadCallbacks()
 	{
-		getEventDispatcher()->addListener(Event::Type::EngineLoaded, [this](Event& e) {
+		getEventDispatcher()->addListener<Event::EngineLoadedEvent>([this](Event::EngineLoadedEvent& e) {
 			demoScene();
 		});
 
-		System::InputActionSystem::InputTrigger trigger;
-		trigger.type = System::InputActionSystem::InputTriggerType::Key;
-		trigger.state = System::InputActionSystem::TriggerState::Pressed;
-		trigger.key = Event::KeyCode::F11;
+		Input::InputTrigger fullscreenTrigger;
+		fullscreenTrigger.type = Input::InputTriggerType::Key;
+		fullscreenTrigger.state = Input::TriggerState::Pressed;
+		fullscreenTrigger.key = Input::KeyCode::F11;
+		getInputActionSys()->bind("ToggleFullscreen", { fullscreenTrigger }, [this]() {
+			getWindow()->setFullscreen(!getWindow()->isFullscreen());
+		});
 
-		getInputActionSys()->bind("ToggleFullscreen", { trigger }, [this]() {
-			getWindow()->toggleFullscreen();
+		Input::InputTrigger captureMouseTrigger;
+		captureMouseTrigger.type = Input::InputTriggerType::Key;
+		captureMouseTrigger.state = Input::TriggerState::Pressed;
+		captureMouseTrigger.key = Input::KeyCode::F10;
+		getInputActionSys()->bind("ToggleCaptureMouse", { captureMouseTrigger }, [this]() {
+			getWindow()->setCursorCapture(!getWindow()->isCursorCaptured());
 		});
 	}
 } // namespace TripleEngineEditor
