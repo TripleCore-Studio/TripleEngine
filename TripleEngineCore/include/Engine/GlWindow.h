@@ -1,41 +1,45 @@
 #ifndef GLWINDOW_H
 #define GLWINDOW_H
 
-#include <memory>
-#include <functional>
 #include <ExportMacros.h>
+#include "Event/Event.h"
+#include "Interfaces/IEventSink.h"
+#include "Interfaces/IWindow.h"
 
 struct GLFWwindow;
 
 namespace TripleEngineCore {
-	class CORE_API GLWindow {
+	class CORE_API GLWindow : public IWindow {
 	public:
 		enum class ErrorCode {
 			None = 0,
 			GlfwInitError,
 			CreateWindowError
 		};
-		using EventCallbackFn = std::function<void(class Event&)>;
 
-		GLWindow(const char* title, int width, int height);
+		GLWindow(const char* title, int width, int height, IEventSink* sink);
 		ErrorCode init(void** outProc);
-		virtual void onUpdate();
 
-		void setEventCallback(const EventCallbackFn& callback) { _data.eventCallback = callback; }
+		void PollEvents() override;
+		void SwapBuffers() override;
+		bool ShouldClose() const override;
+		void* GetNativeWindow() const override;
+		bool isFullscreen() const override;
+		void setFullscreen(bool enabled) override;
+		void setSize(uint32_t width, uint32_t height) override;
+		void setPosition(uint32_t x, uint32_t y) override;
+		float getDPIScale() const override;
+		void setCursorCapture(bool capture);
+		bool isCursorCaptured() const override;
+		double getTime() const override;
+		void shutdown() override;
 
-		void setFullscreen();
-		void setWindowed();
-		void toggleFullscreen();
-
-		const char* getModuleName() const { return "GLWindow"; }
-		double getTime() const;
-
-		virtual void shutdown();
 		~GLWindow();
 	private:
 		GLWindow(const GLWindow&) = delete;
 		GLWindow& operator=(const GLWindow&) = delete;
 		void initGLFWCallbacks();
+		void emit(Event::Event& e);
 
 		struct WindowData
 		{
@@ -43,13 +47,15 @@ namespace TripleEngineCore {
 			char* title = nullptr;
 			int width = 0;
 			int height = 0;
-			EventCallbackFn eventCallback = nullptr;
 
 			int windowedX = 100;
 			int windowedY = 100;
 			int windowedWidth = 800;
 			int windowedHeight = 600;
 			bool isFullscreen = false;
+			bool isCursorCaptured = false;
+
+			IEventSink* eventSink = nullptr;
 		};
 
 		WindowData _data;

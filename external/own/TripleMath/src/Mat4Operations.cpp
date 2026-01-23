@@ -31,7 +31,7 @@ namespace TripleEngineCore::TripleMath {
         return fromGlm(m);
     }
 
-    Mat4 lookAt(const Vec3& eye, const Vec3& target, const Vec3& up) {\
+    Mat4 lookAt(const Vec3& eye, const Vec3& target, const Vec3& up) {
         glm::mat4 m = glm::lookAt(
             glm::vec3(eye.x, eye.y, eye.z),
             glm::vec3(target.x, target.y, target.z),

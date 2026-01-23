@@ -9,12 +9,20 @@
 #include "Interfaces/IOpenGLRenderer.h"
 #include "TLogger.h"
 #include "Utils/CameraUtils.h"
+#include "Engine/GLWindow.h"
 
 #include "Scene/MeshComponent.h"
 #include "Scene/ParentComponent.h"
 #include "Scene/ChildrenComponent.h"
 #include "Scene/NameComponent.h"
 #include "Scene/SceneTypes.h"
+
+#include "Event/EngineLoadedEvent.h"
+#include "Event/WindowCloseEvent.h"
+#include "Event/WindowResizeEvent.h"
+#include "Event/KeyboardInputEvent.h"
+#include "Event/MouseMoveEvent.h"
+#include "Event/MouseButtonEvent.h"
 
 namespace TripleEngineCore {
 	Engine::Engine()
@@ -60,12 +68,13 @@ namespace TripleEngineCore {
 			return ErrorCode::ModuleLoadError;
 		}
 
-		this->_pWindow = std::make_unique<GLWindow>(title, width, height);
+		auto window = std::make_unique<GLWindow>(title, width, height, _pEventDispatcher.get());
 		void* loader = nullptr;
-		if (this->_pWindow->init(&loader) != GLWindow::ErrorCode::None) {
+		if (window->init(&loader) != GLWindow::ErrorCode::None) {
 			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Failed to initialize window");
 			return ErrorCode::FailedToLoadWindow;
 		}
+		this->_pWindow = std::move(window);
 
 		if (loader == nullptr) {
 			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "Loader for OpenGL not initialized");
@@ -96,7 +105,7 @@ namespace TripleEngineCore {
 			_pWindow->shutdown();
 			return ErrorCode::FailedBootstrapComponents;
 		}
-		_pEventDispatcher->dispatch(EngineLoadedEvent());
+		_pEventDispatcher->dispatch(Event::EngineLoadedEvent());
 
 		_lastTime = _pWindow->getTime();
 		this->_isRunning = true;
@@ -105,7 +114,9 @@ namespace TripleEngineCore {
 			float dt = currentTime - _lastTime;
 			_lastTime = currentTime;
 
-			this->_pWindow->onUpdate();
+			this->_pWindow->PollEvents();
+			this->_pWindow->SwapBuffers();
+
 			this->onUpdate(dt);
 
 			this->_pInputActionSystem->update(dt);
@@ -123,8 +134,9 @@ namespace TripleEngineCore {
 
 	void Engine::onRender(float t)
 	{
-		auto* transform = getActiveScene()->getComponent<Scene::TransformComponent>(_cameraEntity);
-		auto* cameraComp = getActiveScene()->getComponent<Scene::CameraComponent>(_cameraEntity);
+		Scene::Scene* scene = this->getActiveScene();
+		auto* transform = scene->getComponent<Scene::TransformComponent>(_cameraEntity);
+		auto* cameraComp = scene->getComponent<Scene::CameraComponent>(_cameraEntity);
 
 		if (!transform || !cameraComp) {
 			TripleLogger::TLogger::ModuleWarn("Engine", "Active camera missing on render");
@@ -170,32 +182,26 @@ namespace TripleEngineCore {
 
 	void Engine::loadSystemCallbacks()
 	{
-		this->_pWindow->setEventCallback([this](Event& event) {
-			this->_pEventDispatcher->dispatch(event);
-		});
-
-		this->_pEventDispatcher->addListener(Event::Type::WindowClose, [this](Event& event) {
-			auto& closeEvent = static_cast<WindowCloseEvent&>(event);
-			TripleLogger::TLogger::Warn("Window ({}) closed", closeEvent.getTitle());
+		this->_pEventDispatcher->addListener<Event::WindowCloseEvent>([this](Event::WindowCloseEvent& e) {
+			TripleLogger::TLogger::Warn("Window ({}) closed", e.getTitle());
 			this->_pWindow->shutdown();
 			this->_isRunning = false;
 		});
 
-		this->_pEventDispatcher->addListener(Event::Type::WindowResize, [this](Event& event) {
-			auto& resizeEvent = static_cast<WindowResizeEvent&>(event);
-			_pRenderSystem->getRenderer()->SetViewport(0, 0, resizeEvent.getWidth(), resizeEvent.getHeight());
+		this->_pEventDispatcher->addListener<Event::WindowResizeEvent>([this](Event::WindowResizeEvent& e) {
+			_pRenderSystem->getRenderer()->SetViewport(0, 0, e.getWidth(), e.getHeight());
 		});
 
-		this->_pEventDispatcher->addListener(Event::Type::KeyboardInput, [this](Event& event) {
-			_pInputSystem->onEvent(event);
+		this->_pEventDispatcher->addListener<Event::KeyboardInputEvent>([this](Event::KeyboardInputEvent& e) {
+			_pInputSystem->onKeyboard(e);
 		});
 
-		this->_pEventDispatcher->addListener(Event::Type::MouseMove, [this](Event& event) {
-			_pInputSystem->onEvent(event);
+		this->_pEventDispatcher->addListener<Event::MouseMoveEvent>([this](Event::MouseMoveEvent& e) {
+			_pInputSystem->onMouseMove(e);
 		});
 
-		this->_pEventDispatcher->addListener(Event::Type::MouseButtonInput, [this](Event& event) {
-			_pInputSystem->onEvent(event);
+		this->_pEventDispatcher->addListener<Event::MouseButtonEvent>([this](Event::MouseButtonEvent& e) {
+			_pInputSystem->onMouseButton(e);
 		});
 	}
 

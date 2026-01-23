@@ -7,9 +7,9 @@
 #include "ExportMacros.h"
 #include "ModuleLoader.h"
 #include "Scene/Scene.h"
+#include "Interfaces/IWindow.h"
 
 #include "Engine/EventSystem.h"
-#include "Engine/GlWindow.h"
 #include "Engine/ComponentManager.h"
 
 #include "System/AssetsSystem.h"
@@ -48,7 +48,7 @@ namespace TripleEngineCore {
 		System::AssetsSystem* getAssetSys() { return _pAssetsSystem.get(); }
 		Scene::Scene* getActiveScene() { return _pScene.get(); }
 		EventDispatcher* getEventDispatcher() { return _pEventDispatcher.get(); }
-		GLWindow* getWindow() { return _pWindow.get(); }
+		IWindow* getWindow() { return _pWindow.get(); }
 	private:
 		Engine(const Engine&) = delete;
 		Engine(Engine&&) = delete;
@@ -59,7 +59,7 @@ namespace TripleEngineCore {
 		void loadAssetsCallbacks();
 		const char* getModuleName() const { return "Engine"; }
 
-		std::unique_ptr<GLWindow> _pWindow;
+		std::unique_ptr<IWindow> _pWindow;
 		std::unique_ptr<EventDispatcher> _pEventDispatcher;
 		std::unique_ptr<ComponentManager> _pComponentManager;
 		std::unique_ptr<System::ModuleLoader> _pModuleLoader;
