@@ -9,6 +9,7 @@
 #include "Interfaces/IOpenGLRenderer.h"
 #include "TLogger.h"
 #include "Utils/CameraUtils.h"
+#include "Utils/TransformUtils.h"
 #include "Engine/GLWindow.h"
 
 #include "Scene/MeshComponent.h"
@@ -146,7 +147,7 @@ namespace TripleEngineCore {
 		Graphics::FrameContext ctx;
 
 		ctx.camera = Graphics::CameraData{ Utils::getViewMatrix(*transform),
-			Utils::getProjectionMatrix(*cameraComp), transform->position };
+			Utils::getProjectionMatrix(*cameraComp), transform->position};
 
 		this->_pRenderSystem->buildRenderCommands(this->_pScene.get(), ctx.commands);
 		ctx.time = t;
@@ -222,36 +223,7 @@ namespace TripleEngineCore {
 
 	bool Engine::bootstrapResources()
 	{
-		using namespace TripleMath;
-		System::TextureID ard = _pAssetsSystem->genSolidTexture("__default_white", 255, 255, 255, 255); // albedo, roughness
-		System::TextureID mtd = _pAssetsSystem->genSolidTexture("__default_black", 0, 0, 0, 255); // metallic
-		System::TextureID nd = _pAssetsSystem->genSolidTexture("__default_normal", 128, 128, 255, 255); // normal
-
-		System::ShaderID sd = _pAssetsSystem->loadShaderFromFile("__default_shader",
-			"assets\\shaders\\__default_shader.vert",
-			"assets\\shaders\\__default_shader.frag");
-
-		if (ard == Asset::INVALID_ASSET_ID || mtd == Asset::INVALID_ASSET_ID || nd == Asset::INVALID_ASSET_ID || sd == Asset::INVALID_ASSET_ID) {
-			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "The default resources were not loaded properly, and the program cannot continue working normally.");
-			return false;
-		}
-
-		Asset::Material mtdd;
-		mtdd.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		mtdd.albedoTextureId = ard;
-		mtdd.metallicTextureId = mtd;
-		mtdd.normalTextureId = nd;
-		mtdd.roughnessTextureId = ard;
-		mtdd.shaderId = sd;
-		mtdd.metallic = 0.1;
-		mtdd.roughness = 1.0;
-		System::MaterialID mdid = _pAssetsSystem->createMaterial("__default_material", mtdd);
-		if (mdid == Asset::INVALID_ASSET_ID) {
-			TripleLogger::TLogger::ModuleCritical(this->getModuleName(), "The default resources were not loaded properly, and the program cannot continue working normally.");
-			return false;
-		}
-
-		return true;
+		return this->_pAssetsSystem->loadDefaultAssets();
 	}
 
 	Engine::~Engine()

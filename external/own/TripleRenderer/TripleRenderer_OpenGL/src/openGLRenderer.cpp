@@ -42,11 +42,13 @@ namespace TripleRenderer::GLRenderer {
             for (auto& item : cmd.items) {
                 const Resources::GLGeometry* geom = _pResourceManager->getGLGeometry(item.geometry);
                 Resources::GLShader* shader = _pResourceManager->getGLShader(item.material.shaderHandle);
+				Resources::GLTexture* albedo = _pResourceManager->getGLTexture(item.material.albedoTexHandle);
 
                 shader->bind();
                 shader->setUniformMat4("u_MVP", MVP.data);
                 shader->setUniform3fv("u_CameraPos", ctx.camera.pos.data());
                 shader->setUniform1f("u_Time", ctx.time);
+				shader->setTexture("u_AlbedoTex", albedo->id, 0);
                 
                 geom->vao.bind();
                 glDrawElements(GL_TRIANGLES, item.indexCount, GL_UNSIGNED_INT, (void*)(item.indexOffset * sizeof(uint32_t)));

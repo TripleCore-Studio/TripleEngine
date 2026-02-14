@@ -6,7 +6,7 @@
 
 namespace TripleEngineCore::Graphics
 {
-	struct CameraData { TripleMath::Mat4 view; TripleMath::Mat4 proj; TripleMath::Vec3 pos; };
+	struct CameraData { TripleMath::Mat4 view; TripleMath::Mat4 proj; TripleMath::Vec3 pos;};
 }
 
 #endif // CAMERA_DATA_H

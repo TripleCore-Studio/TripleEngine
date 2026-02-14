@@ -40,11 +40,19 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 target_link_libraries(${LIB_NAME} PRIVATE 
 	glfw
-	TripleLogger
-	TripleMath
 	glad
 	assimp
 )
+
+target_link_libraries(${LIB_NAME} PUBLIC
+	TripleLogger
+	TripleMath
+)
+
+if(BUILD_TESTS)
+    message(STATUS "Building tests: Enabling CORE_EXPORTS_FOR_TESTS")
+    target_compile_definitions(TripleEngineCore PRIVATE CORE_EXPORTS_FOR_TESTS)
+endif()
 
 # ───── Characters Exports For Windows ─────
 if(WIN32)

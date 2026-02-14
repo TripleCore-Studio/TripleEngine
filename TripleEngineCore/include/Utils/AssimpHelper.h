@@ -15,7 +15,7 @@ namespace TripleEngineCore::Utils {
     public:
         struct LoadedTexture {
             std::string name;
-            int width, height;
+            int width, height, channels;
             std::vector<unsigned char> pixels;
         };
 
@@ -40,9 +40,11 @@ namespace TripleEngineCore::Utils {
         static LoadedModel LoadModel(const std::string& path);
         ~AssimpHelper() = default;
     private:
-        static LoadedTexture LoadEmbeddedTexture(::aiTexture* texture);
-        static LoadedTexture LoadFileTexture(std::string path);
-        static LoadedTexture LoadTexture(::aiMaterial* material, uint16_t type, const ::aiScene* scene);
+        static LoadedTexture LoadEmbeddedTexture(const ::aiTexture* texture);
+        static LoadedTexture LoadFileTexture(const std::string& path);
+        static LoadedTexture LoadTexture(const ::aiMaterial* material, uint16_t type, const ::aiScene* scene);
+		static void LoadGeometry(const ::aiScene* scene, LoadedModel& outModel);
+		static void LoadMaterials(const ::aiScene* scene, LoadedModel& outModel);
     };
 }
 

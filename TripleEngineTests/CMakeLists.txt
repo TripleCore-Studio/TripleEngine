@@ -5,8 +5,14 @@ project(${PROJECT_NAME})
 
 enable_testing()
 
+include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
+
+file(GLOB_RECURSE SOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+)
+
 add_executable(${PROJECT_NAME}
-    src/test_shader_program.cpp
+    ${SOURCE_FILES} 
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -15,13 +21,23 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     gtest_main
+    TripleEngineCore
+)
+
+file(GLOB_RECURSE HEADER_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
+)
+
+target_sources(${PROJECT_NAME} PRIVATE
+	${HEADER_FILES}
 )
 
 include(GoogleTest)
 gtest_discover_tests(${PROJECT_NAME})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests/bin"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 if(MSVC)

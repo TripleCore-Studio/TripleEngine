@@ -23,6 +23,12 @@ namespace TripleEngineCore::System {
     using MaterialID = Asset::AssetID;
     using TextureID = Asset::AssetID;
 
+	inline const std::string DefaultAlbedoRoughnessName = "__default_white";
+    inline const std::string DefaultMetallicName = "__default_black";
+    inline const std::string DefaultNormalName = "__default_normal";
+	inline const std::string DefaultShaderName = "__default_shader";
+	inline const std::string DefaultMaterialName = "__default_material";
+
     class CORE_API AssetsSystem : public IServiceSystem {
     public:
         friend class TripleEngineCore::Engine;
@@ -47,10 +53,13 @@ namespace TripleEngineCore::System {
         MaterialID getMaterialId(const std::string& name) const;
         const Asset::Material* getMaterial(MaterialID id) const;
 
-        TextureID loadTexture(const std::string& name, const std::string& path);
+        TextureID loadTexture(const std::string& name, Asset::Texture&& texture);
+        TextureID loadTextureFromFile(const std::string& name, const std::string& path);
         TextureID getTextureId(const std::string& name) const;
         TextureID genSolidTexture(const std::string& name, uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255);
         const Asset::Texture* getTexture(TextureID id) const;
+
+		bool loadDefaultAssets();
 
         AssetsSystem(const AssetsSystem&) = delete;
         AssetsSystem& operator=(const AssetsSystem&) = delete;
