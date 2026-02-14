@@ -84,7 +84,7 @@ namespace TripleEngineCore::System {
                     RenderItem item;
 
                     const Asset::Material* mat = _pAssets->getMaterial(p.materialId);
-                    if (!mat) mat = _pAssets->getMaterial(_pAssets->getMaterialId("__default_material"));
+                    if (!mat) mat = _pAssets->getMaterial(_pAssets->getMaterialId(System::DefaultMaterialName));
                     if (!mat) {
                         TripleLogger::TLogger::ModuleWarn("Core::RenderSystem", "Primitive in mesh({}) skipped", mesh.name);
                         continue;
@@ -120,7 +120,7 @@ namespace TripleEngineCore::System {
                 desc.width = texture->width;
                 desc.height = texture->height;
                 desc.channels = texture->channels;
-                desc.data = texture->data.data();
+                desc.data = texture->pixels.data();
                 GPUHandle h = _pRenderer->UploadTexture(desc);
                 _uploadedTextures[texture->id] = h;
             }

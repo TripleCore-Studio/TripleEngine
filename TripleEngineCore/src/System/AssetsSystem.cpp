@@ -9,6 +9,72 @@
 using namespace TripleEngineCore::Asset;
 
 namespace TripleEngineCore::System {
+    System::MaterialID processMaterial(const  Utils::AssimpHelper::LoadedMesh& _mesh,
+        const Utils::AssimpHelper::LoadedModel& loadedModel,
+        AssetsSystem* system)
+    {
+        Utils::AssimpHelper::LoadedMaterial _mat = loadedModel.materials[_mesh.materialIndex];
+        Utils::AssimpHelper::LoadedTexture _difftex;
+        bool isEmpty = true;
+        if (!_mat.diffuseTextures.empty()) {
+            _difftex = _mat.diffuseTextures[0];
+            isEmpty = false;
+        }
+        Asset::Texture texture;
+        texture.name = _difftex.name;
+        texture.width = static_cast<uint16_t>(_difftex.width);
+        texture.height = static_cast<uint16_t>(_difftex.height);
+        texture.channels = static_cast<uint8_t>(_difftex.channels);
+        texture.pixels = std::move(_difftex.pixels);
+
+        Asset::Material material;
+        material.name = _mat.name;
+        if (!isEmpty) {
+            material.albedoTextureId = system->loadTexture(material.name, std::move(texture));
+        }
+        else {
+            material.albedoTextureId = system->getTextureId(DefaultAlbedoRoughnessName);
+        }
+        material.albedoColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        material.metallic = 0.0f;
+        material.roughness = 1.0f;
+        material.metallicTextureId = system->getTextureId(DefaultMetallicName);
+        material.normalTextureId = system->getTextureId(DefaultNormalName);
+        material.roughnessTextureId = system->getTextureId(DefaultAlbedoRoughnessName);
+        material.shaderId = system->getShaderId(DefaultShaderName);
+
+        return system->createMaterial(material.name, material);
+    }
+
+    void processMeshes(Asset::Model* model, const Utils::AssimpHelper::LoadedModel& loadedModel, AssetsSystem* system) {
+        for (const auto& _mesh : loadedModel.meshes) {
+            Asset::Mesh mesh;
+            mesh.name = _mesh.name;
+
+            uint32_t baseVertex = model->vertices.size();
+            uint32_t baseIndex = model->indices.size();
+
+            model->vertices.insert(
+                model->vertices.end(),
+                _mesh.vertices.begin(),
+                _mesh.vertices.end()
+            );
+
+            for (uint32_t idx : _mesh.indices)
+                model->indices.push_back(idx + baseVertex);
+
+            Primitive prim;
+            prim.indexOffset = baseIndex;
+            prim.indexCount = _mesh.indices.size();
+            prim.materialId = processMaterial(_mesh, loadedModel, system);
+            mesh.primitives.push_back(std::move(prim));
+
+            model->meshes.push_back(std::move(mesh));
+        }
+    }
+}
+
+namespace TripleEngineCore::System {
 
     struct AssetsSystem::Impl
     {
@@ -22,7 +88,6 @@ namespace TripleEngineCore::System {
         std::function<void(const Asset::Shader*)> _onShaderLoaded;
     };
 
-
     AssetsSystem::AssetsSystem() : _impl(new Impl()) {}
 	AssetsSystem::~AssetsSystem() { delete _impl; }
 
@@ -31,37 +96,15 @@ namespace TripleEngineCore::System {
         if (_impl->models.exists(name))
             return _impl->models.getID(name);
 
-        Utils::AssimpHelper::LoadedModel model = Utils::AssimpHelper::LoadModel(path);
-        if (model.meshes.size() <= 0) {
+        Utils::AssimpHelper::LoadedModel loadedModel = Utils::AssimpHelper::LoadModel(path);
+        if (loadedModel.meshes.size() <= 0) {
             TripleLogger::TLogger::ModuleWarn("AssetsSystem", "(model: {}) the model has no meshes and as a result was not loaded", name);
             return INVALID_ASSET_ID;
         }
 
         auto engineModel = std::make_unique<Asset::Model>();
-        engineModel->meshes.reserve(model.meshes.size());
-
-        for (const auto& m : model.meshes) {
-            Asset::Mesh mesh;
-            mesh.name = m.name;
-
-            uint32_t baseVertex = engineModel->vertices.size();
-            uint32_t baseIndex = engineModel->indices.size();
-
-            engineModel->vertices.insert(
-                engineModel->vertices.end(),
-                m.vertices.begin(),
-                m.vertices.end()
-            );
-
-            for (uint32_t idx : m.indices)
-                engineModel->indices.push_back(idx + baseVertex);
-
-            Primitive prim;
-            prim.indexOffset = baseIndex;
-            prim.indexCount = m.indices.size();
-            mesh.primitives.push_back(std::move(prim));
-            engineModel->meshes.push_back(std::move(mesh));
-        }
+        engineModel->meshes.reserve(loadedModel.meshes.size());
+		processMeshes(engineModel.get(), loadedModel, this);
 
 		auto ptr = engineModel.get();
         Asset::AssetID id = _impl->models.add(name, std::move(engineModel));
@@ -155,7 +198,28 @@ namespace TripleEngineCore::System {
         return _impl->materials.get(id);
     }
 
-    TextureID AssetsSystem::loadTexture(const std::string& name, const std::string& path) {
+    TextureID AssetsSystem::loadTexture(const std::string& name, Asset::Texture&& texture)
+    {
+        if (_impl->textures.exists(name))
+            return _impl->textures.getID(name);
+
+        if (texture.pixels.empty()) {
+            TripleLogger::TLogger::ModuleError("AssetsSystem", "The {} texture is empty", name);
+            return INVALID_ASSET_ID;
+        }
+
+		auto _texture = std::make_unique<Asset::Texture>(std::move(texture));
+        auto ptr = _texture.get();
+        Asset::AssetID id = _impl->textures.add(name, std::move(_texture));
+
+        if (_impl->_onTextureLoaded) {
+            _impl->_onTextureLoaded(ptr);
+        }
+
+		return id;
+    }
+
+    TextureID AssetsSystem::loadTextureFromFile(const std::string& name, const std::string& path) {
         if (_impl->textures.exists(name))
             return _impl->textures.getID(name);
 
@@ -172,7 +236,7 @@ namespace TripleEngineCore::System {
         texture->width = static_cast<uint16_t>(width);
         texture->height = static_cast<uint16_t>(height);
         texture->channels = 4;
-        texture->data.assign(pixels, pixels + width * height * texture->channels);
+        texture->pixels.assign(pixels, pixels + width * height * texture->channels);
 
         stbi_image_free(pixels);
 
@@ -201,7 +265,7 @@ namespace TripleEngineCore::System {
         tex->width = 1;
         tex->height = 1;
         tex->channels = 4;
-        tex->data = { r, g, b, a };
+        tex->pixels = { r, g, b, a };
 
 		auto ptr = tex.get();
         Asset::AssetID id = _impl->textures.add(name, std::move(tex));
@@ -215,6 +279,44 @@ namespace TripleEngineCore::System {
 
     const Texture* AssetsSystem::getTexture(TextureID id) const {
         return _impl->textures.get(id);
+    }
+
+    bool AssetsSystem::loadDefaultAssets()
+    {
+        using namespace TripleMath;
+        System::TextureID ard = this->genSolidTexture(DefaultAlbedoRoughnessName, 255, 255, 255, 255); // albedo, roughness
+        System::TextureID mtd = this->genSolidTexture(DefaultMetallicName, 0, 0, 0, 255); // metallic
+        System::TextureID nd = this->genSolidTexture(DefaultNormalName, 128, 128, 255, 255); // normal
+
+        System::ShaderID sd = this->loadShaderFromFile(DefaultShaderName,
+            "assets\\shaders\\__default_shader.vert",
+            "assets\\shaders\\__default_shader.frag");
+
+        if (ard == Asset::INVALID_ASSET_ID ||
+            mtd == Asset::INVALID_ASSET_ID ||
+            nd == Asset::INVALID_ASSET_ID ||
+            sd == Asset::INVALID_ASSET_ID) 
+        {
+            TripleLogger::TLogger::ModuleCritical("AssetsSystem", "The default resources were not loaded properly, and the program cannot continue working normally.");
+            return false;
+        }
+
+        Asset::Material mtdd;
+        mtdd.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        mtdd.albedoTextureId = ard;
+        mtdd.metallicTextureId = mtd;
+        mtdd.normalTextureId = nd;
+        mtdd.roughnessTextureId = ard;
+        mtdd.shaderId = sd;
+        mtdd.metallic = 0.1;
+        mtdd.roughness = 1.0;
+        System::MaterialID mdid = this->createMaterial(DefaultMaterialName, mtdd);
+        if (mdid == Asset::INVALID_ASSET_ID) {
+            TripleLogger::TLogger::ModuleCritical("AssetsSystem", "The default resources were not loaded properly, and the program cannot continue working normally.");
+            return false;
+        }
+
+        return true;
     }
 
     void AssetsSystem::setTextureLoadedCallback(std::function<void(const Asset::Texture*)> cb)

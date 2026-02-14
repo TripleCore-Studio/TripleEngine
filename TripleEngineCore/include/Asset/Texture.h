@@ -11,7 +11,7 @@ namespace TripleEngineCore::Asset {
         uint16_t width = 0;
         uint16_t height = 0;
         uint8_t channels = 4;
-        std::vector<unsigned char> data;
+        std::vector<unsigned char> pixels;
     };
 
 } // namespace TripleEngineCore::Graphics

@@ -3,6 +3,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Scene/SceneTypes.h"
+#include "ExportMacros.h"
 #include <unordered_map>
 #include <typeindex>
 #include <utility>
@@ -16,7 +17,7 @@ namespace TripleEngineCore {
         void (*move)(void* dst, void* src);
     };
 
-    class ComponentManager {
+    class CORE_API_FOR_TESTS ComponentManager {
     public:
         template<typename T>
         Scene::ComponentTypeID registerComponent() {

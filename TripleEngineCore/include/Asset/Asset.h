@@ -11,6 +11,7 @@ namespace TripleEngineCore::Asset {
 	struct Asset {
 		std::string name;
 		AssetID id;
+		virtual ~Asset() = default;
 	};
 }
 
