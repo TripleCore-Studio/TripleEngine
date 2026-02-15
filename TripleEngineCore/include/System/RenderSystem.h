@@ -8,7 +8,7 @@
 
 #include "Scene/Scene.h"
 #include "Graphics/RenderCommand.h"
-#include "System/AssetsSystem.h"
+#include "Service/AssetService.h"
 #include "Asset/Asset.h"
 
 #include <vector>
@@ -17,7 +17,7 @@
 namespace TripleEngineCore::System {
 	class RenderSystem : public ISystem {
 	public:
-		RenderSystem(AssetsSystem* assetsSystem) : _pAssets(assetsSystem) {}
+		RenderSystem(Service::AssetService* assetsSrv) : _pAssets(assetsSrv) {}
 		RenderSystem() = default;
 		~RenderSystem() = default;
 
@@ -45,7 +45,7 @@ namespace TripleEngineCore::System {
 
 		void buildRenderCmd(Graphics::RenderCommand& cmd, const Asset::Model* obj);
 
-		AssetsSystem* _pAssets = nullptr;
+		Service::AssetService* _pAssets = nullptr;
 		IRenderer* _pRenderer = nullptr;
 
 		std::unordered_map<Asset::AssetID, GPUHandle> _uploadedTextures;

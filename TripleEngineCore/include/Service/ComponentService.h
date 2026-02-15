@@ -1,14 +1,16 @@
-#ifndef COMPONENT_MANAGER_H
-#define COMPONENT_MANAGER_H
+#ifndef COMPONENT_SERVICE_H
+#define COMPONENT_SERVICE_H
 
-#include "Core/CoreTypes.h"
-#include "Scene/SceneTypes.h"
-#include "ExportMacros.h"
 #include <unordered_map>
 #include <typeindex>
 #include <utility>
 
-namespace TripleEngineCore {
+#include "Core/CoreTypes.h"
+#include "Scene/SceneTypes.h"
+#include "ExportMacros.h"
+#include "Interfaces/IService.h"
+
+namespace TripleEngineCore::Service {
     struct ComponentInfo {
         size_t size;
         size_t align;
@@ -17,7 +19,7 @@ namespace TripleEngineCore {
         void (*move)(void* dst, void* src);
     };
 
-    class CORE_API_FOR_TESTS ComponentManager {
+    class CORE_API_FOR_TESTS ComponentService : public IService {
     public:
         template<typename T>
         Scene::ComponentTypeID registerComponent() {
@@ -57,4 +59,4 @@ namespace TripleEngineCore {
     };
 }
 
-#endif // COMPONENT_MANAGER_H
+#endif // COMPONENT_SERVICE_H

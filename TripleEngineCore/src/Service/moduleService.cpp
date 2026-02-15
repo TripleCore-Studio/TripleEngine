@@ -1,15 +1,15 @@
-#include "ModuleLoader.h"
-#include "DynamicLibrary.h"
+#include "Service/ModuleService.h"
+#include "IO/DynamicLibrary.h"
 #include "TLogger.h"
 #include "Modules/OpenGLModule.h"
 
 namespace TripleEngineCore {
-	namespace System {
-		ModuleLoader::ModuleLoader(std::string modulesPath)
+	namespace Service {
+		ModuleService::ModuleService(std::string modulesPath)
 		{
 			this->_modulesPath = modulesPath;
 		}
-		ModuleLoader::ErrorCode ModuleLoader::loadModule(ModuleType type)
+		ModuleService::ErrorCode ModuleService::loadModule(ModuleType type)
 		{
 			switch (type)
 			{
@@ -32,7 +32,7 @@ namespace TripleEngineCore {
 				break;
 			}
 		}
-		void ModuleLoader::unloadModule(ModuleType type)
+		void ModuleService::unloadModule(ModuleType type)
 		{
 			auto it = _modules.find(type);
 			if (it != _modules.end()) {
@@ -44,7 +44,7 @@ namespace TripleEngineCore {
 				TripleLogger::TLogger::ModuleError(this->getLoaderClassName(), "Module not found: \"{}\"", "ModuleType::OpenGLRenderer");
 			}
 		}
-		IModule* ModuleLoader::getModule(ModuleType type)
+		IModule* ModuleService::getModule(ModuleType type)
 		{
 			auto it = _modules.find(type);
 			if (it != _modules.end()) {
@@ -52,11 +52,11 @@ namespace TripleEngineCore {
 			}
 			return nullptr;
 		}
-		std::string ModuleLoader::getLoaderClassName()
+		std::string ModuleService::getLoaderClassName()
 		{
 			return "ModuleLoader";
 		}
-		ModuleLoader::~ModuleLoader()
+		ModuleService::~ModuleService()
 		{
 			for (auto& pair : _modules) {
 				pair.second->unload();

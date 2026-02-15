@@ -13,6 +13,10 @@ namespace TripleEngineCore::TripleMath {
     }
 
     TRIPLEMATH_API Vec3 normalize(const Vec3& v);
+
+    TRIPLEMATH_API float dot(const Vec3& a, const Vec3& b);
+
+    TRIPLEMATH_API Vec3 cross(const Vec3& a, const Vec3& b);
 }
 
 #endif // TRIPLE_MATH_COMMON_H

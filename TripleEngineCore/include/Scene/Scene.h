@@ -25,7 +25,7 @@ namespace TripleEngineCore::Scene
 
     class CORE_API Scene {
     public:
-        Scene(void* compMgr);
+        Scene(void* compSrv);
         ~Scene();
 
         Entity createEntity();

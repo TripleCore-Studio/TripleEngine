@@ -20,7 +20,7 @@ namespace TripleEngineCore::Utils {
         Mat4 s = TripleMath::scale(t.scale);
 
         // M = T * Rz * Ry * Rx * S
-        return multiply(tr, multiply(rotZ, multiply(rotY, multiply(rotX, s))));
+		return tr * rotZ * rotY * rotX * s;
 	}
     TripleMath::Mat4 getRotationMatrix(const Scene::TransformComponent& t)
     {
@@ -32,7 +32,7 @@ namespace TripleEngineCore::Utils {
         Mat4 Ry = rotate(ry, { 0,1,0 });
         Mat4 Rz = rotate(rz, { 0,0,1 });
 
-        return multiply(Rz, multiply(Ry, Rx));
+        return Rz * Ry * Rx;
     }
     TripleMath::Vec3 forward(const Scene::TransformComponent& t)
     {

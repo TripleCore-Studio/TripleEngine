@@ -1,11 +1,11 @@
-#ifndef ASSETS_SYSTEM_H
-#define ASSETS_SYSTEM_H
+#ifndef ASSET_SERVICE_H
+#define ASSET_SERVICE_H
 
 #include <string>
 #include <functional>
 
 #include "ExportMacros.h"
-#include "Interfaces/IServiceSystem.h"
+#include "Interfaces/IService.h"
 
 #include "Asset/Asset.h"
 #include "Asset/Model.h"
@@ -17,7 +17,7 @@ namespace TripleEngineCore {
     class Engine;
 }
 
-namespace TripleEngineCore::System {
+namespace TripleEngineCore::Service {
     using ModelID = Asset::AssetID;
     using ShaderID = Asset::AssetID;
     using MaterialID = Asset::AssetID;
@@ -29,12 +29,12 @@ namespace TripleEngineCore::System {
 	inline const std::string DefaultShaderName = "__default_shader";
 	inline const std::string DefaultMaterialName = "__default_material";
 
-    class CORE_API AssetsSystem : public IServiceSystem {
+    class CORE_API AssetService : public IService {
     public:
         friend class TripleEngineCore::Engine;
 
-        AssetsSystem();
-        ~AssetsSystem();
+        AssetService();
+        ~AssetService();
 
         virtual void init() {}
         virtual void shutdown() {}
@@ -61,11 +61,11 @@ namespace TripleEngineCore::System {
 
 		bool loadDefaultAssets();
 
-        AssetsSystem(const AssetsSystem&) = delete;
-        AssetsSystem& operator=(const AssetsSystem&) = delete;
+        AssetService(const AssetService&) = delete;
+        AssetService& operator=(const AssetService&) = delete;
 
-        AssetsSystem(AssetsSystem&&) = default;
-        AssetsSystem& operator=(AssetsSystem&&) = default;
+        AssetService(AssetService&&) = default;
+        AssetService& operator=(AssetService&&) = default;
     private:
 		struct Impl;
 		Impl* _impl;
@@ -76,4 +76,4 @@ namespace TripleEngineCore::System {
     };
 }
 
-#endif // ASSETS_SYSTEM_H
+#endif // ASSET_SERVICE_H

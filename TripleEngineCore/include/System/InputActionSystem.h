@@ -2,12 +2,13 @@
 #define INPUT_ACTION_SYSTEM_H
 
 #include <string>
+#include <vector>
+#include <functional>
 
+#include "ExportMacros.h"
 #include "Interfaces/ISystem.h"
-#include "Engine/EventSystem.h"
 #include "System/InputSystem.h"
 #include "Input/InputAction.h"
-#include "ExportMacros.h"
 
 namespace TripleEngineCore::System {
     class CORE_API InputActionSystem : public ISystem {

@@ -1,6 +1,5 @@
-// ModuleLoader.h
-#ifndef MODULE_LOADER_H
-#define MODULE_LOADER_H
+#ifndef MODULE_SERVICE_H
+#define MODULE_SERVICE_H
 
 #include <type_traits>
 #include <functional>
@@ -23,10 +22,11 @@ namespace std {
 #include <memory>
 #include <unordered_map>
 #include "Interfaces/IModule.h"
+#include "Interfaces/IService.h"
 
 namespace TripleEngineCore {
-	namespace System {
-		class ModuleLoader {
+	namespace Service {
+		class ModuleService : public IService {
 		public:
 			enum class ErrorCode {
 				None,
@@ -35,19 +35,19 @@ namespace TripleEngineCore {
 				UnknownModuleType
 			};
 
-			ModuleLoader(std::string modulesPath);
+			ModuleService(std::string modulesPath);
 			ErrorCode loadModule(ModuleType type);
 			void unloadModule(ModuleType type);
 			IModule* getModule(ModuleType type);
 			std::string getLoaderClassName();
 
-			~ModuleLoader();
+			~ModuleService();
 
 		private:
-			ModuleLoader(const ModuleLoader&) = delete;
-			ModuleLoader& operator=(const ModuleLoader&) = delete;
-			ModuleLoader(ModuleLoader&&) = delete;
-			ModuleLoader& operator=(ModuleLoader&&) = delete;
+			ModuleService(const ModuleService&) = delete;
+			ModuleService& operator=(const ModuleService&) = delete;
+			ModuleService(ModuleService&&) = delete;
+			ModuleService& operator=(ModuleService&&) = delete;
 
 			std::unordered_map<ModuleType, std::unique_ptr<IModule>> _modules;
 			std::string _modulesPath;

@@ -3,7 +3,7 @@
 
 #include "Interfaces/IModule.h"
 #include "Interfaces/IRenderer.h"
-#include "DynamicLibrary.h"
+#include "IO/DynamicLibrary.h"
 
 namespace TripleEngineCore {
 	class OpenGLRenderModule : public IModule {
