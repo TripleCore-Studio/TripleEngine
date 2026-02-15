@@ -11,6 +11,12 @@
 #include <Event/EngineLoadedEvent.h>
 #include <cmath>
 
+#include <System/InputSystem.h>
+#include <System/InputActionSystem.h>
+
+#include <Service/AssetService.h>
+#include <Service/EventService.h>
+
 namespace TEC = TripleEngineCore;
 namespace Math = TEC::TripleMath;
 
@@ -28,7 +34,7 @@ namespace TripleEngineEditor {
 		Scene::TransformComponent* cameraTransform = getActiveScene()->getComponent<Scene::TransformComponent>(1);
 		if (!cameraTransform) return;
 
-		System::InputSystem* input = getInputSys();
+		System::InputSystem* input = getSystem<System::InputSystem>();
 
 		TripleMath::Vec2 delta = input->getMouseDelta();
 		cameraTransform->rotationEuler.y += -delta.x * _cameraSettings.sensitivity; // yaw
@@ -87,8 +93,8 @@ namespace TripleEngineEditor {
 
 		setActiveCamera(camera);
 
-		System::AssetsSystem* assets = getAssetSys();
-		System::ModelID modelId = assets->loadModelFromFile("demo_model", "assets/models/demo.glb");
+		Service::AssetService* assets = getService<Service::AssetService>();
+		Service::ModelID modelId = assets->loadModelFromFile("demo_model", "assets/models/demo.glb");
 
 		Scene::Entity entity = scene->createEntity();
 		auto meshComp = scene->addComponent<Scene::MeshComponent>(entity);
@@ -102,7 +108,7 @@ namespace TripleEngineEditor {
 
 	void EditorApp::loadCallbacks()
 	{
-		getEventDispatcher()->addListener<Event::EngineLoadedEvent>([this](Event::EngineLoadedEvent& e) {
+		getService<Service::EventService>()->addListener<Event::EngineLoadedEvent>([this](Event::EngineLoadedEvent& e) {
 			demoScene();
 		});
 
@@ -110,7 +116,7 @@ namespace TripleEngineEditor {
 		fullscreenTrigger.type = Input::InputTriggerType::Key;
 		fullscreenTrigger.state = Input::TriggerState::Pressed;
 		fullscreenTrigger.key = Input::KeyCode::F11;
-		getInputActionSys()->bind("ToggleFullscreen", { fullscreenTrigger }, [this]() {
+		getSystem<System::InputActionSystem>()->bind("ToggleFullscreen", {fullscreenTrigger}, [this]() {
 			getWindow()->setFullscreen(!getWindow()->isFullscreen());
 		});
 
@@ -118,7 +124,7 @@ namespace TripleEngineEditor {
 		captureMouseTrigger.type = Input::InputTriggerType::Key;
 		captureMouseTrigger.state = Input::TriggerState::Pressed;
 		captureMouseTrigger.key = Input::KeyCode::F10;
-		getInputActionSys()->bind("ToggleCaptureMouse", { captureMouseTrigger }, [this]() {
+		getSystem<System::InputActionSystem>()->bind("ToggleCaptureMouse", { captureMouseTrigger }, [this]() {
 			getWindow()->setCursorCapture(!getWindow()->isCursorCaptured());
 		});
 	}

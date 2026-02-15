@@ -1,14 +1,16 @@
-#ifndef EVENT_DISPATCHER_H
-#define EVENT_DISPATCHER_H
+#ifndef EVENT_SERVICE_H
+#define EVENT_SERVICE_H
 
 #include <functional>
 #include <unordered_map>
 #include <ExportMacros.h>
+
 #include "Event/Event.h"
 #include "Interfaces/IEventSink.h"
+#include "Interfaces/IService.h"
 
-namespace TripleEngineCore {
-    class CORE_API EventDispatcher : public IEventSink {
+namespace TripleEngineCore::Service {
+    class CORE_API EventService : public IEventSink, public IService {
     public:
         using EventCallbackFn = std::function<void(Event::Event&)>;
 
@@ -31,4 +33,4 @@ namespace TripleEngineCore {
         std::unordered_map<Event::EventID, std::vector<EventCallbackFn>> listeners;
     };
 }
-#endif // EVENT_DISPATCHER_H
+#endif // EVENT_SERVICE_H

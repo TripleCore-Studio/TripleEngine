@@ -8,7 +8,7 @@
 #include "Scene/NameComponent.h"
 
 #include "TLogger.h"
-#include "Engine/ComponentManager.h"
+#include "Service/ComponentService.h"
 
 namespace TripleEngineCore::Scene {
     static size_t alignUp(size_t size, size_t align) {
@@ -25,13 +25,13 @@ namespace TripleEngineCore::Scene {
     };
 
     struct Scene::Impl {
-        ComponentManager* componentManager = nullptr;
+        Service::ComponentService* componentService = nullptr;
         std::unordered_map<ComponentTypeID, ComponentPool> pools;
         std::unordered_set<Entity> entities;
         Entity nextEntity = 1;
     };
 
-    Scene::Scene(void* compMgr) : _impl(new Impl{ static_cast<ComponentManager*>(compMgr) }) {}
+    Scene::Scene(void* compSrv) : _impl(new Impl{ static_cast<Service::ComponentService*>(compSrv) }) {}
     Scene::~Scene() { delete _impl; }
 
     Entity Scene::createEntity()
@@ -72,7 +72,7 @@ namespace TripleEngineCore::Scene {
             if (idx == SIZE_MAX || idx >= pool.dense.size() || pool.dense[idx] != e)
                 continue;
 
-            const auto& info = _impl->componentManager->getInfo(type);
+            const auto& info = _impl->componentService->getInfo(type);
 
             size_t last = pool.dense.size() - 1;
 
@@ -122,8 +122,8 @@ namespace TripleEngineCore::Scene {
         if (_impl->entities.find(parent) == _impl->entities.end()) return false;
         if (_impl->entities.find(child) == _impl->entities.end()) return false;
 
-        ComponentTypeID parentComponentID = _impl->componentManager->getType<ParentComponent>();
-        ComponentTypeID childrenComponentID = _impl->componentManager->getType<ChildrenComponent>();
+        ComponentTypeID parentComponentID = _impl->componentService->getType<ParentComponent>();
+        ComponentTypeID childrenComponentID = _impl->componentService->getType<ChildrenComponent>();
 
         auto existingParent = static_cast<ParentComponent*>(getComponent(child, parentComponentID));
         if (existingParent && existingParent->parent != 0) return false;
@@ -149,7 +149,7 @@ namespace TripleEngineCore::Scene {
             return nullptr;
 
         ComponentPool& pool = _impl->pools[type];
-        const auto& info = _impl->componentManager->getInfo(type);
+        const auto& info = _impl->componentService->getInfo(type);
 
         if (pool.data.empty()) {
             pool.type = type;
@@ -242,7 +242,7 @@ namespace TripleEngineCore::Scene {
 
     ComponentTypeID Scene::getComponentTypeID(const std::type_info& type) const
     {
-        return _impl->componentManager->getTypeByIndex(std::type_index(type));
+        return _impl->componentService->getTypeByIndex(std::type_index(type));
     }
 
 } // namespace TripleEngineCore::Scene

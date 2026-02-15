@@ -1,24 +1,12 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include <memory>
-#include <unordered_map>
-
 #include "ExportMacros.h"
-#include "ModuleLoader.h"
+
+#include <typeinfo>
+
 #include "Scene/Scene.h"
 #include "Interfaces/IWindow.h"
-
-#include "Engine/EventSystem.h"
-#include "Engine/ComponentManager.h"
-
-#include "System/AssetsSystem.h"
-#include "System/RenderSystem.h"
-#include "System/InputSystem.h"
-#include "System/InputActionSystem.h"
-
-#include "Scene/CameraComponent.h"
-#include "Scene/TransformComponent.h"
 
 namespace TripleEngineCore {
 	class CORE_API Engine {
@@ -28,49 +16,53 @@ namespace TripleEngineCore {
 			FailedToLoadWindow,
 			ModuleLoadError,
 			FailedInitRenderer,
+			FailedInitEngine,
 			FailedBootstrapResources,
 			FailedBootstrapComponents
 		};
 
 		Engine();
-		virtual ~Engine();
-		virtual ErrorCode start(const char* title, unsigned int width, unsigned int height);
+		~Engine();
+
+		bool init();
+		ErrorCode run(const char* title, unsigned int width, unsigned int height);
 		virtual void onUpdate(float dt);
-		virtual void onRender(float t);
+		void onRender(float t);
 
-		bool bootstrapResources();
-		bool bootstrapComponents();
+		Scene::Scene* getActiveScene();
+		IWindow* getWindow();
+		void setActiveCamera(Scene::Entity camera);
 
-		void setActiveCamera(const Scene::Entity entity);
+		template<typename T>
+		T* getService(){
+			return static_cast<T*>(getServiceRaw(typeid(T)));
+		}
 
-		System::InputSystem* getInputSys() { return _pInputSystem.get(); }
-		System::InputActionSystem* getInputActionSys() { return _pInputActionSystem.get(); }
-		System::AssetsSystem* getAssetSys() { return _pAssetsSystem.get(); }
-		Scene::Scene* getActiveScene() { return _pScene.get(); }
-		EventDispatcher* getEventDispatcher() { return _pEventDispatcher.get(); }
-		IWindow* getWindow() { return _pWindow.get(); }
+		template<typename T>
+		T* getSystem() {
+			return static_cast<T*>(getSystemRaw(typeid(T)));
+		}
 	private:
 		Engine(const Engine&) = delete;
 		Engine(Engine&&) = delete;
 		Engine& operator=(const Engine&) = delete;
 		Engine& operator=(Engine&&) = delete;
 
+		bool bootstrapResources();
+		bool bootstrapComponents();
+
 		void loadSystemCallbacks();
 		void loadAssetsCallbacks();
+
 		const char* getModuleName() const { return "Engine"; }
 
-		std::unique_ptr<IWindow> _pWindow;
-		std::unique_ptr<EventDispatcher> _pEventDispatcher;
-		std::unique_ptr<ComponentManager> _pComponentManager;
-		std::unique_ptr<System::ModuleLoader> _pModuleLoader;
-		std::unique_ptr<System::AssetsSystem> _pAssetsSystem;
-		std::unique_ptr<System::RenderSystem> _pRenderSystem;
-		std::unique_ptr<System::InputSystem> _pInputSystem;
-		std::unique_ptr<System::InputActionSystem> _pInputActionSystem;
-		std::unique_ptr<Scene::Scene> _pScene;
+		void* getServiceRaw(const std::type_info& type);
+		void* getSystemRaw(const std::type_info& type);
 
-		Scene::Entity _cameraEntity;
+		struct Impl;
+		Impl* _impl;
 
+		bool _initialized;
 		bool _isRunning;
 		float _lastTime;
 	};

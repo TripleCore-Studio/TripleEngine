@@ -2,9 +2,9 @@
 #define ISERVICE_SYSTEM_H
 
 namespace TripleEngineCore {
-    class IServiceSystem {
+    class IService {
     public:
-        virtual ~IServiceSystem() = default;
+        virtual ~IService() = default;
         virtual void init() {}
         virtual void shutdown() {}
     };

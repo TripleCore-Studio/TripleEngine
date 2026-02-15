@@ -84,7 +84,7 @@ namespace TripleEngineCore::System {
                     RenderItem item;
 
                     const Asset::Material* mat = _pAssets->getMaterial(p.materialId);
-                    if (!mat) mat = _pAssets->getMaterial(_pAssets->getMaterialId(System::DefaultMaterialName));
+                    if (!mat) mat = _pAssets->getMaterial(_pAssets->getMaterialId(Service::DefaultMaterialName));
                     if (!mat) {
                         TripleLogger::TLogger::ModuleWarn("Core::RenderSystem", "Primitive in mesh({}) skipped", mesh.name);
                         continue;
