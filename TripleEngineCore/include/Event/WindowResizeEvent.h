@@ -7,18 +7,18 @@ namespace TripleEngineCore::Event {
 	class CORE_API WindowResizeEvent : public Event {
 	public:
 		WindowResizeEvent(int width, int height)
-			: width(width), height(height) {
+			: m_width(width), m_height(height) {
 		}
 
 		EventID getTypeID() const override {
 			return typeid(WindowResizeEvent);
 		}
 
-		int getWidth() const { return width; }
-		int getHeight() const { return height; };
+		int getWidth() const { return m_width; }
+		int getHeight() const { return m_height; };
 	private:
-		int width;
-		int height;
+		int m_width;
+		int m_height;
 	};
 }
 

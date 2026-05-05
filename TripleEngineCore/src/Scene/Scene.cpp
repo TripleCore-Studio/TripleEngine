@@ -31,19 +31,19 @@ namespace TripleEngineCore::Scene {
         Entity nextEntity = 1;
     };
 
-    Scene::Scene(void* compSrv) : _impl(new Impl{ static_cast<Service::ComponentService*>(compSrv) }) {}
-    Scene::~Scene() { delete _impl; }
+    Scene::Scene(void* compSrv) : m_impl(new Impl{ static_cast<Service::ComponentService*>(compSrv) }) {}
+    Scene::~Scene() { delete m_impl; }
 
     Entity Scene::createEntity()
     {
-        Entity e = _impl->nextEntity++;
-        _impl->entities.insert(e);
+        Entity e = m_impl->nextEntity++;
+        m_impl->entities.insert(e);
         return e;
     }
 
     Entity Scene::createEntity(const std::string& name) {
-        Entity e = _impl->nextEntity++;
-        _impl->entities.insert(e);
+        Entity e = m_impl->nextEntity++;
+        m_impl->entities.insert(e);
 
         if (!name.empty()) {
             auto comp = addComponent<NameComponent>(e);
@@ -57,12 +57,12 @@ namespace TripleEngineCore::Scene {
 
     void Scene::destroyEntity(Entity e)
     {
-        if (_impl->entities.find(e) == _impl->entities.end())
+        if (m_impl->entities.find(e) == m_impl->entities.end())
             return;
 
-        _impl->entities.erase(e);
+        m_impl->entities.erase(e);
 
-        for (auto& [type, pool] : _impl->pools)
+        for (auto& [type, pool] : m_impl->pools)
         {
             if (e >= pool.sparse.size())
                 continue;
@@ -72,7 +72,7 @@ namespace TripleEngineCore::Scene {
             if (idx == SIZE_MAX || idx >= pool.dense.size() || pool.dense[idx] != e)
                 continue;
 
-            const auto& info = _impl->componentService->getInfo(type);
+            const auto& info = m_impl->componentService->getInfo(type);
 
             size_t last = pool.dense.size() - 1;
 
@@ -115,15 +115,15 @@ namespace TripleEngineCore::Scene {
 
     std::vector<Entity> Scene::getEntities() const
     {
-        return std::vector<Entity>(_impl->entities.begin(), _impl->entities.end());
+        return std::vector<Entity>(m_impl->entities.begin(), m_impl->entities.end());
     }
 
     bool Scene::addChild(Entity parent, Entity child) {
-        if (_impl->entities.find(parent) == _impl->entities.end()) return false;
-        if (_impl->entities.find(child) == _impl->entities.end()) return false;
+        if (m_impl->entities.find(parent) == m_impl->entities.end()) return false;
+        if (m_impl->entities.find(child) == m_impl->entities.end()) return false;
 
-        ComponentTypeID parentComponentID = _impl->componentService->getType<ParentComponent>();
-        ComponentTypeID childrenComponentID = _impl->componentService->getType<ChildrenComponent>();
+        ComponentTypeID parentComponentID = m_impl->componentService->getType<ParentComponent>();
+        ComponentTypeID childrenComponentID = m_impl->componentService->getType<ChildrenComponent>();
 
         auto existingParent = static_cast<ParentComponent*>(getComponent(child, parentComponentID));
         if (existingParent && existingParent->parent != 0) return false;
@@ -145,11 +145,11 @@ namespace TripleEngineCore::Scene {
 
     void* Scene::addComponent(Entity e, ComponentTypeID type)
     {
-        if (_impl->entities.find(e) == _impl->entities.end())
+        if (m_impl->entities.find(e) == m_impl->entities.end())
             return nullptr;
 
-        ComponentPool& pool = _impl->pools[type];
-        const auto& info = _impl->componentService->getInfo(type);
+        ComponentPool& pool = m_impl->pools[type];
+        const auto& info = m_impl->componentService->getInfo(type);
 
         if (pool.data.empty()) {
             pool.type = type;
@@ -178,8 +178,8 @@ namespace TripleEngineCore::Scene {
 
     void* Scene::getComponent(Entity e, ComponentTypeID type)
     {
-        auto poolIt = _impl->pools.find(type);
-        if (poolIt == _impl->pools.end()) return nullptr;
+        auto poolIt = m_impl->pools.find(type);
+        if (poolIt == m_impl->pools.end()) return nullptr;
 
         ComponentPool& pool = poolIt->second;
 
@@ -194,8 +194,8 @@ namespace TripleEngineCore::Scene {
 
     Scene::ComponentViewRaw Scene::getViewRaw(ComponentTypeID type)
     {
-        auto it = _impl->pools.find(type);
-        if (it == _impl->pools.end()) {
+        auto it = m_impl->pools.find(type);
+        if (it == m_impl->pools.end()) {
             return {};
         }
 
@@ -210,8 +210,8 @@ namespace TripleEngineCore::Scene {
 
     size_t Scene::getComponentIndex(ComponentTypeID type, Entity e)
     {
-        auto it = _impl->pools.find(type);
-        if (it == _impl->pools.end()) return SIZE_MAX;
+        auto it = m_impl->pools.find(type);
+        if (it == m_impl->pools.end()) return SIZE_MAX;
 
         ComponentPool& pool = it->second;
         if (e >= pool.sparse.size()) return SIZE_MAX;
@@ -225,8 +225,8 @@ namespace TripleEngineCore::Scene {
 
     void* Scene::getComponentByIndexChecked(size_t index, ComponentTypeID type, Entity expectedEntity)
     {
-        auto it = _impl->pools.find(type);
-        if (it == _impl->pools.end()) return nullptr;
+        auto it = m_impl->pools.find(type);
+        if (it == m_impl->pools.end()) return nullptr;
 
         ComponentPool& pool = it->second;
 
@@ -237,12 +237,12 @@ namespace TripleEngineCore::Scene {
     }
 
     uint32_t Scene::getEntityCount() const {
-        return static_cast<uint32_t>(_impl->entities.size());
+        return static_cast<uint32_t>(m_impl->entities.size());
     }
 
     ComponentTypeID Scene::getComponentTypeID(const std::type_info& type) const
     {
-        return _impl->componentService->getTypeByIndex(std::type_index(type));
+        return m_impl->componentService->getTypeByIndex(std::type_index(type));
     }
 
 } // namespace TripleEngineCore::Scene

@@ -7,16 +7,16 @@ namespace TripleEngineCore::Event {
 	class CORE_API WindowCloseEvent : public Event {
 	public:
 		WindowCloseEvent(const char* title)
-			: _title(const_cast<char*>(title)) {
+			: m_title(const_cast<char*>(title)) {
 		}
 
 		EventID getTypeID() const override {
 			return typeid(WindowCloseEvent);
 		}
 
-		const char* getTitle() const { return _title; }
+		const char* getTitle() const { return m_title; }
 	private:
-		char* _title;
+		char* m_title;
 	};
 }
 

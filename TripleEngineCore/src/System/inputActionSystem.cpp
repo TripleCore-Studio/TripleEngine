@@ -10,19 +10,19 @@ namespace TripleEngineCore::System {
 
 	struct InputActionSystem::Impl
 	{
-		std::unordered_map<std::string, InputAction> _actions;
+		std::unordered_map<std::string, InputAction> m_actions;
 	};
-	InputActionSystem::InputActionSystem(System::InputSystem* inputSystem) : _pInputSystem(inputSystem)
-		, _impl(new Impl())
+	InputActionSystem::InputActionSystem(System::InputSystem* inputSystem) : m_inputSystem(inputSystem)
+		, m_impl(new Impl())
 	{
 	}
 	InputActionSystem::~InputActionSystem()
 	{
-		delete _impl;
+		delete m_impl;
 	}
 	void InputActionSystem::bind(const std::string& name, std::vector<Input::InputTrigger> triggers, std::function<void()> callback)
 	{
-        if (_impl->_actions.find(name) != _impl->_actions.end()) {
+        if (m_impl->m_actions.find(name) != m_impl->m_actions.end()) {
             TripleLogger::TLogger::ModuleWarn("InputActionSystem", "InputAction '{}' already exists, overwriting", name);
         }
 
@@ -30,11 +30,11 @@ namespace TripleEngineCore::System {
         action.triggers = std::move(triggers);
         action.callback = std::move(callback);
 
-        _impl->_actions[name] = std::move(action);
+        m_impl->m_actions[name] = std::move(action);
 	}
 	void InputActionSystem::update(float /*dt*/)
 	{
-        for (auto& [name, action] : _impl->_actions)
+        for (auto& [name, action] : m_impl->m_actions)
         {
             bool allTriggered = true;
 
@@ -58,11 +58,11 @@ namespace TripleEngineCore::System {
             switch (t.state)
             {
             case Input::TriggerState::Pressed:
-                return _pInputSystem->isKeyPressed(t.key);
+                return m_inputSystem->isKeyPressed(t.key);
             case Input::TriggerState::Held:
-                return _pInputSystem->isKeyDown(t.key);
+                return m_inputSystem->isKeyDown(t.key);
             case Input::TriggerState::Released:
-                return _pInputSystem->isKeyReleased(t.key);
+                return m_inputSystem->isKeyReleased(t.key);
             }
             break;
 
@@ -70,11 +70,11 @@ namespace TripleEngineCore::System {
             switch (t.state)
             {
             case Input::TriggerState::Pressed:
-                return _pInputSystem->isMouseButtonPressed(t.mouse);
+                return m_inputSystem->isMouseButtonPressed(t.mouse);
             case Input::TriggerState::Held:
-                return _pInputSystem->isMouseButtonDown(t.mouse);
+                return m_inputSystem->isMouseButtonDown(t.mouse);
             case Input::TriggerState::Released:
-                return _pInputSystem->isMouseButtonReleased(t.mouse);
+                return m_inputSystem->isMouseButtonReleased(t.mouse);
             }
             break;
         }

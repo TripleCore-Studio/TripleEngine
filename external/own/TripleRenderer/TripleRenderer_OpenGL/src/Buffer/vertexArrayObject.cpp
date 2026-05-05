@@ -8,32 +8,32 @@ using namespace TripleEngineCore::Graphics;
 namespace TripleRenderer::GLRenderer::Buffer {
 	VertexArrayObject::VertexArrayObject()
 	{
-		glGenVertexArrays(1, &_vaoID);
+		glGenVertexArrays(1, &m_vaoID);
 	}
 	VertexArrayObject::~VertexArrayObject()
 	{
-		if (_vaoID != 0)
-			glDeleteVertexArrays(1, &_vaoID);
+		if (m_vaoID != 0)
+			glDeleteVertexArrays(1, &m_vaoID);
 	}
 
 	VertexArrayObject::VertexArrayObject(VertexArrayObject&& other) noexcept
-		: _vaoID(other._vaoID)
+		: m_vaoID(other.m_vaoID)
 	{
-		other._vaoID = 0;
+		other.m_vaoID = 0;
 	}
 
 	VertexArrayObject& VertexArrayObject::operator=(VertexArrayObject&& other) noexcept {
 		if (this != &other) {
-			if (_vaoID != 0) glDeleteVertexArrays(1, &_vaoID);
-			_vaoID = other._vaoID;
-			other._vaoID = 0;
+			if (m_vaoID != 0) glDeleteVertexArrays(1, &m_vaoID);
+			m_vaoID = other.m_vaoID;
+			other.m_vaoID = 0;
 		}
 		return *this;
 	}
 
 	void VertexArrayObject::bind() const
 	{
-		glBindVertexArray(_vaoID);
+		glBindVertexArray(m_vaoID);
 	}
 	void VertexArrayObject::unbind() const
 	{

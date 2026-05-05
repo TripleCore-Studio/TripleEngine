@@ -1,10 +1,8 @@
 #ifndef MOUSE_BUTTON_CODE_H
 #define MOUSE_BUTTON_CODE_H
 
-#include "ExportMacros.h"
-
 namespace TripleEngineCore::Input {
-	enum class CORE_API MouseButton {
+	enum class MouseButton {
 		Unknown = -1,
 
 		Left,

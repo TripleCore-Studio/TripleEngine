@@ -17,9 +17,9 @@ namespace TripleRenderer::GLRenderer::Resources {
 
 		void setTexture(const std::string& name, unsigned int textureID, int slot);
 
-		bool isCompiled() const { return _compiled; }
-		std::string getErrorLog() const { return _errorLog; }
-		unsigned int getProgramID() const { return _programID; }
+		bool isCompiled() const { return m_compiled; }
+		std::string getErrorLog() const { return m_errorLog; }
+		unsigned int getProgramID() const { return m_programID; }
 		bool deleteProgram();
 		~GLShader();
 
@@ -29,9 +29,9 @@ namespace TripleRenderer::GLRenderer::Resources {
 		GLShader(GLShader&& other) noexcept;
 		GLShader& operator=(GLShader&& other) noexcept;
 	private:
-		unsigned int _programID;
-		bool _compiled;
-		std::string _errorLog;
+		unsigned int m_programID;
+		bool m_compiled;
+		std::string m_errorLog;
 		unsigned int compileShader(const std::string& source, unsigned int shaderType, std::string& outLog);
 		unsigned int linkProgram(unsigned int vertexShader, unsigned int fragmentShader, std::string& outLog);
 

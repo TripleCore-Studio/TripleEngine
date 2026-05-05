@@ -1,10 +1,8 @@
 #ifndef KEY_CODE_H
 #define KEY_CODE_H
 
-#include "ExportMacros.h"
-
 namespace TripleEngineCore::Input {
-	enum class CORE_API KeyCode : int {
+	enum class KeyCode : int {
 		Unknown = -1,
 
 		A, B, C, D, W, S,

@@ -1,6 +1,8 @@
 #ifndef TEXTURE_DESC_H
 #define TEXTURE_DESC_H
 
+#include <cstdint>
+
 namespace TripleEngineCore::Graphics {
 	struct TextureDesc {
 		uint16_t width;

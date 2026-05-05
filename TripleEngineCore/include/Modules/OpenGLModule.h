@@ -26,9 +26,9 @@ namespace TripleEngineCore {
 			IRenderer* renderer = nullptr;
 		};
 
-		ModuleData _data;
-		std::string _path;
-		std::string _name;
+		ModuleData m_data;
+		std::string m_path;
+		std::string m_name;
 
 		OpenGLRenderModule(const OpenGLRenderModule&) = delete;
 		OpenGLRenderModule& operator=(const OpenGLRenderModule&) = delete;

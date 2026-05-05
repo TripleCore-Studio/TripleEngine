@@ -7,7 +7,7 @@ namespace TripleEngineCore {
 	namespace Service {
 		ModuleService::ModuleService(std::string modulesPath)
 		{
-			this->_modulesPath = modulesPath;
+			this->m_modulesPath = modulesPath;
 		}
 		ModuleService::ErrorCode ModuleService::loadModule(ModuleType type)
 		{
@@ -15,15 +15,15 @@ namespace TripleEngineCore {
 			{
 			case ModuleType::OpenGLRenderer:
 			{
-				if (_modules.find(type) != _modules.end()) {
+				if (m_modules.find(type) != m_modules.end()) {
 					TripleLogger::TLogger::ModuleError(this->getLoaderClassName(), "Module already loaded: OpenGLRenderer");
 					return ErrorCode::ModuleAlreadyLoaded;
 				}
-				auto module = std::make_unique<OpenGLRenderModule>(this->_modulesPath, TRIPLE_OPENGL_MODULE_FILENAME);
+				auto module = std::make_unique<OpenGLRenderModule>(this->m_modulesPath, TRIPLE_OPENGL_MODULE_FILENAME);
 				if (!module->load()) {
 					return ErrorCode::FailedToLoadOpenGL;
 				}
-				_modules[type] = std::move(module);
+				m_modules[type] = std::move(module);
 				return ErrorCode::None;
 				break;
 			}
@@ -34,10 +34,10 @@ namespace TripleEngineCore {
 		}
 		void ModuleService::unloadModule(ModuleType type)
 		{
-			auto it = _modules.find(type);
-			if (it != _modules.end()) {
+			auto it = m_modules.find(type);
+			if (it != m_modules.end()) {
 				it->second->unload();
-				_modules.erase(it);
+				m_modules.erase(it);
 				TripleLogger::TLogger::ModuleInfo(this->getLoaderClassName(), "Module unloaded successfully: \"{}\"", static_cast<int>(type));
 			}
 			else {
@@ -46,8 +46,8 @@ namespace TripleEngineCore {
 		}
 		IModule* ModuleService::getModule(ModuleType type)
 		{
-			auto it = _modules.find(type);
-			if (it != _modules.end()) {
+			auto it = m_modules.find(type);
+			if (it != m_modules.end()) {
 				return it->second.get();
 			}
 			return nullptr;
@@ -58,10 +58,10 @@ namespace TripleEngineCore {
 		}
 		ModuleService::~ModuleService()
 		{
-			for (auto& pair : _modules) {
+			for (auto& pair : m_modules) {
 				pair.second->unload();
 			}
-			_modules.clear();
+			m_modules.clear();
 		}
 	}
 }

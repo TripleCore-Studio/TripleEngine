@@ -2,6 +2,7 @@
 #define GEOMETRY_DESC_H
 
 #include "Graphics/Vertex.h"
+#include <cstdint>
 
 namespace TripleEngineCore::Graphics {
 	struct GeometryDesc {

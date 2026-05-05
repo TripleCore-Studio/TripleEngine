@@ -1,10 +1,8 @@
 #ifndef KEY_ACTION_h
 #define KEY_ACTION_h
 
-#include <ExportMacros.h>
-
 namespace TripleEngineCore::Event {
-	enum class CORE_API KeyAction {
+	enum class KeyAction {
 		Press,
 		Release,
 		Repeat

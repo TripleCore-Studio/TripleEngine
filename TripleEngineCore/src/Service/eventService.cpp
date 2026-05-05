@@ -4,8 +4,8 @@
 namespace TripleEngineCore::Service {
     void EventService::dispatch(Event::Event& event)
     {
-        auto it = listeners.find(event.getTypeID());
-        if (it == listeners.end())
+        auto it = m_listeners.find(event.getTypeID());
+        if (it == m_listeners.end())
             return;
 
         for (auto& fn : it->second)

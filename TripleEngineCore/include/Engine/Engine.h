@@ -42,6 +42,9 @@ namespace TripleEngineCore {
 		T* getSystem() {
 			return static_cast<T*>(getSystemRaw(typeid(T)));
 		}
+
+		struct Impl;
+		Impl* m_impl;
 	private:
 		Engine(const Engine&) = delete;
 		Engine(Engine&&) = delete;
@@ -59,12 +62,9 @@ namespace TripleEngineCore {
 		void* getServiceRaw(const std::type_info& type);
 		void* getSystemRaw(const std::type_info& type);
 
-		struct Impl;
-		Impl* _impl;
-
-		bool _initialized;
-		bool _isRunning;
-		float _lastTime;
+		bool m_isInitialized;
+		bool m_isRunning;
+		float m_lastTime;
 	};
 }
 #endif // APPLICATION_H

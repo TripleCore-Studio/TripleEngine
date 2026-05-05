@@ -9,7 +9,6 @@
 #include <MathCommon.h>
 #include <Utils/TransformUtils.h>
 #include <Event/EngineLoadedEvent.h>
-#include <cmath>
 
 #include <System/InputSystem.h>
 #include <System/InputActionSystem.h>
@@ -17,11 +16,8 @@
 #include <Service/AssetService.h>
 #include <Service/EventService.h>
 
-namespace TEC = TripleEngineCore;
-namespace Math = TEC::TripleMath;
-
-using namespace TEC;
-using namespace Math;
+using namespace TripleEngineCore;
+using namespace TripleMath;
 
 namespace TripleEngineEditor {
 	void EditorApp::onUpdate(float dt)
@@ -94,16 +90,27 @@ namespace TripleEngineEditor {
 		setActiveCamera(camera);
 
 		Service::AssetService* assets = getService<Service::AssetService>();
-		Service::ModelID modelId = assets->loadModelFromFile("demo_model", "assets/models/demo.glb");
 
-		Scene::Entity entity = scene->createEntity();
-		auto meshComp = scene->addComponent<Scene::MeshComponent>(entity);
-		meshComp->modelIndex = modelId;
+		Service::ModelID areaId = assets->loadModelFromFile("area", "assets/models/area.glb");
+		Service::ModelID characterId = assets->loadModelFromFile("character", "assets/models/character.glb");
 
-		auto entityTransform = scene->addComponent<Scene::TransformComponent>(entity);
-		entityTransform->position = TripleMath::Vec3(0, 0, 0);
-		entityTransform->rotationEuler = TripleMath::Vec3(0, 0, 0);
-		entityTransform->scale = TripleMath::Vec3(5.0, 5.0, 5.0);
+		Scene::Entity areaEntity = scene->createEntity();
+		auto meshComp = scene->addComponent<Scene::MeshComponent>(areaEntity);
+		meshComp->modelIndex = areaId;
+
+		auto areaTransform = scene->addComponent<Scene::TransformComponent>(areaEntity);
+		areaTransform->position = TripleMath::Vec3(0, 0, 0);
+		areaTransform->rotationEuler = TripleMath::Vec3(0, 0, 0);
+		areaTransform->scale = TripleMath::Vec3(5.0, 5.0, 5.0);
+
+		Scene::Entity characterEntity = scene->createEntity();
+		auto characterMeshComp = scene->addComponent<Scene::MeshComponent>(characterEntity);
+		characterMeshComp->modelIndex = characterId;
+
+		auto characterTransform = scene->addComponent<Scene::TransformComponent>(characterEntity);
+		characterTransform->position = TripleMath::Vec3(7, -0.25, -1.3);
+		characterTransform->rotationEuler = TripleMath::Vec3(0, 90, 0);
+		characterTransform->scale = TripleMath::Vec3(1.5, 1.5, 1.5);
 	}
 
 	void EditorApp::loadCallbacks()
@@ -116,6 +123,7 @@ namespace TripleEngineEditor {
 		fullscreenTrigger.type = Input::InputTriggerType::Key;
 		fullscreenTrigger.state = Input::TriggerState::Pressed;
 		fullscreenTrigger.key = Input::KeyCode::F11;
+
 		getSystem<System::InputActionSystem>()->bind("ToggleFullscreen", {fullscreenTrigger}, [this]() {
 			getWindow()->setFullscreen(!getWindow()->isFullscreen());
 		});
@@ -124,6 +132,7 @@ namespace TripleEngineEditor {
 		captureMouseTrigger.type = Input::InputTriggerType::Key;
 		captureMouseTrigger.state = Input::TriggerState::Pressed;
 		captureMouseTrigger.key = Input::KeyCode::F10;
+		
 		getSystem<System::InputActionSystem>()->bind("ToggleCaptureMouse", { captureMouseTrigger }, [this]() {
 			getWindow()->setCursorCapture(!getWindow()->isCursorCaptured());
 		});

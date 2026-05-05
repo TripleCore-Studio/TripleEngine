@@ -38,14 +38,14 @@ namespace TripleEngineCore::System {
         TripleMath::Vec2 getMouseDelta() const;
     private:
         struct Impl;
-        Impl* _impl;
+        Impl* m_impl;
 
-        float _mouseX;
-        float _mouseY;
-        float _lastMouseX;
-        float _lastMouseY;
-        bool _firstMouse;
-        TripleMath::Vec2 _mouseDelta;
+        float m_mouseX;
+        float m_mouseY;
+        float m_lastMouseX;
+        float m_lastMouseY;
+        bool m_firstMouse;
+        TripleMath::Vec2 m_mouseDelta;
     };
 
 }

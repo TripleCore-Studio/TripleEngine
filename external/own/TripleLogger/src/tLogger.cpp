@@ -4,7 +4,7 @@
 #include <memory>
 
 namespace {
-    static std::shared_ptr<spdlog::logger> logger;
+    static std::shared_ptr<spdlog::logger> s_logger;
 }
 
 namespace TripleLogger {

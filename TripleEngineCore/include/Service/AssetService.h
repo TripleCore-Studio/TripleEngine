@@ -68,7 +68,7 @@ namespace TripleEngineCore::Service {
         AssetService& operator=(AssetService&&) = default;
     private:
 		struct Impl;
-		Impl* _impl;
+		Impl* m_impl;
 
         void setTextureLoadedCallback(std::function<void(const Asset::Texture*)> cb);
         void setModelLoadedCallback(std::function<void(const Asset::Model*)> cb);
