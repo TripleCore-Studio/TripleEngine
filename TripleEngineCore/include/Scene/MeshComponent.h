@@ -2,6 +2,7 @@
 #define MESH_COMPONENT_H
 
 #include "ExportMacros.h"
+#include <cstdint>
 
 namespace TripleEngineCore::Scene {
     struct MeshComponent {

@@ -4,9 +4,9 @@
 namespace TripleEngineCore {
     OpenGLRenderModule::OpenGLRenderModule(const std::string& modulesPath, const std::string& moduleName)
     {
-		this->_name = moduleName;
+		this->m_name = moduleName;
 #ifdef _WIN32
-		this->_path = modulesPath + "\\" + moduleName;
+		this->m_path = modulesPath + "\\" + moduleName;
 #else
 		this->_path = modulesPath + "/" + moduleName;
 #endif // _WIN32
@@ -14,57 +14,57 @@ namespace TripleEngineCore {
 
     const std::string& TripleEngineCore::OpenGLRenderModule::getModuleName() const
     {
-        return this->_name;
+        return this->m_name;
     }
 
     bool TripleEngineCore::OpenGLRenderModule::load()
     {
-		this->_data.libHandle = IO::DynamicLibrary::Load(this->_path);
-        if (!this->_data.libHandle) {
-            TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to load OpenGL module: \"{}\"", this->_path);
+		this->m_data.libHandle = IO::DynamicLibrary::Load(this->m_path);
+        if (!this->m_data.libHandle) {
+            TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to load OpenGL module: \"{}\"", this->m_path);
 			return false;
         }
 
-		this->_data.createFunc = reinterpret_cast<CreateRendererFunc>(IO::DynamicLibrary::GetSymbol(this->_data.libHandle, "CreateRenderer"));
-        if (!this->_data.createFunc) {
-			TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to find CreateRenderer function in OpenGL module: \"{}\"", this->_path);
+		this->m_data.createFunc = reinterpret_cast<CreateRendererFunc>(IO::DynamicLibrary::GetSymbol(this->m_data.libHandle, "CreateRenderer"));
+        if (!this->m_data.createFunc) {
+			TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to find CreateRenderer function in OpenGL module: \"{}\"", this->m_path);
             this->unload();
             return false;
         }
 
-		this->_data.destroyFunc = reinterpret_cast<DestroyRendererFunc>(IO::DynamicLibrary::GetSymbol(this->_data.libHandle, "DestroyRenderer"));
-        if (!this->_data.destroyFunc) {
-            TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to find DestroyRenderer function in OpenGL module: \"{}\"", this->_path);
+		this->m_data.destroyFunc = reinterpret_cast<DestroyRendererFunc>(IO::DynamicLibrary::GetSymbol(this->m_data.libHandle, "DestroyRenderer"));
+        if (!this->m_data.destroyFunc) {
+            TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to find DestroyRenderer function in OpenGL module: \"{}\"", this->m_path);
             this->unload();
             return false;
         }
 
-		this->_data.renderer = this->_data.createFunc();
-		if (!this->_data.renderer) {
-			TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to create OpenGL renderer from module: \"{}\"", this->_path);
+		this->m_data.renderer = this->m_data.createFunc();
+		if (!this->m_data.renderer) {
+			TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to create OpenGL renderer from module: \"{}\"", this->m_path);
             this->unload();
 			return false;
 		}
-		TripleLogger::TLogger::ModuleInfo(this->getModuleClassName(), "OpenGL module loaded successfully: \"{}\"", this->_path);
+		TripleLogger::TLogger::ModuleInfo(this->getModuleClassName(), "OpenGL module loaded successfully: \"{}\"", this->m_path);
 		return true;
     }
 
     void OpenGLRenderModule::unload()
     {
-		if (this->_data.destroyFunc && this->_data.renderer) {
-			this->_data.destroyFunc(this->_data.renderer);
-			this->_data.renderer = nullptr;
+		if (this->m_data.destroyFunc && this->m_data.renderer) {
+			this->m_data.destroyFunc(this->m_data.renderer);
+			this->m_data.renderer = nullptr;
 		}
-		if (this->_data.libHandle) {
-			IO::DynamicLibrary::Unload(this->_data.libHandle);
-			this->_data.libHandle = nullptr;
-            TripleLogger::TLogger::ModuleWarn(this->getModuleClassName(), "OpenGL module unloaded: \"{}\"", this->_path);
+		if (this->m_data.libHandle) {
+			IO::DynamicLibrary::Unload(this->m_data.libHandle);
+			this->m_data.libHandle = nullptr;
+            TripleLogger::TLogger::ModuleWarn(this->getModuleClassName(), "OpenGL module unloaded: \"{}\"", this->m_path);
 		}
     }
 
     IRenderer* OpenGLRenderModule::getRenderer() const
     {
-        return this->_data.renderer;
+        return this->m_data.renderer;
     }
 
     std::string OpenGLRenderModule::getModuleClassName()

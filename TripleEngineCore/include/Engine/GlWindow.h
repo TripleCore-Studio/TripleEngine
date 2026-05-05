@@ -29,7 +29,7 @@ namespace TripleEngineCore {
 		void setSize(uint32_t width, uint32_t height) override;
 		void setPosition(uint32_t x, uint32_t y) override;
 		float getDPIScale() const override;
-		void setCursorCapture(bool capture);
+		void setCursorCapture(bool capture) override;
 		bool isCursorCaptured() const override;
 		double getTime() const override;
 		void shutdown() override;
@@ -58,8 +58,8 @@ namespace TripleEngineCore {
 			IEventSink* eventSink = nullptr;
 		};
 
-		WindowData _data;
-		GLFWwindow* _pWindow;
+		WindowData m_data;
+		GLFWwindow* m_window;
 	};
 }
 #endif // GLWINDOW_H

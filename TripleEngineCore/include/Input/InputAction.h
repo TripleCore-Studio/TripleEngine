@@ -6,12 +6,12 @@
 #include "MouseButton.h"
 
 namespace TripleEngineCore::Input {
-    enum class CORE_API InputTriggerType {
+    enum class InputTriggerType {
         Key,
         MouseButton
     };
 
-    enum class CORE_API TriggerState {
+    enum class TriggerState {
         Pressed,
         Held,
         Released

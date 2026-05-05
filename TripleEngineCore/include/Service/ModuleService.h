@@ -49,8 +49,8 @@ namespace TripleEngineCore {
 			ModuleService(ModuleService&&) = delete;
 			ModuleService& operator=(ModuleService&&) = delete;
 
-			std::unordered_map<ModuleType, std::unique_ptr<IModule>> _modules;
-			std::string _modulesPath;
+			std::unordered_map<ModuleType, std::unique_ptr<IModule>> m_modules;
+			std::string m_modulesPath;
 		};
 	}
 }

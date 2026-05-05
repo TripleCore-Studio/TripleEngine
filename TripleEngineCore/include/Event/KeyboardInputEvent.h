@@ -9,24 +9,24 @@ namespace TripleEngineCore::Event {
 	class CORE_API KeyboardInputEvent : public Event {
 	public:
 		KeyboardInputEvent(Input::KeyCode key, KeyAction action, int mods)
-			: key(key), action(action), mods(mods) {
+			: m_key(key), m_action(action), m_mods(mods) {
 		}
 
 		EventID getTypeID() const override {
 			return typeid(KeyboardInputEvent);
 		}
 
-		Input::KeyCode getKey() const { return key; }
-		KeyAction getAction() const { return action; }
-		int getMods() const { return mods; }
+		Input::KeyCode getKey() const { return m_key; }
+		KeyAction getAction() const { return m_action; }
+		int getMods() const { return m_mods; }
 
-		bool isPressed() const { return action == KeyAction::Press; }
-		bool isReleased() const { return action == KeyAction::Release; }
-		bool isRepeat() const { return action == KeyAction::Repeat; }
+		bool isPressed() const { return m_action == KeyAction::Press; }
+		bool isReleased() const { return m_action == KeyAction::Release; }
+		bool isRepeat() const { return m_action == KeyAction::Repeat; }
 	private:
-		Input::KeyCode key;
-		KeyAction action;
-		int mods;
+		Input::KeyCode m_key;
+		KeyAction m_action;
+		int m_mods;
 	};
 }
 

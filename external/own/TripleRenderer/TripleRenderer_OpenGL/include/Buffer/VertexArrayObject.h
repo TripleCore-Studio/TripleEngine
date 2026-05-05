@@ -11,7 +11,7 @@ namespace TripleRenderer::GLRenderer::Buffer {
 		~VertexArrayObject();
 		void bind() const;
 		void unbind() const;
-		unsigned int getID() const { return _vaoID; }
+		unsigned int getID() const { return m_vaoID; }
 		void setData(const VertexBufferObject& vbo);
 		void setIndexData(const IndexBufferObject& ibo);
 
@@ -22,7 +22,7 @@ namespace TripleRenderer::GLRenderer::Buffer {
 
 		VertexArrayObject& operator=(VertexArrayObject&& other) noexcept;
 	private:
-		unsigned int _vaoID;
+		unsigned int m_vaoID;
 	};
 }
 

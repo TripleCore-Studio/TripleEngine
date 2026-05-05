@@ -28,8 +28,8 @@ namespace TripleEngineCore::System {
         bool checkTrigger(const Input::InputTrigger& t);
 
         struct Impl;
-		Impl* _impl;
-		System::InputSystem* _pInputSystem;
+		Impl* m_impl;
+		System::InputSystem* m_inputSystem;
     };
 
 }

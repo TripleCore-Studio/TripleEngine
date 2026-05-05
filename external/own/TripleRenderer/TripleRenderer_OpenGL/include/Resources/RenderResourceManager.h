@@ -29,10 +29,10 @@ namespace TripleRenderer::GLRenderer::Resources {
 
 		void bindMaterial(tec::Graphics::RenderMaterial& material);
 	private:
-		std::unordered_map<tec::GPUHandle, GLGeometry> _primitiveCache;
-		std::unordered_map<tec::GPUHandle, GLTexture> _textureCache;
-		std::unordered_map<tec::GPUHandle, GLShader> _shaderCache;
-		tec::GPUHandle _nextHandle = 0;
+		std::unordered_map<tec::GPUHandle, GLGeometry> m_primitiveCache;
+		std::unordered_map<tec::GPUHandle, GLTexture> m_textureCache;
+		std::unordered_map<tec::GPUHandle, GLShader> m_shaderCache;
+		tec::GPUHandle m_nextHandle = 0;
 	};
 }
 

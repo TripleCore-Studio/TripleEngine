@@ -23,16 +23,16 @@ namespace TripleRenderer::GLRenderer
 		virtual bool initGlad(void* loader) override;
 		virtual void SetViewport(int x, int y, int width, int height) override;
 
-		virtual tec::GPUHandle UploadTexture(const tecg::TextureDesc& texture);
-		virtual tec::GPUHandle UploadShader(const tecg::ShaderDesc& shader);
-		virtual tec::GPUHandle UploadGeometry(const tecg::GeometryDesc& geometry);
+		virtual tec::GPUHandle UploadTexture(const tecg::TextureDesc& texture) override;
+		virtual tec::GPUHandle UploadShader(const tecg::ShaderDesc& shader) override;
+		virtual tec::GPUHandle UploadGeometry(const tecg::GeometryDesc& geometry) override;
 
-		virtual bool UnloadTexture(tec::GPUHandle handle);
-		virtual bool UnloadShader(tec::GPUHandle handle);
-		virtual bool UnloadGeometry(tec::GPUHandle handle);
+		virtual bool UnloadTexture(tec::GPUHandle handle) override;
+		virtual bool UnloadShader(tec::GPUHandle handle) override;
+		virtual bool UnloadGeometry(tec::GPUHandle handle) override;
 	private:
-		bool _initGlad = false;
-		std::unique_ptr<Resources::RenderResourceManager> _pResourceManager;
+		bool m_initGlad = false;
+		std::unique_ptr<Resources::RenderResourceManager> m_resourceManager;
 	};
 }
 

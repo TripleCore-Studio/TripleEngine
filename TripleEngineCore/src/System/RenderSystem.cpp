@@ -30,8 +30,8 @@ namespace TripleEngineCore::System {
             Graphics::RenderCommand cmd;
             cmd.worldMat = world;
 
-            if (meshComp->modelIndex != INVALID_INDEX && _pAssets != nullptr) {
-                const Asset::Model* model = _pAssets->getModel(meshComp->modelIndex);
+            if (meshComp->modelIndex != INVALID_INDEX && m_assets != nullptr) {
+                const Asset::Model* model = m_assets->getModel(meshComp->modelIndex);
                 buildRenderCmd(cmd, model);
             }
 
@@ -50,22 +50,22 @@ namespace TripleEngineCore::System {
         switch (type) {
         case ResourceType::Texture:
         {
-            auto it = _uploadedTextures.find(id);
-            if (it == _uploadedTextures.end()) return false;
+            auto it = m_uploadedTextures.find(id);
+            if (it == m_uploadedTextures.end()) return false;
             out = it->second;
             return true;
         }
         case ResourceType::Model:
         {
-            auto it = _uploadedModels.find(id);
-            if (it == _uploadedModels.end()) return false;
+            auto it = m_uploadedModels.find(id);
+            if (it == m_uploadedModels.end()) return false;
             out = it->second;
             return true;
         }
         case ResourceType::Shader:
         {
-            auto it = _uploadedShaders.find(id);
-            if (it == _uploadedShaders.end()) return false;
+            auto it = m_uploadedShaders.find(id);
+            if (it == m_uploadedShaders.end()) return false;
             out = it->second;
             return true;
         }
@@ -83,8 +83,8 @@ namespace TripleEngineCore::System {
                 for (auto& p : mesh.primitives) {
                     RenderItem item;
 
-                    const Asset::Material* mat = _pAssets->getMaterial(p.materialId);
-                    if (!mat) mat = _pAssets->getMaterial(_pAssets->getMaterialId(Service::DefaultMaterialName));
+                    const Asset::Material* mat = m_assets->getMaterial(p.materialId);
+                    if (!mat) mat = m_assets->getMaterial(m_assets->getMaterialId(Service::DefaultMaterialName));
                     if (!mat) {
                         TripleLogger::TLogger::ModuleWarn("Core::RenderSystem", "Primitive in mesh({}) skipped", mesh.name);
                         continue;
@@ -113,41 +113,41 @@ namespace TripleEngineCore::System {
     }
 
     void RenderSystem::uploadTexture(const Asset::Texture* texture) {
-        if (texture && _pRenderer) {
-            auto it = _uploadedTextures.find(texture->id);
-            if (it == _uploadedTextures.end()) {
+        if (texture && m_renderer) {
+            auto it = m_uploadedTextures.find(texture->id);
+            if (it == m_uploadedTextures.end()) {
                 Graphics::TextureDesc desc;
                 desc.width = texture->width;
                 desc.height = texture->height;
                 desc.channels = texture->channels;
                 desc.data = texture->pixels.data();
-                GPUHandle h = _pRenderer->UploadTexture(desc);
-                _uploadedTextures[texture->id] = h;
+                GPUHandle h = m_renderer->UploadTexture(desc);
+                m_uploadedTextures[texture->id] = h;
             }
         }
     }
 
     void RenderSystem::uploadGeometry(const Asset::Model* model) {
-        auto it = _uploadedModels.find(model->id);
-        if (it != _uploadedModels.end()) return;
+        auto it = m_uploadedModels.find(model->id);
+        if (it != m_uploadedModels.end()) return;
         Graphics::GeometryDesc desc;
         desc.vertices = model->vertices.data();
         desc.vertexCount = model->vertices.size();
         desc.indices = model->indices.data();
         desc.indexCount = model->indices.size();
-        GPUHandle h = _pRenderer->UploadGeometry(desc);
-        _uploadedModels[model->id] = h;
+        GPUHandle h = m_renderer->UploadGeometry(desc);
+        m_uploadedModels[model->id] = h;
     }
 
     void RenderSystem::uploadShader(const Asset::Shader* shader) {
-        if (shader && _pRenderer) {
-            auto it = _uploadedShaders.find(shader->id);
-            if (it == _uploadedShaders.end()) {
+        if (shader && m_renderer) {
+            auto it = m_uploadedShaders.find(shader->id);
+            if (it == m_uploadedShaders.end()) {
                 Graphics::ShaderDesc desc;
                 desc.vCode = shader->vertexSource.c_str();
                 desc.fCode = shader->fragmentSource.c_str();
-                GPUHandle h = _pRenderer->UploadShader(desc);
-                _uploadedShaders[shader->id] = h;
+                GPUHandle h = m_renderer->UploadShader(desc);
+                m_uploadedShaders[shader->id] = h;
             }
         }
     }

@@ -78,23 +78,23 @@ namespace TripleEngineCore::Service {
 
     struct AssetService::Impl
     {
-        Asset::AssetStorage<Asset::Model> models;
-        Asset::AssetStorage<Asset::Shader> shaders;
-        Asset::AssetStorage<Asset::Material> materials;
-        Asset::AssetStorage<Asset::Texture> textures;
+        Asset::AssetStorage<Asset::Model> m_models;
+        Asset::AssetStorage<Asset::Shader> m_shaders;
+        Asset::AssetStorage<Asset::Material> m_materials;
+        Asset::AssetStorage<Asset::Texture> m_textures;
 
-        std::function<void(const Asset::Texture*)> _onTextureLoaded;
-        std::function<void(const Asset::Model*)>  _onModelLoaded;
-        std::function<void(const Asset::Shader*)> _onShaderLoaded;
+        std::function<void(const Asset::Texture*)> m_onTextureLoaded;
+        std::function<void(const Asset::Model*)>  m_onModelLoaded;
+        std::function<void(const Asset::Shader*)> m_onShaderLoaded;
     };
 
-    AssetService::AssetService() : _impl(new Impl()) {}
-	AssetService::~AssetService() { delete _impl; }
+    AssetService::AssetService() : m_impl(new Impl()) {}
+	AssetService::~AssetService() { delete m_impl; }
 
     ModelID AssetService::loadModelFromFile(const std::string& name, const std::string& path)
     {
-        if (_impl->models.exists(name))
-            return _impl->models.getID(name);
+        if (m_impl->m_models.exists(name))
+            return m_impl->m_models.getID(name);
 
         Utils::AssimpHelper::LoadedModel loadedModel = Utils::AssimpHelper::LoadModel(path);
         if (loadedModel.meshes.size() <= 0) {
@@ -107,47 +107,47 @@ namespace TripleEngineCore::Service {
 		processMeshes(engineModel.get(), loadedModel, this);
 
 		auto ptr = engineModel.get();
-        Asset::AssetID id = _impl->models.add(name, std::move(engineModel));
+        Asset::AssetID id = m_impl->m_models.add(name, std::move(engineModel));
 
-        if (_impl->_onModelLoaded) {
-            _impl->_onModelLoaded(ptr);
+        if (m_impl->m_onModelLoaded) {
+            m_impl->m_onModelLoaded(ptr);
         }
 
         return id;
     }
 
     ModelID AssetService::loadModelFromModel(const std::string& name, Model&& model) {
-        if (_impl->models.exists(name))
-            return _impl->models.getID(name);
+        if (m_impl->m_models.exists(name))
+            return m_impl->m_models.getID(name);
 
         auto _model = std::make_unique<Model>(std::move(model));
 
 		auto ptr = _model.get();
-        Asset::AssetID id = _impl->models.add(name, std::move(_model));
+        Asset::AssetID id = m_impl->m_models.add(name, std::move(_model));
 
-        if (_impl->_onModelLoaded) {
-            _impl->_onModelLoaded(ptr);
+        if (m_impl->m_onModelLoaded) {
+            m_impl->m_onModelLoaded(ptr);
         }
 
         return id;
     }
 
     ModelID AssetService::getModelId(const std::string& name) const {
-        return _impl->models.getID(name);
+        return m_impl->m_models.getID(name);
     }
 
     const Model* AssetService::getModel(ModelID id) const {
-        return _impl->models.get(id);
+        return m_impl->m_models.get(id);
     }
 
     Asset::Model* AssetService::getModelMutable(ModelID id)
     {
-        return _impl->models.getMutable(id);
+        return m_impl->m_models.getMutable(id);
     }
 
     ShaderID AssetService::loadShaderFromFile(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath) {
-        if (_impl->shaders.exists(name))
-            return _impl->shaders.getID(name);
+        if (m_impl->m_shaders.exists(name))
+            return m_impl->m_shaders.getID(name);
 
         std::ifstream vsFile(vertexPath);
         std::ifstream fsFile(fragmentPath);
@@ -165,43 +165,43 @@ namespace TripleEngineCore::Service {
         shader->fragmentSource = fsStream.str();
 
 		auto ptr = shader.get();
-        Asset::AssetID id = _impl->shaders.add(name, std::move(shader));
+        Asset::AssetID id = m_impl->m_shaders.add(name, std::move(shader));
 
-        if(_impl->_onShaderLoaded) {
-            _impl->_onShaderLoaded(ptr);
+        if(m_impl->m_onShaderLoaded) {
+            m_impl->m_onShaderLoaded(ptr);
 		}
 
         return id;
     }
 
     ShaderID AssetService::getShaderId(const std::string& name) const {
-        return _impl->shaders.getID(name);
+        return m_impl->m_shaders.getID(name);
     }
 
     const Shader* AssetService::getShader(ShaderID id) const {
-        return _impl->shaders.get(id);
+        return m_impl->m_shaders.get(id);
     }
 
     MaterialID AssetService::createMaterial(const std::string& name, const Material& material) {
-        if (_impl->materials.exists(name))
-            return _impl->materials.getID(name);
+        if (m_impl->m_materials.exists(name))
+            return m_impl->m_materials.getID(name);
 
         auto ptr = std::make_unique<Material>(material);
-        return _impl->materials.add(name, std::move(ptr));
+        return m_impl->m_materials.add(name, std::move(ptr));
     }
 
     MaterialID AssetService::getMaterialId(const std::string& name) const {
-        return _impl->materials.getID(name);
+        return m_impl->m_materials.getID(name);
     }
 
     const Material* AssetService::getMaterial(MaterialID id) const {
-        return _impl->materials.get(id);
+        return m_impl->m_materials.get(id);
     }
 
     TextureID AssetService::loadTexture(const std::string& name, Asset::Texture&& texture)
     {
-        if (_impl->textures.exists(name))
-            return _impl->textures.getID(name);
+        if (m_impl->m_textures.exists(name))
+            return m_impl->m_textures.getID(name);
 
         if (texture.pixels.empty()) {
             TripleLogger::TLogger::ModuleError("AssetService", "The {} texture is empty", name);
@@ -210,18 +210,18 @@ namespace TripleEngineCore::Service {
 
 		auto _texture = std::make_unique<Asset::Texture>(std::move(texture));
         auto ptr = _texture.get();
-        Asset::AssetID id = _impl->textures.add(name, std::move(_texture));
+        Asset::AssetID id = m_impl->m_textures.add(name, std::move(_texture));
 
-        if (_impl->_onTextureLoaded) {
-            _impl->_onTextureLoaded(ptr);
+        if (m_impl->m_onTextureLoaded) {
+            m_impl->m_onTextureLoaded(ptr);
         }
 
 		return id;
     }
 
     TextureID AssetService::loadTextureFromFile(const std::string& name, const std::string& path) {
-        if (_impl->textures.exists(name))
-            return _impl->textures.getID(name);
+        if (m_impl->m_textures.exists(name))
+            return m_impl->m_textures.getID(name);
 
         stbi_set_flip_vertically_on_load(true);
 
@@ -241,25 +241,25 @@ namespace TripleEngineCore::Service {
         stbi_image_free(pixels);
 
 		auto ptr = texture.get();
-        Asset::AssetID id = _impl->textures.add(name, std::move(texture));
+        Asset::AssetID id = m_impl->m_textures.add(name, std::move(texture));
 
-        if (_impl->_onTextureLoaded) {
-            _impl->_onTextureLoaded(ptr);
+        if (m_impl->m_onTextureLoaded) {
+            m_impl->m_onTextureLoaded(ptr);
 		}
 
         return id;
     }
 
     TextureID AssetService::getTextureId(const std::string& name) const {
-        return _impl->textures.getID(name);
+        return m_impl->m_textures.getID(name);
     }
 
     TextureID AssetService::genSolidTexture(
         const std::string& name,
         uint8_t r, uint8_t g, uint8_t b, uint8_t a
     ) {
-        if (_impl->textures.exists(name))
-            return _impl->textures.getID(name);
+        if (m_impl->m_textures.exists(name))
+            return m_impl->m_textures.getID(name);
 
         auto tex = std::make_unique<Asset::Texture>();
         tex->width = 1;
@@ -268,17 +268,17 @@ namespace TripleEngineCore::Service {
         tex->pixels = { r, g, b, a };
 
 		auto ptr = tex.get();
-        Asset::AssetID id = _impl->textures.add(name, std::move(tex));
+        Asset::AssetID id = m_impl->m_textures.add(name, std::move(tex));
 
-        if (_impl->_onTextureLoaded) {
-            _impl->_onTextureLoaded(ptr);
+        if (m_impl->m_onTextureLoaded) {
+            m_impl->m_onTextureLoaded(ptr);
         }
 
         return id;
     }
 
     const Texture* AssetService::getTexture(TextureID id) const {
-        return _impl->textures.get(id);
+        return m_impl->m_textures.get(id);
     }
 
     bool AssetService::loadDefaultAssets()
@@ -321,16 +321,16 @@ namespace TripleEngineCore::Service {
 
     void AssetService::setTextureLoadedCallback(std::function<void(const Asset::Texture*)> cb)
     {
-        _impl->_onTextureLoaded = std::move(cb);
+        m_impl->m_onTextureLoaded = std::move(cb);
     }
 
     void AssetService::setModelLoadedCallback(std::function<void(const Asset::Model*)> cb)
     {
-        _impl->_onModelLoaded = std::move(cb);
+        m_impl->m_onModelLoaded = std::move(cb);
     }
 
     void AssetService::setShaderLoadedCallback(std::function<void(const Asset::Shader*)> cb)
     {
-        _impl->_onShaderLoaded = std::move(cb);
+        m_impl->m_onShaderLoaded = std::move(cb);
     }
 }

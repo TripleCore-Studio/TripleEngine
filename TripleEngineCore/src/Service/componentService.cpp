@@ -7,22 +7,22 @@ namespace TripleEngineCore::Service {
             throw std::invalid_argument("Invalid component registration");
         }
 
-        Scene::ComponentTypeID id = _nextID++;
-        _registry[id] = { size, align, construct, destruct, move };
+        Scene::ComponentTypeID id = m_nextID++;
+        m_registry[id] = { size, align, construct, destruct, move };
         return id;
     }
 
     const ComponentInfo& ComponentService::getInfo(Scene::ComponentTypeID id) const {
-        auto it = _registry.find(id);
-        if (it == _registry.end()) {
+        auto it = m_registry.find(id);
+        if (it == m_registry.end()) {
             throw std::runtime_error("ComponentTypeID not registered");
         }
         return it->second;
     }
     Scene::ComponentTypeID ComponentService::getTypeByIndex(const std::type_index& index) const
     {
-        auto it = _typeMap.find(index);
-        if (it == _typeMap.end()) {
+        auto it = m_typeMap.find(index);
+        if (it == m_typeMap.end()) {
             return Scene::INVALID_COMPONENT_TYPE_ID;
         }
         return it->second;

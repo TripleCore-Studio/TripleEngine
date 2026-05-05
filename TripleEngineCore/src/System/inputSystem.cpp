@@ -8,47 +8,47 @@
 namespace TripleEngineCore::System {
 	struct InputSystem::Impl
 	{
-		std::unordered_map<Input::KeyCode, bool> _keys;
-		std::unordered_map<Input::KeyCode, bool> _keysPressed;
-		std::unordered_map<Input::KeyCode, bool> _keysReleased;
+		std::unordered_map<Input::KeyCode, bool> m_keys;
+		std::unordered_map<Input::KeyCode, bool> m_keysPressed;
+		std::unordered_map<Input::KeyCode, bool> m_keysReleased;
 
-		std::unordered_map<Input::MouseButton, bool> _mouseButtons;
-		std::unordered_map<Input::MouseButton, bool> _mouseButtonsPressed;
-		std::unordered_map<Input::MouseButton, bool> _mouseButtonsReleased;
+		std::unordered_map<Input::MouseButton, bool> m_mouseButtons;
+		std::unordered_map<Input::MouseButton, bool> m_mouseButtonsPressed;
+		std::unordered_map<Input::MouseButton, bool> m_mouseButtonsReleased;
 	};
 
 	InputSystem::InputSystem() : 
-		_impl(new Impl()),
-		_mouseX(0),
-		_mouseY(0),
-		_lastMouseX(0),
-		_lastMouseY(0),
-		_mouseDelta(0, 0),
-		_firstMouse(true)
+		m_impl(new Impl()),
+		m_mouseX(0),
+		m_mouseY(0),
+		m_lastMouseX(0),
+		m_lastMouseY(0),
+		m_mouseDelta(0, 0),
+		m_firstMouse(true)
 	{}
 
-	InputSystem::~InputSystem() { delete _impl; }
+	InputSystem::~InputSystem() { delete m_impl; }
 
 	void InputSystem::init()
 	{
-		_impl->_keys.clear();
-		_impl->_keysPressed.clear();
+		m_impl->m_keys.clear();
+		m_impl->m_keysPressed.clear();
 
-		_mouseX = _mouseY = 0.0f;
-		_lastMouseX = _lastMouseY = 0.0f;
-		_mouseDelta = TripleMath::Vec2(0, 0);
-		_firstMouse = true;
+		m_mouseX = m_mouseY = 0.0f;
+		m_lastMouseX = m_lastMouseY = 0.0f;
+		m_mouseDelta = TripleMath::Vec2(0, 0);
+		m_firstMouse = true;
 	}
 
 	void InputSystem::update(float /*dt*/)
 	{
-		_impl->_keysPressed.clear();
-		_impl->_keysReleased.clear();
+		m_impl->m_keysPressed.clear();
+		m_impl->m_keysReleased.clear();
 
-		_impl->_mouseButtonsPressed.clear();
-		_impl->_mouseButtonsReleased.clear();
+		m_impl->m_mouseButtonsPressed.clear();
+		m_impl->m_mouseButtonsReleased.clear();
 
-		_mouseDelta = TripleMath::Vec2(0, 0);
+		m_mouseDelta = TripleMath::Vec2(0, 0);
 	}
 
 	void InputSystem::onKeyboard(Event::KeyboardInputEvent& ke)
@@ -57,32 +57,32 @@ namespace TripleEngineCore::System {
 
 		if (ke.isPressed())
 		{
-			if (!_impl->_keys[key])
-				_impl->_keysPressed[key] = true;
+			if (!m_impl->m_keys[key])
+				m_impl->m_keysPressed[key] = true;
 
-			_impl->_keys[key] = true;
+			m_impl->m_keys[key] = true;
 		}
 		else if (ke.isReleased())
 		{
-			_impl->_keys[key] = false;
-			_impl->_keysReleased[key] = true;
+			m_impl->m_keys[key] = false;
+			m_impl->m_keysReleased[key] = true;
 		}
 	}
 
 	void InputSystem::onMouseMove(Event::MouseMoveEvent& me)
 	{
-		if (_firstMouse) {
-			_mouseX = _lastMouseX = me.getX();
-			_mouseY = _lastMouseY = me.getY();
-			_firstMouse = false;
+		if (m_firstMouse) {
+			m_mouseX = m_lastMouseX = me.getX();
+			m_mouseY = m_lastMouseY = me.getY();
+			m_firstMouse = false;
 		}
 		else {
-			_mouseDelta = TripleMath::Vec2(
-				me.getX() - _mouseX,
-				_mouseY - me.getY()
+			m_mouseDelta = TripleMath::Vec2(
+				me.getX() - m_mouseX,
+				m_mouseY - me.getY()
 			);
-			_mouseX = me.getX();
-			_mouseY = me.getY();
+			m_mouseX = me.getX();
+			m_mouseY = me.getY();
 		}
 	}
 
@@ -92,20 +92,20 @@ namespace TripleEngineCore::System {
 
 		if (me.isPressed())
 		{
-			_impl->_mouseButtons[btn] = true;
-			_impl->_mouseButtonsPressed[btn] = true;
+			m_impl->m_mouseButtons[btn] = true;
+			m_impl->m_mouseButtonsPressed[btn] = true;
 		}
 		else if (me.isReleased())
 		{
-			_impl->_mouseButtons[btn] = false;
-			_impl->_mouseButtonsReleased[btn] = true;
+			m_impl->m_mouseButtons[btn] = false;
+			m_impl->m_mouseButtonsReleased[btn] = true;
 		}
 	}
 
 	bool InputSystem::isKeyDown(Input::KeyCode key) const
 	{
-		auto it = _impl->_keys.find(key);
-		if (it == _impl->_keys.end())
+		auto it = m_impl->m_keys.find(key);
+		if (it == m_impl->m_keys.end())
 			return false;
 
 		return it->second;
@@ -113,8 +113,8 @@ namespace TripleEngineCore::System {
 
 	bool InputSystem::isKeyPressed(Input::KeyCode key) const
 	{
-		auto it = _impl->_keysPressed.find(key);
-		if (it == _impl->_keysPressed.end())
+		auto it = m_impl->m_keysPressed.find(key);
+		if (it == m_impl->m_keysPressed.end())
 			return false;
 
 		return it->second;
@@ -122,8 +122,8 @@ namespace TripleEngineCore::System {
 
 	bool InputSystem::isKeyReleased(Input::KeyCode key) const
 	{
-		auto it = _impl->_keysReleased.find(key);
-		if (it == _impl->_keysReleased.end())
+		auto it = m_impl->m_keysReleased.find(key);
+		if (it == m_impl->m_keysReleased.end())
 			return false;
 
 		return it->second;
@@ -131,8 +131,8 @@ namespace TripleEngineCore::System {
 
 	bool InputSystem::isMouseButtonDown(Input::MouseButton btn) const
 	{
-		auto it = _impl->_mouseButtons.find(btn);
-		if (it == _impl->_mouseButtons.end())
+		auto it = m_impl->m_mouseButtons.find(btn);
+		if (it == m_impl->m_mouseButtons.end())
 			return false;
 
 		return it->second;
@@ -140,8 +140,8 @@ namespace TripleEngineCore::System {
 
 	bool InputSystem::isMouseButtonPressed(Input::MouseButton btn) const
 	{
-		auto it = _impl->_mouseButtonsPressed.find(btn);
-		if (it == _impl->_mouseButtonsPressed.end())
+		auto it = m_impl->m_mouseButtonsPressed.find(btn);
+		if (it == m_impl->m_mouseButtonsPressed.end())
 			return false;
 
 		return it->second;
@@ -149,8 +149,8 @@ namespace TripleEngineCore::System {
 
 	bool InputSystem::isMouseButtonReleased(Input::MouseButton btn) const
 	{
-		auto it = _impl->_mouseButtonsReleased.find(btn);
-		if (it == _impl->_mouseButtonsReleased.end())
+		auto it = m_impl->m_mouseButtonsReleased.find(btn);
+		if (it == m_impl->m_mouseButtonsReleased.end())
 			return false;
 
 		return it->second;
@@ -158,6 +158,6 @@ namespace TripleEngineCore::System {
 
 	TripleMath::Vec2 InputSystem::getMouseDelta() const
 	{
-		return _mouseDelta;
+		return m_mouseDelta;
 	}
 }

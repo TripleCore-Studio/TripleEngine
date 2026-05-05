@@ -18,12 +18,12 @@ namespace TripleRenderer::GLRenderer::Buffer {
 
         void setData(const void* data, unsigned int size, Usage usage = Usage::STATIC_DRAW);
 
-        unsigned int getID() const { return _iboId; }
+        unsigned int getID() const { return m_iboId; }
 
         IndexBufferObject(IndexBufferObject&& other) noexcept;
         IndexBufferObject& operator=(IndexBufferObject&& other) noexcept;
     private:
-        unsigned int _iboId;
+        unsigned int m_iboId;
 
         IndexBufferObject(const IndexBufferObject&) = delete;
         IndexBufferObject& operator=(const IndexBufferObject&) = delete;

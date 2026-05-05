@@ -1,7 +1,6 @@
 #include "OpenGLRenderer.h"
 #include <glad/glad.h>
 #include <math.h>
-#include <unordered_map>
 #include "TLogger.h"
 
 #include "Graphics/CameraData.h"
@@ -10,7 +9,7 @@ using namespace TripleEngineCore::TripleMath;
 
 namespace TripleRenderer::GLRenderer {
     void OpenGLRenderer::Initialize() {
-        if (!_initGlad) {
+        if (!m_initGlad) {
             TripleLogger::TLogger::ModuleCritical("OpenGLRenderer", "GLAD not initialized. Call initGlad() before Initialize().");
             return;
         }
@@ -18,12 +17,12 @@ namespace TripleRenderer::GLRenderer {
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-        _pResourceManager = std::make_unique<Resources::RenderResourceManager>();
+        m_resourceManager = std::make_unique<Resources::RenderResourceManager>();
     }
 
     bool OpenGLRenderer::initGlad(void* loader) {
         bool result = gladLoadGLLoader((GLADloadproc)loader) != 0;
-        _initGlad = result;
+        m_initGlad = result;
         return result;
     }
 
@@ -40,12 +39,13 @@ namespace TripleRenderer::GLRenderer {
         for (auto& cmd : ctx.commands) {
             Mat4 MVP = VP * cmd.worldMat;
             for (auto& item : cmd.items) {
-                const Resources::GLGeometry* geom = _pResourceManager->getGLGeometry(item.geometry);
-                Resources::GLShader* shader = _pResourceManager->getGLShader(item.material.shaderHandle);
-				Resources::GLTexture* albedo = _pResourceManager->getGLTexture(item.material.albedoTexHandle);
+                const Resources::GLGeometry* geom = m_resourceManager->getGLGeometry(item.geometry);
+                Resources::GLShader* shader = m_resourceManager->getGLShader(item.material.shaderHandle);
+				Resources::GLTexture* albedo = m_resourceManager->getGLTexture(item.material.albedoTexHandle);
 
                 shader->bind();
                 shader->setUniformMat4("u_MVP", MVP.data);
+                shader->setUniformMat4("u_Model", cmd.worldMat.data);
                 shader->setUniform3fv("u_CameraPos", ctx.camera.pos.data());
                 shader->setUniform1f("u_Time", ctx.time);
 				shader->setTexture("u_AlbedoTex", albedo->id, 0);
@@ -67,15 +67,15 @@ namespace TripleRenderer::GLRenderer {
     }
 
     tec::GPUHandle OpenGLRenderer::UploadTexture(const tecg::TextureDesc& texture) {
-        return _pResourceManager->createGLTexture(texture);
+        return m_resourceManager->createGLTexture(texture);
     }
 
     tec::GPUHandle OpenGLRenderer::UploadShader(const tecg::ShaderDesc& shader) {
-        return _pResourceManager->createGLShader(shader);
+        return m_resourceManager->createGLShader(shader);
     }
 
     tec::GPUHandle OpenGLRenderer::UploadGeometry(const tecg::GeometryDesc& geometry) {
-        return _pResourceManager->createGLGeometry(geometry);
+        return m_resourceManager->createGLGeometry(geometry);
     }
 
     bool OpenGLRenderer::UnloadTexture(tec::GPUHandle handle) {

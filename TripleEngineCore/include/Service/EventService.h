@@ -21,7 +21,7 @@ namespace TripleEngineCore::Service {
                 callback(static_cast<EventT&>(e));
             };
 
-            listeners[typeid(EventT)].push_back(wrapper);
+            m_listeners[typeid(EventT)].push_back(wrapper);
         }
 
         void dispatch(Event::Event& event);
@@ -30,7 +30,7 @@ namespace TripleEngineCore::Service {
             dispatch(event);
         }
     private:
-        std::unordered_map<Event::EventID, std::vector<EventCallbackFn>> listeners;
+        std::unordered_map<Event::EventID, std::vector<EventCallbackFn>> m_listeners;
     };
 }
 #endif // EVENT_SERVICE_H

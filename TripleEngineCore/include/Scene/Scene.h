@@ -109,7 +109,7 @@ namespace TripleEngineCore::Scene
         void* getComponentByIndexChecked(size_t index, ComponentTypeID type, Entity expectedEntity);
 
         struct Impl;
-        Impl* _impl;
+        Impl* m_impl;
     };
 
 } // namespace TripleEngineCore::Scene

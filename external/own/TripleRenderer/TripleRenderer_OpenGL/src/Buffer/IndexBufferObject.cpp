@@ -17,32 +17,32 @@ namespace TripleRenderer::GLRenderer::Buffer {
 
 	IndexBufferObject::IndexBufferObject()
 	{
-		glGenBuffers(1, &_iboId);
+		glGenBuffers(1, &m_iboId);
 	}
 
 	IndexBufferObject::IndexBufferObject(IndexBufferObject&& other) noexcept
-		: _iboId(other._iboId) {
-		other._iboId = 0;
+		: m_iboId(other.m_iboId) {
+		other.m_iboId = 0;
 	}
 
 	IndexBufferObject& IndexBufferObject::operator=(IndexBufferObject&& other) noexcept {
 		if (this != &other) {
-			if (_iboId != 0) glDeleteBuffers(1, &_iboId);
-			_iboId = other._iboId;
-			other._iboId = 0;
+			if (m_iboId != 0) glDeleteBuffers(1, &m_iboId);
+			m_iboId = other.m_iboId;
+			other.m_iboId = 0;
 		}
 		return *this;
 	}
 
 	IndexBufferObject::~IndexBufferObject()
 	{
-		if (_iboId != 0)
-			glDeleteBuffers(1, &_iboId);
+		if (m_iboId != 0)
+			glDeleteBuffers(1, &m_iboId);
 	}
 
 	void IndexBufferObject::bind() const
 	{
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _iboId);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_iboId);
 	}
 
 	void IndexBufferObject::unbind() const

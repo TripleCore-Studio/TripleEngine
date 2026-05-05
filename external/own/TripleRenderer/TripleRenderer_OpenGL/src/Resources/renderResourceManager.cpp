@@ -6,34 +6,34 @@ namespace TripleRenderer::GLRenderer::Resources
 {
 	GLGeometry* RenderResourceManager::getGLGeometry(const tec::GPUHandle geometry)
 	{
-		auto it = _primitiveCache.find(geometry);
-		if (it != _primitiveCache.end())
+		auto it = m_primitiveCache.find(geometry);
+		if (it != m_primitiveCache.end())
 			return &it->second;
 		return nullptr;
 	}
 
 	tec::GPUHandle RenderResourceManager::createGLGeometry(const tec::Graphics::GeometryDesc& desc) {
 		GLGeometry geom;
-		tec::GPUHandle handle = _nextHandle++;
+		tec::GPUHandle handle = m_nextHandle++;
 		geom.vbo.setData(desc.vertices, desc.vertexCount * sizeof(tec::Graphics::Vertex), Buffer::VertexBufferObject::Usage::STATIC_DRAW);
 		geom.ibo.setData(desc.indices, desc.indexCount * sizeof(uint32_t), Buffer::IndexBufferObject::Usage::STATIC_DRAW);
 		geom.vao.setData(geom.vbo);
 		geom.vao.setIndexData(geom.ibo);
-		_primitiveCache.emplace(handle, std::move(geom));
+		m_primitiveCache.emplace(handle, std::move(geom));
 		return handle;
 	}
 
 	GLTexture* Resources::RenderResourceManager::getGLTexture(tec::GPUHandle texture)
 	{
-		auto it = _textureCache.find(texture);
-		if (it != _textureCache.end())
+		auto it = m_textureCache.find(texture);
+		if (it != m_textureCache.end())
 			return &it->second;
 		return nullptr;
 	}
 
 	tec::GPUHandle RenderResourceManager::createGLTexture(const tec::Graphics::TextureDesc& desc) {
 		GLTexture texGPU;
-		tec::GPUHandle handle = _nextHandle++;
+		tec::GPUHandle handle = m_nextHandle++;
 		glGenTextures(1, &texGPU.id);
 		texGPU.target = GL_TEXTURE_2D;
 		texGPU.width = desc.width;
@@ -62,21 +62,21 @@ namespace TripleRenderer::GLRenderer::Resources
 		glTexParameteri(texGPU.target, GL_TEXTURE_WRAP_T, texGPU.wrapV);
 
 		glBindTexture(texGPU.target, 0);
-		_textureCache.emplace(handle, std::move(texGPU));
+		m_textureCache.emplace(handle, std::move(texGPU));
 		return handle;
 	}
 
 	GLShader* RenderResourceManager::getGLShader(tec::GPUHandle shader)
 	{
-		auto it = _shaderCache.find(shader);
-		if (it != _shaderCache.end())
+		auto it = m_shaderCache.find(shader);
+		if (it != m_shaderCache.end())
 			return &it->second;
 		return nullptr;
 	}
 
 	tec::GPUHandle RenderResourceManager::createGLShader(const tec::Graphics::ShaderDesc& desc) {
 		GLShader shader;
-		tec::GPUHandle handle = _nextHandle++;
+		tec::GPUHandle handle = m_nextHandle++;
 
 		if (!shader.compileProgram(desc.vCode, desc.fCode))
 		{
@@ -84,7 +84,7 @@ namespace TripleRenderer::GLRenderer::Resources
 			return tec::INVALID_GPU_HANDLE;
 		}
 
-		_shaderCache.emplace(handle, std::move(shader));
+		m_shaderCache.emplace(handle, std::move(shader));
 
 		return handle;
 	}

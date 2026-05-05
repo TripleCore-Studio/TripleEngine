@@ -1,4 +1,4 @@
-#include "Engine/GlWindow.h"
+#include "Engine/GLWindow.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <TLogger.h>
@@ -75,11 +75,11 @@ namespace TripleEngineCore {
 	static bool s_glfwInit = false;
     GLWindow::GLWindow(const char* title, int width, int height, IEventSink* sink)
     {
-		_data.title = const_cast<char*>(title);
-		_data.width = width;
-		_data.height = height;
-		_data.eventSink = sink;
-		this->_pWindow = nullptr;
+		m_data.title = const_cast<char*>(title);
+		m_data.width = width;
+		m_data.height = height;
+		m_data.eventSink = sink;
+		this->m_window = nullptr;
     }
 
 	GLWindow::ErrorCode GLWindow::init(void** proc)
@@ -95,19 +95,19 @@ namespace TripleEngineCore {
 			}
 		}
 
-		this->_pWindow = glfwCreateWindow(this->_data.width, this->_data.height, this->_data.title, nullptr, nullptr);
-		if (!this->_pWindow) {
+		this->m_window = glfwCreateWindow(this->m_data.width, this->m_data.height, this->m_data.title, nullptr, nullptr);
+		if (!this->m_window) {
 			TripleLogger::TLogger::ModuleCritical("GLWindow", "Failed to create GLFW window");
 			shutdown();
 			return ErrorCode::CreateWindowError;
 		}
 		else {
-			glfwMakeContextCurrent(this->_pWindow);
+			glfwMakeContextCurrent(this->m_window);
 			TripleLogger::TLogger::ModuleInfo("GLWindow", "GLFW window created successfully");
 		}
 
-		*proc = glfwGetProcAddress;
-		glfwSetWindowUserPointer(this->_pWindow, &this->_data);
+		*proc = reinterpret_cast<void*>(glfwGetProcAddress);
+		glfwSetWindowUserPointer(this->m_window, &this->m_data);
 		this->initGLFWCallbacks();
 
 		return ErrorCode::None;
@@ -120,55 +120,55 @@ namespace TripleEngineCore {
 
 	void GLWindow::SwapBuffers()
 	{
-		glfwSwapBuffers(this->_pWindow);
+		glfwSwapBuffers(this->m_window);
 	}
 
 	bool GLWindow::ShouldClose() const
 	{
-		return glfwWindowShouldClose(this->_pWindow);
+		return glfwWindowShouldClose(this->m_window);
 	}
 
 	void* GLWindow::GetNativeWindow() const
 	{
-		return this->_pWindow;
+		return this->m_window;
 	}
 
 	bool GLWindow::isFullscreen() const
 	{
-		return this->_data.isFullscreen;
+		return this->m_data.isFullscreen;
 	}
 
 	void GLWindow::setFullscreen(bool enabled)
 	{
 		if (enabled) {
-			if (!_pWindow || _data.isFullscreen) return;
+			if (!m_window || m_data.isFullscreen) return;
 
-			glfwGetWindowPos(_pWindow, &_data.windowedX, &_data.windowedY);
-			glfwGetWindowSize(_pWindow, &_data.windowedWidth, &_data.windowedHeight);
+			glfwGetWindowPos(m_window, &m_data.windowedX, &m_data.windowedY);
+			glfwGetWindowSize(m_window, &m_data.windowedWidth, &m_data.windowedHeight);
 
 			GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 			const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-			glfwSetWindowMonitor(_pWindow, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-			_data.isFullscreen = true;
+			glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+			m_data.isFullscreen = true;
 		}
 		else {
-			if (!_pWindow || !_data.isFullscreen) return;
+			if (!m_window || !m_data.isFullscreen) return;
 
-			glfwSetWindowMonitor(_pWindow, nullptr, _data.windowedX, _data.windowedY, _data.windowedWidth, _data.windowedHeight, 0);
-			_data.isFullscreen = false;
+			glfwSetWindowMonitor(m_window, nullptr, m_data.windowedX, m_data.windowedY, m_data.windowedWidth, m_data.windowedHeight, 0);
+			m_data.isFullscreen = false;
 		}
 	}
 
 	void GLWindow::setSize(uint32_t width, uint32_t height)
 	{
-		if (!_pWindow)
+		if (!m_window)
 			return;
 
-		if (_data.isFullscreen)
+		if (m_data.isFullscreen)
 			setFullscreen(false);
 
-		glfwSetWindowSize(_pWindow,
+		glfwSetWindowSize(m_window,
 			static_cast<int>(width),
 			static_cast<int>(height)
 		);
@@ -176,10 +176,10 @@ namespace TripleEngineCore {
 
 	void GLWindow::setPosition(uint32_t x, uint32_t y)
 	{
-		if (!_pWindow)
+		if (!m_window)
 			return;
 
-		glfwSetWindowPos(_pWindow,
+		glfwSetWindowPos(m_window,
 			static_cast<int>(x),
 			static_cast<int>(y)
 		);
@@ -187,20 +187,20 @@ namespace TripleEngineCore {
 
 	float GLWindow::getDPIScale() const
 	{
-		if (!_pWindow)
+		if (!m_window)
 			return 1.0f;
 
 		float xscale = 1.0f;
 		float yscale = 1.0f;
 
-		glfwGetWindowContentScale(_pWindow, &xscale, &yscale);
+		glfwGetWindowContentScale(m_window, &xscale, &yscale);
 
 		return xscale;
 	}
 
 	void GLWindow::initGLFWCallbacks()
 	{
-		glfwSetWindowSizeCallback(this->_pWindow, [](GLFWwindow* window, int width, int height) {
+		glfwSetWindowSizeCallback(this->m_window, [](GLFWwindow* window, int width, int height) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			data.width = width;
 			data.height = height;
@@ -208,19 +208,19 @@ namespace TripleEngineCore {
 			data.eventSink->pushEvent(event);
 		});
 
-		glfwSetWindowCloseCallback(this->_pWindow, [](GLFWwindow* window) {
+		glfwSetWindowCloseCallback(this->m_window, [](GLFWwindow* window) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			Event::WindowCloseEvent event(data.title);
 			data.eventSink->pushEvent(event);
 		});
 
-		glfwSetCursorPosCallback(this->_pWindow, [](GLFWwindow* window, double xpos, double ypos) {
+		glfwSetCursorPosCallback(this->m_window, [](GLFWwindow* window, double xpos, double ypos) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			Event::MouseMoveEvent event(static_cast<float>(xpos), static_cast<float>(ypos));
 			data.eventSink->pushEvent(event);
 		});
 
-		glfwSetKeyCallback(this->_pWindow, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+		glfwSetKeyCallback(this->m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
 			Event::KeyboardInputEvent event(
@@ -232,7 +232,7 @@ namespace TripleEngineCore {
 			data.eventSink->pushEvent(event);
 		});
 
-		glfwSetMouseButtonCallback(this->_pWindow, [](GLFWwindow* window, int button, int action, int mods) {
+		glfwSetMouseButtonCallback(this->m_window, [](GLFWwindow* window, int button, int action, int mods) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
 			Event::MouseButtonEvent event(
@@ -247,25 +247,25 @@ namespace TripleEngineCore {
 
 	void GLWindow::emit(Event::Event& e)
 	{
-		if (_data.eventSink)
-			_data.eventSink->pushEvent(e);
+		if (m_data.eventSink)
+			m_data.eventSink->pushEvent(e);
 	}
 
 	void GLWindow::setCursorCapture(bool capture)
 	{
 		if (capture) {
-			glfwSetInputMode(this->_pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			_data.isCursorCaptured = true;
+			glfwSetInputMode(this->m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			m_data.isCursorCaptured = true;
 		}
 		else {
-			glfwSetInputMode(this->_pWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			_data.isCursorCaptured = false;
+			glfwSetInputMode(this->m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			m_data.isCursorCaptured = false;
 		}
 	}
 
 	bool GLWindow::isCursorCaptured() const
 	{
-		return _data.isCursorCaptured;
+		return m_data.isCursorCaptured;
 	}
 
 	double GLWindow::getTime() const
@@ -276,9 +276,9 @@ namespace TripleEngineCore {
 	void GLWindow::shutdown()
 	{
 		if (s_glfwInit) {
-			if (_pWindow) {
-				glfwDestroyWindow(this->_pWindow);
-				_pWindow = nullptr;
+			if (m_window) {
+				glfwDestroyWindow(this->m_window);
+				m_window = nullptr;
 			}
 			glfwTerminate();
 		}
