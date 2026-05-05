@@ -1,2 +1,4 @@
-# Игнорировать папку build
 build/
+.vs/
+.cache/
+out/
