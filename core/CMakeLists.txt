@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
-set(LIB_NAME TripleEngineCore)
+set(LIB_NAME triple_core)
 
 include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
 
@@ -13,6 +13,7 @@ assign_source_groups("${CMAKE_CURRENT_SOURCE_DIR}/src" SOURCE_FILES "src")
 add_library(${LIB_NAME} SHARED
 	${SOURCE_FILES}
 )
+add_library(triple::core ALIAS triple_core) 
 
 target_include_directories(${LIB_NAME}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -30,7 +31,7 @@ target_sources(${LIB_NAME} PRIVATE
 	${HEADER_FILES}
 )
 
-target_compile_features(${LIB_NAME} PUBLIC cxx_std_17)
+target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)
 
 # ───── GLFW ─────
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -45,8 +46,8 @@ target_link_libraries(${LIB_NAME} PRIVATE
 )
 
 target_link_libraries(${LIB_NAME} PUBLIC
-	TripleLogger
-	TripleMath
+	triple::log
+	triple::math
 )
 
 if(BUILD_TESTS)
@@ -61,7 +62,7 @@ endif()
 
 target_compile_definitions(${LIB_NAME}
     PRIVATE
-        TRIPLE_OPENGL_MODULE_FILENAME="$<TARGET_FILE_NAME:TripleRenderer_OpenGL>"
+        TRIPLE_OPENGL_MODULE_FILENAME="$<TARGET_FILE_NAME:triple_gl>"
 )
 
 copy_dll_to_bin(TripleEngineCore)

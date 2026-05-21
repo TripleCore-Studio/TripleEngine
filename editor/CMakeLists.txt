@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
-set(EDITOR_PROJECT_NAME TripleEngineEditor)
-
-project(${EDITOR_PROJECT_NAME} VERSION 1.0)
+set(EDITOR_PROJECT_NAME editor)
 
 include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
 
@@ -31,7 +29,7 @@ target_sources(${EDITOR_PROJECT_NAME} PRIVATE
 	${HEADER_FILES}
 )
 
-target_compile_features(${EDITOR_PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_features(${EDITOR_PROJECT_NAME} PUBLIC cxx_std_20)
 
 target_link_libraries(${EDITOR_PROJECT_NAME} 
 	PRIVATE 

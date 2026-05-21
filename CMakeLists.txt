@@ -12,15 +12,15 @@ endif()
 
 option(BUILD_TESTS "Build unit tests" OFF)
 
-add_subdirectory(external/third_party/glad)
-add_subdirectory(external/third_party/glfw)
-add_subdirectory(external/third_party/spdlog)
-add_subdirectory(external/third_party/fmt)
-add_subdirectory(external/third_party/glm)
+add_subdirectory(external/glad)
+add_subdirectory(external/glfw)
+add_subdirectory(external/spdlog)
+add_subdirectory(external/fmt)
+add_subdirectory(external/glm)
 
 if(BUILD_TESTS)
     message(STATUS "Building googletest...")
-    add_subdirectory(external/third_party/googletest)
+    add_subdirectory(external/googletest)
 endif()
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
@@ -35,18 +35,19 @@ set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_FBX_IMPORTER ON CACHE BOOL "" FORCE)   # FBX
 set(ASSIMP_BUILD_OBJ_IMPORTER ON CACHE BOOL "" FORCE)   # OBJ
 set(ASSIMP_BUILD_GLTF_IMPORTER ON CACHE BOOL "" FORCE)  # glTF
-add_subdirectory(external/third_party/assimp)
+add_subdirectory(external/assimp)
 
-add_subdirectory(external/own/TripleLogger)
-add_subdirectory(external/own/TripleRenderer)
-add_subdirectory(external/own/TripleMath)
+add_subdirectory(engine/log)
+add_subdirectory(engine/math)
+add_subdirectory(engine/gfx)
+add_subdirectory(engine/gl)
 
-add_subdirectory(TripleEngineCore)
-add_subdirectory(TripleEngineEditor)
+add_subdirectory(core)
+add_subdirectory(editor)
 
 if(BUILD_TESTS)
     message(STATUS "Building tests...")
-    add_subdirectory(TripleEngineTests)
+    add_subdirectory(tests)
 endif()
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT TripleEngineEditor)
