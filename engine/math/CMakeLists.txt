@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
-set(LIB_NAME TripleMath)
-
-project(${LIB_NAME} VERSION 1.0)
+set(LIB_NAME triple_math)
 
 include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
 
@@ -12,11 +10,12 @@ file(GLOB_RECURSE SOURCES_FILES
 
 assign_source_groups("${CMAKE_CURRENT_SOURCE_DIR}/src" SOURCE_FILES "src")
 
-add_library(${LIB_NAME} SHARED
+add_library(${LIB_NAME} STATIC
     ${SOURCES_FILES}
 )
+add_library(triple::math ALIAS triple_math)
 
-target_compile_features(${LIB_NAME} PUBLIC cxx_std_17)
+target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)
 
 target_include_directories(${LIB_NAME}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -35,10 +34,3 @@ target_sources(${LIB_NAME} PRIVATE
 
 # ───── GLM ─────
 target_link_libraries(${LIB_NAME} PRIVATE glm)
-
-# ───── Characters Exports For Windows ─────
-if(WIN32)
-    target_compile_definitions(${LIB_NAME} PRIVATE TRIPLEMATH_EXPORTS)
-endif()
-
-copy_dll_to_bin(${LIB_NAME})
