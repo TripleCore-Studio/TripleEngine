@@ -1,10 +1,10 @@
 #ifndef RENDER_ITEM_H
 #define RENDER_ITEM_H
 
-#include "Core/CoreTypes.h"
-#include "Graphics/RenderMaterial.h"
+#include "GfxTypes.h"
+#include "RenderMaterial.h"
 
-namespace TripleEngineCore::Graphics {
+namespace triple::gfx {
     struct RenderItem {
         GPUHandle geometry;
         uint32_t indexOffset;

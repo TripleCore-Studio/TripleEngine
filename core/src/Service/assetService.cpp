@@ -1,33 +1,31 @@
-#include "Service/AssetService.h"
-#include "TLogger.h"
+#include "triple/core/Service/AssetService.h"
+#include <triple/log/Logger.h>
 #include <fstream>
 #include <sstream>
 #include "stb_image.h"
-#include "Utils/AssimpHelper.h"
-#include "Asset/AssetStorage.h"
+#include "triple/core/Utils/AssimpHelper.h"
+#include "triple/core/Asset/AssetStorage.h"
 
-using namespace TripleEngineCore::Asset;
-
-namespace TripleEngineCore::Service {
-    Service::MaterialID processMaterial(const  Utils::AssimpHelper::LoadedMesh& _mesh,
-        const Utils::AssimpHelper::LoadedModel& loadedModel,
+namespace triple::core {
+    MaterialID processMaterial(const AssimpHelper::LoadedMesh& _mesh,
+        const AssimpHelper::LoadedModel& loadedModel,
         AssetService* system)
     {
-        Utils::AssimpHelper::LoadedMaterial _mat = loadedModel.materials[_mesh.materialIndex];
-        Utils::AssimpHelper::LoadedTexture _difftex;
+        AssimpHelper::LoadedMaterial _mat = loadedModel.materials[_mesh.materialIndex];
+        AssimpHelper::LoadedTexture _difftex;
         bool isEmpty = true;
         if (!_mat.diffuseTextures.empty()) {
             _difftex = _mat.diffuseTextures[0];
             isEmpty = false;
         }
-        Asset::Texture texture;
+        Texture texture;
         texture.name = _difftex.name;
         texture.width = static_cast<uint16_t>(_difftex.width);
         texture.height = static_cast<uint16_t>(_difftex.height);
         texture.channels = static_cast<uint8_t>(_difftex.channels);
         texture.pixels = std::move(_difftex.pixels);
 
-        Asset::Material material;
+        Material material;
         material.name = _mat.name;
         if (!isEmpty) {
             material.albedoTextureId = system->loadTexture(material.name, std::move(texture));
@@ -46,9 +44,9 @@ namespace TripleEngineCore::Service {
         return system->createMaterial(material.name, material);
     }
 
-    void processMeshes(Asset::Model* model, const Utils::AssimpHelper::LoadedModel& loadedModel, AssetService* system) {
+    void processMeshes(Model* model, const AssimpHelper::LoadedModel& loadedModel, AssetService* system) {
         for (const auto& _mesh : loadedModel.meshes) {
-            Asset::Mesh mesh;
+            Mesh mesh;
             mesh.name = _mesh.name;
 
             uint32_t baseVertex = model->vertices.size();
@@ -74,18 +72,18 @@ namespace TripleEngineCore::Service {
     }
 }
 
-namespace TripleEngineCore::Service {
+namespace triple::core {
 
     struct AssetService::Impl
     {
-        Asset::AssetStorage<Asset::Model> m_models;
-        Asset::AssetStorage<Asset::Shader> m_shaders;
-        Asset::AssetStorage<Asset::Material> m_materials;
-        Asset::AssetStorage<Asset::Texture> m_textures;
+        AssetStorage<Model> m_models;
+        AssetStorage<Shader> m_shaders;
+        AssetStorage<Material> m_materials;
+        AssetStorage<Texture> m_textures;
 
-        std::function<void(const Asset::Texture*)> m_onTextureLoaded;
-        std::function<void(const Asset::Model*)>  m_onModelLoaded;
-        std::function<void(const Asset::Shader*)> m_onShaderLoaded;
+        std::function<void(const Texture*)> m_onTextureLoaded;
+        std::function<void(const Model*)>  m_onModelLoaded;
+        std::function<void(const Shader*)> m_onShaderLoaded;
     };
 
     AssetService::AssetService() : m_impl(new Impl()) {}
@@ -96,18 +94,18 @@ namespace TripleEngineCore::Service {
         if (m_impl->m_models.exists(name))
             return m_impl->m_models.getID(name);
 
-        Utils::AssimpHelper::LoadedModel loadedModel = Utils::AssimpHelper::LoadModel(path);
+        AssimpHelper::LoadedModel loadedModel = AssimpHelper::LoadModel(path);
         if (loadedModel.meshes.size() <= 0) {
-            TripleLogger::TLogger::ModuleWarn("AssetService", "(model: {}) the model has no meshes and as a result was not loaded", name);
+            triple::log::Logger::ModuleWarn("AssetService", "(model: {}) the model has no meshes and as a result was not loaded", name);
             return INVALID_ASSET_ID;
         }
 
-        auto engineModel = std::make_unique<Asset::Model>();
+        auto engineModel = std::make_unique<Model>();
         engineModel->meshes.reserve(loadedModel.meshes.size());
 		processMeshes(engineModel.get(), loadedModel, this);
 
 		auto ptr = engineModel.get();
-        Asset::AssetID id = m_impl->m_models.add(name, std::move(engineModel));
+        AssetID id = m_impl->m_models.add(name, std::move(engineModel));
 
         if (m_impl->m_onModelLoaded) {
             m_impl->m_onModelLoaded(ptr);
@@ -123,7 +121,7 @@ namespace TripleEngineCore::Service {
         auto _model = std::make_unique<Model>(std::move(model));
 
 		auto ptr = _model.get();
-        Asset::AssetID id = m_impl->m_models.add(name, std::move(_model));
+        AssetID id = m_impl->m_models.add(name, std::move(_model));
 
         if (m_impl->m_onModelLoaded) {
             m_impl->m_onModelLoaded(ptr);
@@ -140,7 +138,7 @@ namespace TripleEngineCore::Service {
         return m_impl->m_models.get(id);
     }
 
-    Asset::Model* AssetService::getModelMutable(ModelID id)
+    Model* AssetService::getModelMutable(ModelID id)
     {
         return m_impl->m_models.getMutable(id);
     }
@@ -152,7 +150,7 @@ namespace TripleEngineCore::Service {
         std::ifstream vsFile(vertexPath);
         std::ifstream fsFile(fragmentPath);
         if (!vsFile.is_open() || !fsFile.is_open()) {
-            TripleLogger::TLogger::ModuleError("AssetService", "Failed to open shader '{}'", name);
+            triple::log::Logger::ModuleError("AssetService", "Failed to open shader '{}'", name);
             return INVALID_ASSET_ID;
         }
 
@@ -165,7 +163,7 @@ namespace TripleEngineCore::Service {
         shader->fragmentSource = fsStream.str();
 
 		auto ptr = shader.get();
-        Asset::AssetID id = m_impl->m_shaders.add(name, std::move(shader));
+        AssetID id = m_impl->m_shaders.add(name, std::move(shader));
 
         if(m_impl->m_onShaderLoaded) {
             m_impl->m_onShaderLoaded(ptr);
@@ -198,19 +196,19 @@ namespace TripleEngineCore::Service {
         return m_impl->m_materials.get(id);
     }
 
-    TextureID AssetService::loadTexture(const std::string& name, Asset::Texture&& texture)
+    TextureID AssetService::loadTexture(const std::string& name, Texture&& texture)
     {
         if (m_impl->m_textures.exists(name))
             return m_impl->m_textures.getID(name);
 
         if (texture.pixels.empty()) {
-            TripleLogger::TLogger::ModuleError("AssetService", "The {} texture is empty", name);
+            triple::log::Logger::ModuleError("AssetService", "The {} texture is empty", name);
             return INVALID_ASSET_ID;
         }
 
-		auto _texture = std::make_unique<Asset::Texture>(std::move(texture));
+		auto _texture = std::make_unique<Texture>(std::move(texture));
         auto ptr = _texture.get();
-        Asset::AssetID id = m_impl->m_textures.add(name, std::move(_texture));
+        AssetID id = m_impl->m_textures.add(name, std::move(_texture));
 
         if (m_impl->m_onTextureLoaded) {
             m_impl->m_onTextureLoaded(ptr);
@@ -228,7 +226,7 @@ namespace TripleEngineCore::Service {
         int width, height, channels;
         stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, 4);
         if (!pixels) {
-            TripleLogger::TLogger::ModuleError("AssetService", "Failed to load texture '{}': {}", name, path);
+            triple::log::Logger::ModuleError("AssetService", "Failed to load texture '{}': {}", name, path);
             return INVALID_ASSET_ID;
         }
 
@@ -241,7 +239,7 @@ namespace TripleEngineCore::Service {
         stbi_image_free(pixels);
 
 		auto ptr = texture.get();
-        Asset::AssetID id = m_impl->m_textures.add(name, std::move(texture));
+        AssetID id = m_impl->m_textures.add(name, std::move(texture));
 
         if (m_impl->m_onTextureLoaded) {
             m_impl->m_onTextureLoaded(ptr);
@@ -261,14 +259,14 @@ namespace TripleEngineCore::Service {
         if (m_impl->m_textures.exists(name))
             return m_impl->m_textures.getID(name);
 
-        auto tex = std::make_unique<Asset::Texture>();
+        auto tex = std::make_unique<Texture>();
         tex->width = 1;
         tex->height = 1;
         tex->channels = 4;
         tex->pixels = { r, g, b, a };
 
 		auto ptr = tex.get();
-        Asset::AssetID id = m_impl->m_textures.add(name, std::move(tex));
+        AssetID id = m_impl->m_textures.add(name, std::move(tex));
 
         if (m_impl->m_onTextureLoaded) {
             m_impl->m_onTextureLoaded(ptr);
@@ -283,26 +281,25 @@ namespace TripleEngineCore::Service {
 
     bool AssetService::loadDefaultAssets()
     {
-        using namespace TripleMath;
-        Service::TextureID ard = this->genSolidTexture(DefaultAlbedoRoughnessName, 255, 255, 255, 255); // albedo, roughness
-        Service::TextureID mtd = this->genSolidTexture(DefaultMetallicName, 0, 0, 0, 255); // metallic
-        Service::TextureID nd = this->genSolidTexture(DefaultNormalName, 128, 128, 255, 255); // normal
+        TextureID ard = this->genSolidTexture(DefaultAlbedoRoughnessName, 255, 255, 255, 255); // albedo, roughness
+        TextureID mtd = this->genSolidTexture(DefaultMetallicName, 0, 0, 0, 255); // metallic
+        TextureID nd = this->genSolidTexture(DefaultNormalName, 128, 128, 255, 255); // normal
 
-        Service::ShaderID sd = this->loadShaderFromFile(DefaultShaderName,
+        ShaderID sd = this->loadShaderFromFile(DefaultShaderName,
             "assets\\shaders\\__default_shader.vert",
             "assets\\shaders\\__default_shader.frag");
 
-        if (ard == Asset::INVALID_ASSET_ID ||
-            mtd == Asset::INVALID_ASSET_ID ||
-            nd == Asset::INVALID_ASSET_ID ||
-            sd == Asset::INVALID_ASSET_ID) 
+        if (ard == INVALID_ASSET_ID ||
+            mtd == INVALID_ASSET_ID ||
+            nd == INVALID_ASSET_ID ||
+            sd == INVALID_ASSET_ID) 
         {
-            TripleLogger::TLogger::ModuleCritical("AssetService", "The default resources were not loaded properly, and the program cannot continue working normally.");
+            triple::log::Logger::ModuleCritical("AssetService", "The default resources were not loaded properly, and the program cannot continue working normally.");
             return false;
         }
 
-        Asset::Material mtdd;
-        mtdd.albedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        Material mtdd;
+        mtdd.albedoColor = triple::math::Vec4(1.0f, 1.0f, 1.0f, 1.0f);
         mtdd.albedoTextureId = ard;
         mtdd.metallicTextureId = mtd;
         mtdd.normalTextureId = nd;
@@ -310,26 +307,26 @@ namespace TripleEngineCore::Service {
         mtdd.shaderId = sd;
         mtdd.metallic = 0.1;
         mtdd.roughness = 1.0;
-        Service::MaterialID mdid = this->createMaterial(DefaultMaterialName, mtdd);
-        if (mdid == Asset::INVALID_ASSET_ID) {
-            TripleLogger::TLogger::ModuleCritical("AssetService", "The default resources were not loaded properly, and the program cannot continue working normally.");
+        MaterialID mdid = this->createMaterial(DefaultMaterialName, mtdd);
+        if (mdid == INVALID_ASSET_ID) {
+            triple::log::Logger::ModuleCritical("AssetService", "The default resources were not loaded properly, and the program cannot continue working normally.");
             return false;
         }
 
         return true;
     }
 
-    void AssetService::setTextureLoadedCallback(std::function<void(const Asset::Texture*)> cb)
+    void AssetService::setTextureLoadedCallback(std::function<void(const Texture*)> cb)
     {
         m_impl->m_onTextureLoaded = std::move(cb);
     }
 
-    void AssetService::setModelLoadedCallback(std::function<void(const Asset::Model*)> cb)
+    void AssetService::setModelLoadedCallback(std::function<void(const Model*)> cb)
     {
         m_impl->m_onModelLoaded = std::move(cb);
     }
 
-    void AssetService::setShaderLoadedCallback(std::function<void(const Asset::Shader*)> cb)
+    void AssetService::setShaderLoadedCallback(std::function<void(const Shader*)> cb)
     {
         m_impl->m_onShaderLoaded = std::move(cb);
     }

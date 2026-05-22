@@ -1,14 +1,12 @@
-#include "Utils/AssimpHelper.h"
+#include "triple/core/Utils/AssimpHelper.h"
 #include "stb_image.h"
-#include "TLogger.h"
+#include <triple/log/Logger.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-using namespace TripleEngineCore::Graphics;
-
-namespace TripleEngineCore::Utils {
+namespace triple::core {
 	AssimpHelper::LoadedModel AssimpHelper::LoadModel(const std::string& path)
 	{
         Assimp::Importer importer;
@@ -22,7 +20,7 @@ namespace TripleEngineCore::Utils {
         const aiScene* scene = importer.ReadFile(path, flags);
 
         if (!scene || !scene->mRootNode) {
-            TripleLogger::TLogger::ModuleError("AssimpHelper", "fail load model: ({})", path);
+            triple::log::Logger::ModuleError("AssimpHelper", "fail load model: ({})", path);
             return LoadedModel();
         }
 
@@ -115,7 +113,7 @@ namespace TripleEngineCore::Utils {
             loadedMesh.indices.reserve(mesh->mNumFaces * 3);
 
             for (unsigned i = 0; i < mesh->mNumVertices; ++i) {
-                Vertex v;
+                gfx::Vertex v;
                 v.position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
 
                 if (mesh->HasNormals())

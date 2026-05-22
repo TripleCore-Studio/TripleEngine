@@ -1,14 +1,14 @@
 #ifndef RENDER_COMMAND_H
 #define RENDER_COMMAND_H
 
-#include "Mat4.h"
+#include "triple/math/Mat4.h"
 #include "RenderItem.h"
 #include <vector>
 
-namespace TripleEngineCore::Graphics {
+namespace triple::gfx {
 	struct RenderCommand
 	{
-		TripleMath::Mat4 worldMat;
+		triple::math::Mat4 worldMat;
 		std::vector<RenderItem> items;
 	};
 }

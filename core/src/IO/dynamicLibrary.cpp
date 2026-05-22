@@ -1,32 +1,30 @@
-#include "IO/DynamicLibrary.h"
-namespace TripleEngineCore
+#include "triple/core/IO/DynamicLibrary.h"
+namespace triple::core
 {
-	namespace IO {
-        LibHandle DynamicLibrary::Load(const std::string& path)
-        {
+    LibHandle DynamicLibrary::Load(const std::string& path)
+    {
 #if defined(_WIN32)
-            return LoadLibraryA(path.c_str());
+        return LoadLibraryA(path.c_str());
 #else
-            return dlopen(path.c_str(), RTLD_NOW);
+        return dlopen(path.c_str(), RTLD_NOW);
 #endif
-        }
+    }
 
-        void DynamicLibrary::Unload(LibHandle handle)
-        {
+    void DynamicLibrary::Unload(LibHandle handle)
+    {
 #if defined(_WIN32)
-            FreeLibrary(handle);
+        FreeLibrary(handle);
 #else
-            dlclose(handle);
+        dlclose(handle);
 #endif
-        }
+    }
 
-        void* DynamicLibrary::GetSymbol(LibHandle handle, const std::string& name)
-        {
+    void* DynamicLibrary::GetSymbol(LibHandle handle, const std::string& name)
+    {
 #if defined(_WIN32)
-            return reinterpret_cast<void*>(GetProcAddress(handle, name.c_str()));
+        return reinterpret_cast<void*>(GetProcAddress(handle, name.c_str()));
 #else
-            return dlsym(handle, name.c_str());
+        return dlsym(handle, name.c_str());
 #endif
-        }
-	}
+    }
 }

@@ -1,8 +1,8 @@
-#include "Vec4.h"
+#include "triple/math/Vec4.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace TripleEngineCore::TripleMath {
+namespace triple::math {
 
     Vec4 Vec4::operator+(const Vec4& other) const {
         glm::vec4 a(x, y, z, w);

@@ -1,22 +1,22 @@
-#include "Utils/CameraUtils.h"
-#include "Mat4Operations.h"
-#include "Utils/TransformUtils.h"
+#include "triple/core/Utils/CameraUtils.h"
+#include <triple/math/Mat4Operations.h>
+#include "triple/core/Utils/TransformUtils.h"
 
-namespace TripleEngineCore::Utils {
-	TripleMath::Mat4 getProjectionMatrix(const Scene::CameraComponent& camera)
+namespace triple::core {
+	triple::math::Mat4 getProjectionMatrix(const CameraComponent& camera)
 	{
-        return TripleMath::perspective(
+        return triple::math::perspective(
             camera.fov * 0.01745329251f,
             camera.aspectRatio,
             camera.nearPlane,
             camera.farPlane
         );
 	}
-    TripleMath::Mat4 getViewMatrix(const Scene::TransformComponent& transform)
+    triple::math::Mat4 getViewMatrix(const TransformComponent& transform)
     {
-        TripleMath::Vec3 eye = transform.position;
-        TripleMath::Vec3 center = eye + Utils::forward(transform);
-        TripleMath::Vec3 up = Utils::up(transform);
-        return TripleEngineCore::TripleMath::lookAt(eye, center, up);
+        triple::math::Vec3 eye = transform.position;
+        triple::math::Vec3 center = eye + forward(transform);
+        triple::math::Vec3 upVec = up(transform);
+        return triple::math::lookAt(eye, center, upVec);
     }
 }

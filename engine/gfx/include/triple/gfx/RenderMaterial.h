@@ -1,13 +1,13 @@
 #ifndef RENDER_MATERIAL_H
 #define RENDER_MATERIAL_H
 
-#include "Core/CoreTypes.h"
-#include "Vec4.h"
+#include "GfxTypes.h"
+#include "triple/math/Vec4.h"
 
-namespace TripleEngineCore::Graphics {
+namespace triple::gfx {
 	struct RenderMaterial
 	{
-		TripleMath::Vec4 albedoColor;
+		triple::math::Vec4 albedoColor;
 		float metallic;
 		float roughness;
 

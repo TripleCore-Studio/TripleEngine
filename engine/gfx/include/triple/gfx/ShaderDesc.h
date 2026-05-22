@@ -1,7 +1,7 @@
 #ifndef SHADER_DESC_H
 #define SHADER_DESC_H
 
-namespace TripleEngineCore::Graphics {
+namespace triple::gfx {
 	struct ShaderDesc {
 		const char* vCode;
 		const char* fCode;

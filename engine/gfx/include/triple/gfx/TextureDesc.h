@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace TripleEngineCore::Graphics {
+namespace triple::gfx {
 	struct TextureDesc {
 		uint16_t width;
 		uint16_t height;

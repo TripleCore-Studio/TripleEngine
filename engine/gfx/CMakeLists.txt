@@ -13,4 +13,4 @@ file(GLOB_RECURSE HEADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
 )
-target_sources(triple_gfx INTERFACE ${HEADER_FILES})
+target_sources(triple_gfx INTERFACE ${HEADER_FILES}) 

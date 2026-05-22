@@ -1,14 +1,14 @@
-#include "Utils/TransformUtils.h"
-#include "Mat4Operations.h"
-#include "MathCommon.h"
-
-using namespace TripleEngineCore::TripleMath;
+#include "triple/core/Utils/TransformUtils.h"
+#include <triple/math/Mat4Operations.h>
+#include <triple/math/MathCommon.h>
 
 constexpr float DEG2RAD = 3.14159265359f / 180.0f;
 
-namespace TripleEngineCore::Utils {
-	TripleMath::Mat4 getModelMatrix(const Scene::TransformComponent& t)
-	{
+using namespace triple::math;
+
+namespace triple::core {
+    triple::math::Mat4 getModelMatrix(const TransformComponent& t)
+    {
         float rx = t.rotationEuler.x * DEG2RAD;
         float ry = t.rotationEuler.y * DEG2RAD;
         float rz = t.rotationEuler.z * DEG2RAD;
@@ -17,12 +17,12 @@ namespace TripleEngineCore::Utils {
         Mat4 rotY = rotate(ry, { 0, 1, 0 });
         Mat4 rotZ = rotate(rz, { 0, 0, 1 });
         Mat4 tr = translate(t.position);
-        Mat4 s = TripleMath::scale(t.scale);
+        Mat4 s = triple::math::scale(t.scale);
 
         // M = T * Rz * Ry * Rx * S
-		return tr * rotZ * rotY * rotX * s;
-	}
-    TripleMath::Mat4 getRotationMatrix(const Scene::TransformComponent& t)
+        return tr * rotZ * rotY * rotX * s;
+    }
+    triple::math::Mat4 getRotationMatrix(const TransformComponent& t)
     {
         float rx = t.rotationEuler.x * DEG2RAD;
         float ry = t.rotationEuler.y * DEG2RAD;
@@ -34,19 +34,19 @@ namespace TripleEngineCore::Utils {
 
         return Rz * Ry * Rx;
     }
-    TripleMath::Vec3 forward(const Scene::TransformComponent& t)
+    triple::math::Vec3 forward(const TransformComponent& t)
     {
         Mat4 R = getRotationMatrix(t);
         Vec4 v = R * Vec4(0, 0, -1, 0);
         return normalize(Vec3(v.x, v.y, v.z));
     }
-    TripleMath::Vec3 right(const Scene::TransformComponent& t)
+    triple::math::Vec3 right(const TransformComponent& t)
     {
         Mat4 R = getRotationMatrix(t);
         Vec4 v = R * Vec4(1, 0, 0, 0);
         return normalize(Vec3(v.x, v.y, v.z));
     }
-    TripleMath::Vec3 up(const Scene::TransformComponent& t)
+    triple::math::Vec3 up(const TransformComponent& t)
     {
         Mat4 R = getRotationMatrix(t);
         Vec4 v = R * Vec4(0, 1, 0, 0);

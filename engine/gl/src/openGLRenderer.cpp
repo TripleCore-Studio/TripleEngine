@@ -1,23 +1,21 @@
-#include "OpenGLRenderer.h"
+#include "triple/gl/OpenGLRenderer.h"
 #include <glad/glad.h>
 #include <math.h>
-#include "TLogger.h"
+#include "triple/log/Logger.h"
 
-#include "Graphics/CameraData.h"
+#include "triple/gfx/CameraData.h"
 
-using namespace TripleEngineCore::TripleMath;
-
-namespace TripleRenderer::GLRenderer {
+namespace triple::gl {
     void OpenGLRenderer::Initialize() {
         if (!m_initGlad) {
-            TripleLogger::TLogger::ModuleCritical("OpenGLRenderer", "GLAD not initialized. Call initGlad() before Initialize().");
+            triple::log::Logger::ModuleCritical("OpenGLRenderer", "GLAD not initialized. Call initGlad() before Initialize().");
             return;
         }
 
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-        m_resourceManager = std::make_unique<Resources::RenderResourceManager>();
+        m_resourceManager = std::make_unique<RenderResourceManager>();
     }
 
     bool OpenGLRenderer::initGlad(void* loader) {
@@ -30,18 +28,18 @@ namespace TripleRenderer::GLRenderer {
     {
     }
 
-    void OpenGLRenderer::RenderFrame(tecg::FrameContext& ctx)
+    void OpenGLRenderer::RenderFrame(gfx::FrameContext& ctx)
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        Mat4 VP = ctx.camera.proj * ctx.camera.view;
+        triple::math::Mat4 VP = ctx.camera.proj * ctx.camera.view;
 
         for (auto& cmd : ctx.commands) {
-            Mat4 MVP = VP * cmd.worldMat;
+            triple::math::Mat4 MVP = VP * cmd.worldMat;
             for (auto& item : cmd.items) {
-                const Resources::GLGeometry* geom = m_resourceManager->getGLGeometry(item.geometry);
-                Resources::GLShader* shader = m_resourceManager->getGLShader(item.material.shaderHandle);
-				Resources::GLTexture* albedo = m_resourceManager->getGLTexture(item.material.albedoTexHandle);
+                const GLGeometry* geom = m_resourceManager->getGLGeometry(item.geometry);
+                GLShader* shader = m_resourceManager->getGLShader(item.material.shaderHandle);
+				GLTexture* albedo = m_resourceManager->getGLTexture(item.material.albedoTexHandle);
 
                 shader->bind();
                 shader->setUniformMat4("u_MVP", MVP.data);
@@ -66,36 +64,36 @@ namespace TripleRenderer::GLRenderer {
         glViewport(x, y, width, height);
     }
 
-    tec::GPUHandle OpenGLRenderer::UploadTexture(const tecg::TextureDesc& texture) {
+    gfx::GPUHandle OpenGLRenderer::UploadTexture(const gfx::TextureDesc& texture) {
         return m_resourceManager->createGLTexture(texture);
     }
 
-    tec::GPUHandle OpenGLRenderer::UploadShader(const tecg::ShaderDesc& shader) {
+    gfx::GPUHandle OpenGLRenderer::UploadShader(const gfx::ShaderDesc& shader) {
         return m_resourceManager->createGLShader(shader);
     }
 
-    tec::GPUHandle OpenGLRenderer::UploadGeometry(const tecg::GeometryDesc& geometry) {
+    gfx::GPUHandle OpenGLRenderer::UploadGeometry(const gfx::GeometryDesc& geometry) {
         return m_resourceManager->createGLGeometry(geometry);
     }
 
-    bool OpenGLRenderer::UnloadTexture(tec::GPUHandle handle) {
+    bool OpenGLRenderer::UnloadTexture(gfx::GPUHandle handle) {
         return false;
     }
 
-    bool OpenGLRenderer::UnloadShader(tec::GPUHandle handle) {
+    bool OpenGLRenderer::UnloadShader(gfx::GPUHandle handle) {
         return false;
     }
 
-    bool OpenGLRenderer::UnloadGeometry(tec::GPUHandle handle) {
+    bool OpenGLRenderer::UnloadGeometry(gfx::GPUHandle handle) {
         return false;
     }
 
     void OpenGLRenderer::Shutdown() {}
 }
-RENDERER_API TripleEngineCore::IRenderer* CreateRenderer() {
-    return new TripleRenderer::GLRenderer::OpenGLRenderer();
+RENDERER_API triple::gfx::IRenderer* CreateRenderer() {
+    return new triple::gl::OpenGLRenderer();
 }
 
-RENDERER_API void DestroyRenderer(TripleEngineCore::IRenderer* renderer) {
+RENDERER_API void DestroyRenderer(triple::gfx::IRenderer* renderer) {
     delete renderer;
 }
