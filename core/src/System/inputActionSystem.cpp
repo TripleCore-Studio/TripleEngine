@@ -1,10 +1,10 @@
-#include "System/InputActionSystem.h"
+#include "triple/core/System/InputActionSystem.h"
 #include <unordered_map>
-#include "TLogger.h"
+#include <triple/log/Logger.h>
 
-namespace TripleEngineCore::System {
+namespace triple::core {
     struct InputAction {
-        std::vector<Input::InputTrigger> triggers;
+        std::vector<InputTrigger> triggers;
         std::function<void()> callback;
     };
 
@@ -12,7 +12,7 @@ namespace TripleEngineCore::System {
 	{
 		std::unordered_map<std::string, InputAction> m_actions;
 	};
-	InputActionSystem::InputActionSystem(System::InputSystem* inputSystem) : m_inputSystem(inputSystem)
+	InputActionSystem::InputActionSystem(InputSystem* inputSystem) : m_inputSystem(inputSystem)
 		, m_impl(new Impl())
 	{
 	}
@@ -20,10 +20,10 @@ namespace TripleEngineCore::System {
 	{
 		delete m_impl;
 	}
-	void InputActionSystem::bind(const std::string& name, std::vector<Input::InputTrigger> triggers, std::function<void()> callback)
+	void InputActionSystem::bind(const std::string& name, std::vector<InputTrigger> triggers, std::function<void()> callback)
 	{
         if (m_impl->m_actions.find(name) != m_impl->m_actions.end()) {
-            TripleLogger::TLogger::ModuleWarn("InputActionSystem", "InputAction '{}' already exists, overwriting", name);
+            triple::log::Logger::ModuleWarn("InputActionSystem", "InputAction '{}' already exists, overwriting", name);
         }
 
         InputAction action;
@@ -50,30 +50,30 @@ namespace TripleEngineCore::System {
                 action.callback();
         }
 	}
-	bool InputActionSystem::checkTrigger(const Input::InputTrigger& t)
+	bool InputActionSystem::checkTrigger(const InputTrigger& t)
 	{
         switch (t.type)
         {
-        case Input::InputTriggerType::Key:
+        case InputTriggerType::Key:
             switch (t.state)
             {
-            case Input::TriggerState::Pressed:
+            case TriggerState::Pressed:
                 return m_inputSystem->isKeyPressed(t.key);
-            case Input::TriggerState::Held:
+            case TriggerState::Held:
                 return m_inputSystem->isKeyDown(t.key);
-            case Input::TriggerState::Released:
+            case TriggerState::Released:
                 return m_inputSystem->isKeyReleased(t.key);
             }
             break;
 
-        case Input::InputTriggerType::MouseButton:
+        case InputTriggerType::MouseButton:
             switch (t.state)
             {
-            case Input::TriggerState::Pressed:
+            case TriggerState::Pressed:
                 return m_inputSystem->isMouseButtonPressed(t.mouse);
-            case Input::TriggerState::Held:
+            case TriggerState::Held:
                 return m_inputSystem->isMouseButtonDown(t.mouse);
-            case Input::TriggerState::Released:
+            case TriggerState::Released:
                 return m_inputSystem->isMouseButtonReleased(t.mouse);
             }
             break;

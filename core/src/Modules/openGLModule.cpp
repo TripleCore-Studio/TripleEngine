@@ -1,7 +1,7 @@
-#include "Modules/OpenGLModule.h"
-#include "TLogger.h"
+#include "triple/core/Modules/OpenGLModule.h"
+#include <triple/log/Logger.h>
 
-namespace TripleEngineCore {
+namespace triple::core {
     OpenGLRenderModule::OpenGLRenderModule(const std::string& modulesPath, const std::string& moduleName)
     {
 		this->m_name = moduleName;
@@ -12,40 +12,40 @@ namespace TripleEngineCore {
 #endif // _WIN32
     }
 
-    const std::string& TripleEngineCore::OpenGLRenderModule::getModuleName() const
+    const std::string& OpenGLRenderModule::getModuleName() const
     {
         return this->m_name;
     }
 
-    bool TripleEngineCore::OpenGLRenderModule::load()
+    bool OpenGLRenderModule::load()
     {
-		this->m_data.libHandle = IO::DynamicLibrary::Load(this->m_path);
+		this->m_data.libHandle = DynamicLibrary::Load(this->m_path);
         if (!this->m_data.libHandle) {
-            TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to load OpenGL module: \"{}\"", this->m_path);
+            triple::log::Logger::ModuleError(this->getModuleClassName(), "Failed to load OpenGL module: \"{}\"", this->m_path);
 			return false;
         }
 
-		this->m_data.createFunc = reinterpret_cast<CreateRendererFunc>(IO::DynamicLibrary::GetSymbol(this->m_data.libHandle, "CreateRenderer"));
+		this->m_data.createFunc = reinterpret_cast<gfx::CreateRendererFunc>(DynamicLibrary::GetSymbol(this->m_data.libHandle, "CreateRenderer"));
         if (!this->m_data.createFunc) {
-			TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to find CreateRenderer function in OpenGL module: \"{}\"", this->m_path);
+            triple::log::Logger::ModuleError(this->getModuleClassName(), "Failed to find CreateRenderer function in OpenGL module: \"{}\"", this->m_path);
             this->unload();
             return false;
         }
 
-		this->m_data.destroyFunc = reinterpret_cast<DestroyRendererFunc>(IO::DynamicLibrary::GetSymbol(this->m_data.libHandle, "DestroyRenderer"));
+		this->m_data.destroyFunc = reinterpret_cast<gfx::DestroyRendererFunc>(DynamicLibrary::GetSymbol(this->m_data.libHandle, "DestroyRenderer"));
         if (!this->m_data.destroyFunc) {
-            TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to find DestroyRenderer function in OpenGL module: \"{}\"", this->m_path);
+            triple::log::Logger::ModuleError(this->getModuleClassName(), "Failed to find DestroyRenderer function in OpenGL module: \"{}\"", this->m_path);
             this->unload();
             return false;
         }
 
 		this->m_data.renderer = this->m_data.createFunc();
 		if (!this->m_data.renderer) {
-			TripleLogger::TLogger::ModuleError(this->getModuleClassName(), "Failed to create OpenGL renderer from module: \"{}\"", this->m_path);
+            triple::log::Logger::ModuleError(this->getModuleClassName(), "Failed to create OpenGL renderer from module: \"{}\"", this->m_path);
             this->unload();
 			return false;
 		}
-		TripleLogger::TLogger::ModuleInfo(this->getModuleClassName(), "OpenGL module loaded successfully: \"{}\"", this->m_path);
+		triple::log::Logger::ModuleInfo(this->getModuleClassName(), "OpenGL module loaded successfully: \"{}\"", this->m_path);
 		return true;
     }
 
@@ -56,13 +56,13 @@ namespace TripleEngineCore {
 			this->m_data.renderer = nullptr;
 		}
 		if (this->m_data.libHandle) {
-			IO::DynamicLibrary::Unload(this->m_data.libHandle);
+			DynamicLibrary::Unload(this->m_data.libHandle);
 			this->m_data.libHandle = nullptr;
-            TripleLogger::TLogger::ModuleWarn(this->getModuleClassName(), "OpenGL module unloaded: \"{}\"", this->m_path);
+            triple::log::Logger::ModuleWarn(this->getModuleClassName(), "OpenGL module unloaded: \"{}\"", this->m_path);
 		}
     }
 
-    IRenderer* OpenGLRenderModule::getRenderer() const
+    gfx::IRenderer* OpenGLRenderModule::getRenderer() const
     {
         return this->m_data.renderer;
     }

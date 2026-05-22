@@ -1,4 +1,4 @@
-#include "Quat.h"
+#include "triple/math/Quat.h"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace TripleEngineCore::TripleMath {
+namespace triple::math {
     Quat Quat::fromEulerAngles(const Vec3& eulerDeg) {
         glm::vec3 eulerRad = glm::radians(glm::vec3(eulerDeg.x, eulerDeg.y, eulerDeg.z));
         glm::quat q = glm::quat(eulerRad);

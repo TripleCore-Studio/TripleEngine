@@ -1,8 +1,8 @@
-#include "Service/EventService.h"
+#include "triple/core/Service/EventService.h"
 #include <vector>
 
-namespace TripleEngineCore::Service {
-    void EventService::dispatch(Event::Event& event)
+namespace triple::core {
+    void EventService::dispatch(Event& event)
     {
         auto it = m_listeners.find(event.getTypeID());
         if (it == m_listeners.end())

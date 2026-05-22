@@ -1,10 +1,10 @@
-#include "Mat4.h"
+#include "triple/math/Mat4.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace TripleEngineCore::TripleMath {
+namespace triple::math {
 
     static glm::mat4 toGlm(const Mat4& m) {
         return glm::make_mat4(m.data);

@@ -17,7 +17,7 @@ add_library(triple::core ALIAS triple_core)
 
 target_include_directories(${LIB_NAME}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-	PRIVATE ${CMAKE_SOURCE_DIR}/external/third_party/stb
+	PRIVATE ${CMAKE_SOURCE_DIR}/external/stb
 )
 
 file(GLOB_RECURSE HEADER_FILES
@@ -48,6 +48,7 @@ target_link_libraries(${LIB_NAME} PRIVATE
 target_link_libraries(${LIB_NAME} PUBLIC
 	triple::log
 	triple::math
+    triple::gfx
 )
 
 if(BUILD_TESTS)
@@ -65,4 +66,4 @@ target_compile_definitions(${LIB_NAME}
         TRIPLE_OPENGL_MODULE_FILENAME="$<TARGET_FILE_NAME:triple_gl>"
 )
 
-copy_dll_to_bin(TripleEngineCore)
+copy_dll_to_bin(triple_core)

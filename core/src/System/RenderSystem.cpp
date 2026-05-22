@@ -1,37 +1,35 @@
-#include "System/RenderSystem.h"
+#include "triple/core/System/RenderSystem.h"
 
-#include "Scene/TransformComponent.h"
-#include "Scene/MeshComponent.h"
-#include "Scene/ChildrenComponent.h"
-#include "Scene/ParentComponent.h"
+#include "triple/core/Scene/TransformComponent.h"
+#include "triple/core/Scene/MeshComponent.h"
+#include "triple/core/Scene/ChildrenComponent.h"
+#include "triple/core/Scene/ParentComponent.h"
 
-#include "Mat4.h"
-#include "TLogger.h"
-#include "Utils/TransformUtils.h"
+#include <triple/math/Vec4.h>
+#include <triple/log/Logger.h>
+#include "triple/core/Utils/TransformUtils.h"
 
-#include "Asset/Model.h"
-#include "Asset/Material.h"
+#include "triple/core/Asset/Model.h"
+#include "triple/core/Asset/Material.h"
 
-#include "Graphics/RenderItem.h"
+#include <triple/gfx/RenderItem.h>
 
-using namespace TripleEngineCore::Graphics;
-
-namespace TripleEngineCore::System {
-    void RenderSystem::gatherFromEntity(Scene::Scene* scene,
-        Scene::Entity e,
-        std::vector<Graphics::RenderCommand>& commands,
-        const TripleMath::Mat4& parentWorld)
+namespace triple::core {
+    void RenderSystem::gatherFromEntity(Scene* scene,
+        Entity e,
+        std::vector<gfx::RenderCommand>& commands,
+        const triple::math::Mat4& parentWorld)
     {
-        auto transform = static_cast<Scene::TransformComponent*>(scene->getComponent<Scene::TransformComponent>(e));
-        TripleMath::Mat4 local = transform ? Utils::getModelMatrix(*transform) : TripleMath::Mat4::identity();
-        TripleMath::Mat4 world = parentWorld * local;
+        auto transform = static_cast<TransformComponent*>(scene->getComponent<TransformComponent>(e));
+        triple::math::Mat4 local = transform ? getModelMatrix(*transform) : triple::math::Mat4::identity();
+        triple::math::Mat4 world = parentWorld * local;
 
-        if (auto meshComp = static_cast<Scene::MeshComponent*>(scene->getComponent<Scene::MeshComponent>(e))) {
-            Graphics::RenderCommand cmd;
+        if (auto meshComp = static_cast<MeshComponent*>(scene->getComponent<MeshComponent>(e))) {
+            gfx::RenderCommand cmd;
             cmd.worldMat = world;
 
             if (meshComp->modelIndex != INVALID_INDEX && m_assets != nullptr) {
-                const Asset::Model* model = m_assets->getModel(meshComp->modelIndex);
+                const Model* model = m_assets->getModel(meshComp->modelIndex);
                 buildRenderCmd(cmd, model);
             }
 
@@ -39,14 +37,14 @@ namespace TripleEngineCore::System {
                 commands.push_back(std::move(cmd));
         }
 
-        if (auto childrenComp = static_cast<Scene::ChildrenComponent*>(scene->getComponent<Scene::ChildrenComponent>(e))) {
-            for (Scene::Entity child : childrenComp->children) {
+        if (auto childrenComp = static_cast<ChildrenComponent*>(scene->getComponent<ChildrenComponent>(e))) {
+            for (Entity child : childrenComp->children) {
                 gatherFromEntity(scene, child, commands, world);
             }
         }
     }
 
-    bool RenderSystem::getGPU(ResourceType type, Asset::AssetID id, GPUHandle& out) {
+    bool RenderSystem::getGPU(ResourceType type, AssetID id, gfx::GPUHandle& out) {
         switch (type) {
         case ResourceType::Texture:
         {
@@ -73,24 +71,24 @@ namespace TripleEngineCore::System {
         return false;
     }
 
-    void RenderSystem::buildRenderCmd(Graphics::RenderCommand& cmd, const Asset::Model* obj)
+    void RenderSystem::buildRenderCmd(gfx::RenderCommand& cmd, const Model* obj)
     {
         if (obj) {
-            GPUHandle gpuGeometry;
+            gfx::GPUHandle gpuGeometry;
             if (!getGPU(ResourceType::Model, obj->id, gpuGeometry)) return;
 
             for (auto& mesh : obj->meshes) {
                 for (auto& p : mesh.primitives) {
-                    RenderItem item;
+                    gfx::RenderItem item;
 
-                    const Asset::Material* mat = m_assets->getMaterial(p.materialId);
-                    if (!mat) mat = m_assets->getMaterial(m_assets->getMaterialId(Service::DefaultMaterialName));
+                    const Material* mat = m_assets->getMaterial(p.materialId);
+                    if (!mat) mat = m_assets->getMaterial(m_assets->getMaterialId(DefaultMaterialName));
                     if (!mat) {
-                        TripleLogger::TLogger::ModuleWarn("Core::RenderSystem", "Primitive in mesh({}) skipped", mesh.name);
+                        triple::log::Logger::ModuleWarn("Core::RenderSystem", "Primitive in mesh({}) skipped", mesh.name);
                         continue;
                     }
 
-                    RenderMaterial rMat;
+                    gfx::RenderMaterial rMat;
                     rMat.albedoColor = mat->albedoColor;
                     rMat.metallic = mat->metallic;
                     rMat.roughness = mat->roughness;
@@ -112,57 +110,57 @@ namespace TripleEngineCore::System {
         }
     }
 
-    void RenderSystem::uploadTexture(const Asset::Texture* texture) {
+    void RenderSystem::uploadTexture(const Texture* texture) {
         if (texture && m_renderer) {
             auto it = m_uploadedTextures.find(texture->id);
             if (it == m_uploadedTextures.end()) {
-                Graphics::TextureDesc desc;
+                gfx::TextureDesc desc;
                 desc.width = texture->width;
                 desc.height = texture->height;
                 desc.channels = texture->channels;
                 desc.data = texture->pixels.data();
-                GPUHandle h = m_renderer->UploadTexture(desc);
+                gfx::GPUHandle h = m_renderer->UploadTexture(desc);
                 m_uploadedTextures[texture->id] = h;
             }
         }
     }
 
-    void RenderSystem::uploadGeometry(const Asset::Model* model) {
+    void RenderSystem::uploadGeometry(const Model* model) {
         auto it = m_uploadedModels.find(model->id);
         if (it != m_uploadedModels.end()) return;
-        Graphics::GeometryDesc desc;
+        gfx::GeometryDesc desc;
         desc.vertices = model->vertices.data();
         desc.vertexCount = model->vertices.size();
         desc.indices = model->indices.data();
         desc.indexCount = model->indices.size();
-        GPUHandle h = m_renderer->UploadGeometry(desc);
+        gfx::GPUHandle h = m_renderer->UploadGeometry(desc);
         m_uploadedModels[model->id] = h;
     }
 
-    void RenderSystem::uploadShader(const Asset::Shader* shader) {
+    void RenderSystem::uploadShader(const Shader* shader) {
         if (shader && m_renderer) {
             auto it = m_uploadedShaders.find(shader->id);
             if (it == m_uploadedShaders.end()) {
-                Graphics::ShaderDesc desc;
+                gfx::ShaderDesc desc;
                 desc.vCode = shader->vertexSource.c_str();
                 desc.fCode = shader->fragmentSource.c_str();
-                GPUHandle h = m_renderer->UploadShader(desc);
+                gfx::GPUHandle h = m_renderer->UploadShader(desc);
                 m_uploadedShaders[shader->id] = h;
             }
         }
     }
 
 
-    void RenderSystem::buildRenderCommands(Scene::Scene* scene,
-        std::vector<Graphics::RenderCommand>& commands)
+    void RenderSystem::buildRenderCommands(Scene* scene,
+        std::vector<gfx::RenderCommand>& commands)
     {
         commands.clear();
         commands.reserve(scene->getEntityCount());
 
-        for (Scene::Entity e : scene->getEntities()) {
-            auto parentComp = static_cast<Scene::ParentComponent*>(scene->getComponent<Scene::ParentComponent>(e));
+        for (Entity e : scene->getEntities()) {
+            auto parentComp = static_cast<ParentComponent*>(scene->getComponent<ParentComponent>(e));
             if (!parentComp || parentComp->parent == 0) {
-                gatherFromEntity(scene, e, commands, TripleMath::Mat4::identity());
+                gatherFromEntity(scene, e, commands, triple::math::Mat4::identity());
             }
         }
     }

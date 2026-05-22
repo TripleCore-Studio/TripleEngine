@@ -5,7 +5,7 @@ set(LIB_NAME triple_log)
 include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
 
 add_library(${LIB_NAME} STATIC
-    src/tLogger.cpp
+    src/Logger.cpp
 )
 add_library(triple::log ALIAS triple_log)
 

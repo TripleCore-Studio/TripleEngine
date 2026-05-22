@@ -1,8 +1,8 @@
 #include <iostream>
-#include "EditorApp.h"
+#include "triple/editor/EditorApp.h"
 
-using namespace TripleEngineEditor;
-using namespace TripleEngineCore;
+using namespace triple::editor;
+using namespace triple::core;
 
 int main() {
 	std::unique_ptr<EditorApp> app = std::make_unique<EditorApp>();

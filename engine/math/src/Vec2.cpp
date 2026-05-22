@@ -1,9 +1,9 @@
-#include "Vec2.h"
+#include "triple/math/Vec2.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace TripleEngineCore::TripleMath {
+namespace triple::math {
     Vec2 Vec2::operator+(const Vec2& other) const {
         glm::vec2 a(x, y);
         glm::vec2 b(other.x, other.y);

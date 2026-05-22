@@ -1,16 +1,15 @@
-#include "Scene/Scene.h"
+#include "triple/core/Scene/Scene.h"
 
 #include <unordered_set>
 #include <cstring>
 
-#include "Scene/ParentComponent.h"
-#include "Scene/ChildrenComponent.h"
-#include "Scene/NameComponent.h"
+#include "triple/core/Scene/ParentComponent.h"
+#include "triple/core/Scene/ChildrenComponent.h"
+#include "triple/core/Scene/NameComponent.h"
 
-#include "TLogger.h"
-#include "Service/ComponentService.h"
+#include "triple/core/Service/ComponentService.h"
 
-namespace TripleEngineCore::Scene {
+namespace triple::core {
     static size_t alignUp(size_t size, size_t align) {
         return (size + align - 1) & ~(align - 1);
     }
@@ -25,13 +24,13 @@ namespace TripleEngineCore::Scene {
     };
 
     struct Scene::Impl {
-        Service::ComponentService* componentService = nullptr;
+        ComponentService* componentService = nullptr;
         std::unordered_map<ComponentTypeID, ComponentPool> pools;
         std::unordered_set<Entity> entities;
         Entity nextEntity = 1;
     };
 
-    Scene::Scene(void* compSrv) : m_impl(new Impl{ static_cast<Service::ComponentService*>(compSrv) }) {}
+    Scene::Scene(void* compSrv) : m_impl(new Impl{ static_cast<ComponentService*>(compSrv) }) {}
     Scene::~Scene() { delete m_impl; }
 
     Entity Scene::createEntity()
@@ -47,7 +46,7 @@ namespace TripleEngineCore::Scene {
 
         if (!name.empty()) {
             auto comp = addComponent<NameComponent>(e);
-            if (comp.isValid()) {
+            if (comp) {
                 comp->name = name;
             }
         }
@@ -245,4 +244,4 @@ namespace TripleEngineCore::Scene {
         return m_impl->componentService->getTypeByIndex(std::type_index(type));
     }
 
-} // namespace TripleEngineCore::Scene
+}

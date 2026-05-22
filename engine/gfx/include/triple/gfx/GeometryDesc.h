@@ -1,10 +1,10 @@
 #ifndef GEOMETRY_DESC_H
 #define GEOMETRY_DESC_H
 
-#include "Graphics/Vertex.h"
+#include "Vertex.h"
 #include <cstdint>
 
-namespace TripleEngineCore::Graphics {
+namespace triple::gfx {
 	struct GeometryDesc {
 		const Vertex* vertices;
 		uint32_t vertexCount;

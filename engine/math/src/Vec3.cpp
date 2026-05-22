@@ -1,9 +1,9 @@
-#include "Vec3.h"
+#include "triple/math/Vec3.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace TripleEngineCore::TripleMath {
+namespace triple::math {
 
     Vec3 Vec3::operator+(const Vec3& other) const {
         glm::vec3 a(x, y, z);

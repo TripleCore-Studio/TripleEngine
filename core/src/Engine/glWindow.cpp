@@ -1,74 +1,75 @@
-#include "Engine/GLWindow.h"
+#include "triple/core/Engine/GLWindow.h"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <TLogger.h>
+#include <triple/log/Logger.h>
 
-#include "Input/KeyCode.h"
-#include "Input/MouseButton.h"
+#include "triple/core/Input/KeyCode.h"
+#include "triple/core/Input/MouseButton.h"
 
-#include "Event/KeyAction.h"
+#include "triple/core/Event/KeyAction.h"
 
-#include "Event/KeyboardInputEvent.h"
-#include "Event/MouseButtonEvent.h"
-#include "Event/MouseMoveEvent.h"
-#include "Event/WindowCloseEvent.h"
-#include "Event/WindowResizeEvent.h"
+#include "triple/core/Event/KeyboardInputEvent.h"
+#include "triple/core/Event/MouseButtonEvent.h"
+#include "triple/core/Event/MouseMoveEvent.h"
+#include "triple/core/Event/WindowCloseEvent.h"
+#include "triple/core/Event/WindowResizeEvent.h"
 
-namespace TripleEngineCore {
+namespace triple::core {
 
-	static Input::KeyCode ConvertKey(int glfwKey)
+	static KeyCode ConvertKey(int glfwKey)
 	{
 		switch (glfwKey)
 		{
-		case GLFW_KEY_W: return Input::KeyCode::W;
-		case GLFW_KEY_A: return Input::KeyCode::A;
-		case GLFW_KEY_S: return Input::KeyCode::S;
-		case GLFW_KEY_D: return Input::KeyCode::D;
-		case GLFW_KEY_SPACE: return Input::KeyCode::Space;
-		case GLFW_KEY_ESCAPE: return Input::KeyCode::Escape;
-		case GLFW_KEY_LEFT_SHIFT: return Input::KeyCode::LeftShift;
-		case GLFW_KEY_LEFT_CONTROL: return Input::KeyCode::LeftCtrl;
-		case GLFW_KEY_LEFT: return Input::KeyCode::Left;
-		case GLFW_KEY_RIGHT: return Input::KeyCode::Right;
-		case GLFW_KEY_UP: return Input::KeyCode::Up;
-		case GLFW_KEY_DOWN: return Input::KeyCode::Down;
-		case GLFW_KEY_F1: return Input::KeyCode::F1;
-		case GLFW_KEY_F2: return Input::KeyCode::F2;
-		case GLFW_KEY_F3: return Input::KeyCode::F3;
-		case GLFW_KEY_F4: return Input::KeyCode::F4;
-		case GLFW_KEY_F5: return Input::KeyCode::F5;
-		case GLFW_KEY_F6: return Input::KeyCode::F6;
-		case GLFW_KEY_F7: return Input::KeyCode::F7;
-		case GLFW_KEY_F8: return Input::KeyCode::F8;
-		case GLFW_KEY_F9: return Input::KeyCode::F9;
-		case GLFW_KEY_F10: return Input::KeyCode::F10;
-		case GLFW_KEY_F11: return Input::KeyCode::F11;
-		case GLFW_KEY_F12: return Input::KeyCode::F12;
-		default: return Input::KeyCode::Unknown;
+		case GLFW_KEY_W: return KeyCode::W;
+		case GLFW_KEY_A: return KeyCode::A;
+		case GLFW_KEY_S: return KeyCode::S;
+		case GLFW_KEY_D: return KeyCode::D;
+		case GLFW_KEY_SPACE: return KeyCode::Space;
+		case GLFW_KEY_ESCAPE: return KeyCode::Escape;
+		case GLFW_KEY_LEFT_SHIFT: return KeyCode::LeftShift;
+		case GLFW_KEY_LEFT_CONTROL: return KeyCode::LeftCtrl;
+		case GLFW_KEY_LEFT: return KeyCode::Left;
+		case GLFW_KEY_RIGHT: return KeyCode::Right;
+		case GLFW_KEY_UP: return KeyCode::Up;
+		case GLFW_KEY_DOWN: return KeyCode::Down;
+		case GLFW_KEY_F1: return KeyCode::F1;
+		case GLFW_KEY_F2: return KeyCode::F2;
+		case GLFW_KEY_F3: return KeyCode::F3;
+		case GLFW_KEY_F4: return KeyCode::F4;
+		case GLFW_KEY_F5: return KeyCode::F5;
+		case GLFW_KEY_F6: return KeyCode::F6;
+		case GLFW_KEY_F7: return KeyCode::F7;
+		case GLFW_KEY_F8: return KeyCode::F8;
+		case GLFW_KEY_F9: return KeyCode::F9;
+		case GLFW_KEY_F10: return KeyCode::F10;
+		case GLFW_KEY_F11: return KeyCode::F11;
+		case GLFW_KEY_F12: return KeyCode::F12;
+		default: return KeyCode::Unknown;
 		}
 	}
 
-	static Event::KeyAction ConvertAction(int glfwAction)
+	static KeyAction ConvertAction(int glfwAction)
 	{
 		switch (glfwAction)
 		{
-		case GLFW_PRESS:   return Event::KeyAction::Press;
-		case GLFW_RELEASE: return Event::KeyAction::Release;
-		case GLFW_REPEAT:  return Event::KeyAction::Repeat;
-		default:           return Event::KeyAction::Release;
+		case GLFW_PRESS:   return KeyAction::Press;
+		case GLFW_RELEASE: return KeyAction::Release;
+		case GLFW_REPEAT:  return KeyAction::Repeat;
+		default:           return KeyAction::Release;
 		}
 	}
 
-	static Input::MouseButton ConvertMouseButton(int button)
+	static MouseButton ConvertMouseButton(int button)
 	{
 		switch (button)
 		{
-		case GLFW_MOUSE_BUTTON_LEFT:   return Input::MouseButton::Left;
-		case GLFW_MOUSE_BUTTON_RIGHT:  return Input::MouseButton::Right;
-		case GLFW_MOUSE_BUTTON_MIDDLE: return Input::MouseButton::Middle;
-		case GLFW_MOUSE_BUTTON_4:      return Input::MouseButton::Button4;
-		case GLFW_MOUSE_BUTTON_5:      return Input::MouseButton::Button5;
-		default:                       return Input::MouseButton::Unknown;
+		case GLFW_MOUSE_BUTTON_LEFT:   return MouseButton::Left;
+		case GLFW_MOUSE_BUTTON_RIGHT:  return MouseButton::Right;
+		case GLFW_MOUSE_BUTTON_MIDDLE: return MouseButton::Middle;
+		case GLFW_MOUSE_BUTTON_4:      return MouseButton::Button4;
+		case GLFW_MOUSE_BUTTON_5:      return MouseButton::Button5;
+		default:                       return MouseButton::Unknown;
 		}
 	}
 
@@ -86,24 +87,24 @@ namespace TripleEngineCore {
 	{
 		if (!s_glfwInit) {
 			if (!glfwInit()) {
-				TripleLogger::TLogger::ModuleCritical("GLWindow", "Error Init GLFW!");
+				triple::log::Logger::ModuleCritical("GLWindow", "Error Init GLFW!");
 				return ErrorCode::GlfwInitError;
 			}
 			else {
-				TripleLogger::TLogger::ModuleInfo("GLWindow", "GLFW initialized successfully.");
+				triple::log::Logger::ModuleInfo("GLWindow", "GLFW initialized successfully.");
 				s_glfwInit = true;
 			}
 		}
 
 		this->m_window = glfwCreateWindow(this->m_data.width, this->m_data.height, this->m_data.title, nullptr, nullptr);
 		if (!this->m_window) {
-			TripleLogger::TLogger::ModuleCritical("GLWindow", "Failed to create GLFW window");
+			triple::log::Logger::ModuleCritical("GLWindow", "Failed to create GLFW window");
 			shutdown();
 			return ErrorCode::CreateWindowError;
 		}
 		else {
 			glfwMakeContextCurrent(this->m_window);
-			TripleLogger::TLogger::ModuleInfo("GLWindow", "GLFW window created successfully");
+			triple::log::Logger::ModuleInfo("GLWindow", "GLFW window created successfully");
 		}
 
 		*proc = reinterpret_cast<void*>(glfwGetProcAddress);
@@ -204,26 +205,26 @@ namespace TripleEngineCore {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			data.width = width;
 			data.height = height;
-			Event::WindowResizeEvent event(width, height);
+			WindowResizeEvent event(width, height);
 			data.eventSink->pushEvent(event);
 		});
 
 		glfwSetWindowCloseCallback(this->m_window, [](GLFWwindow* window) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
-			Event::WindowCloseEvent event(data.title);
+			WindowCloseEvent event(data.title);
 			data.eventSink->pushEvent(event);
 		});
 
 		glfwSetCursorPosCallback(this->m_window, [](GLFWwindow* window, double xpos, double ypos) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
-			Event::MouseMoveEvent event(static_cast<float>(xpos), static_cast<float>(ypos));
+			MouseMoveEvent event(static_cast<float>(xpos), static_cast<float>(ypos));
 			data.eventSink->pushEvent(event);
 		});
 
 		glfwSetKeyCallback(this->m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
-			Event::KeyboardInputEvent event(
+			KeyboardInputEvent event(
 				ConvertKey(key),
 				ConvertAction(action),
 				mods
@@ -235,7 +236,7 @@ namespace TripleEngineCore {
 		glfwSetMouseButtonCallback(this->m_window, [](GLFWwindow* window, int button, int action, int mods) {
 			WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
-			Event::MouseButtonEvent event(
+			MouseButtonEvent event(
 				ConvertMouseButton(button),
 				ConvertAction(action),
 				mods
@@ -245,7 +246,7 @@ namespace TripleEngineCore {
 		});
 	}
 
-	void GLWindow::emit(Event::Event& e)
+	void GLWindow::emit(Event& e)
 	{
 		if (m_data.eventSink)
 			m_data.eventSink->pushEvent(e);

@@ -1,67 +1,65 @@
-#include "Service/ModuleService.h"
-#include "IO/DynamicLibrary.h"
-#include "TLogger.h"
-#include "Modules/OpenGLModule.h"
+#include "triple/core/Service/ModuleService.h"
+#include "triple/core/IO/DynamicLibrary.h"
+#include <triple/log/Logger.h>
+#include "triple/core/Modules/OpenGLModule.h"
 
-namespace TripleEngineCore {
-	namespace Service {
-		ModuleService::ModuleService(std::string modulesPath)
+namespace triple::core {
+	ModuleService::ModuleService(std::string modulesPath)
+	{
+		this->m_modulesPath = modulesPath;
+	}
+	ModuleService::ErrorCode ModuleService::loadModule(ModuleType type)
+	{
+		switch (type)
 		{
-			this->m_modulesPath = modulesPath;
-		}
-		ModuleService::ErrorCode ModuleService::loadModule(ModuleType type)
+		case ModuleType::OpenGLRenderer:
 		{
-			switch (type)
-			{
-			case ModuleType::OpenGLRenderer:
-			{
-				if (m_modules.find(type) != m_modules.end()) {
-					TripleLogger::TLogger::ModuleError(this->getLoaderClassName(), "Module already loaded: OpenGLRenderer");
-					return ErrorCode::ModuleAlreadyLoaded;
-				}
-				auto module = std::make_unique<OpenGLRenderModule>(this->m_modulesPath, TRIPLE_OPENGL_MODULE_FILENAME);
-				if (!module->load()) {
-					return ErrorCode::FailedToLoadOpenGL;
-				}
-				m_modules[type] = std::move(module);
-				return ErrorCode::None;
-				break;
+			if (m_modules.find(type) != m_modules.end()) {
+				triple::log::Logger::ModuleError(this->getLoaderClassName(), "Module already loaded: OpenGLRenderer");
+				return ErrorCode::ModuleAlreadyLoaded;
 			}
-			default:
-				TripleLogger::TLogger::ModuleError(this->getLoaderClassName(), "Unknown module type: {}", "ModuleType::OpenGLRenderer");
-				break;
+			auto module = std::make_unique<OpenGLRenderModule>(this->m_modulesPath, TRIPLE_OPENGL_MODULE_FILENAME);
+			if (!module->load()) {
+				return ErrorCode::FailedToLoadOpenGL;
 			}
+			m_modules[type] = std::move(module);
+			return ErrorCode::None;
+			break;
 		}
-		void ModuleService::unloadModule(ModuleType type)
-		{
-			auto it = m_modules.find(type);
-			if (it != m_modules.end()) {
-				it->second->unload();
-				m_modules.erase(it);
-				TripleLogger::TLogger::ModuleInfo(this->getLoaderClassName(), "Module unloaded successfully: \"{}\"", static_cast<int>(type));
-			}
-			else {
-				TripleLogger::TLogger::ModuleError(this->getLoaderClassName(), "Module not found: \"{}\"", "ModuleType::OpenGLRenderer");
-			}
+		default:
+			triple::log::Logger::ModuleError(this->getLoaderClassName(), "Unknown module type: {}", "ModuleType::OpenGLRenderer");
+			break;
 		}
-		IModule* ModuleService::getModule(ModuleType type)
-		{
-			auto it = m_modules.find(type);
-			if (it != m_modules.end()) {
-				return it->second.get();
-			}
-			return nullptr;
+	}
+	void ModuleService::unloadModule(ModuleType type)
+	{
+		auto it = m_modules.find(type);
+		if (it != m_modules.end()) {
+			it->second->unload();
+			m_modules.erase(it);
+			triple::log::Logger::ModuleInfo(this->getLoaderClassName(), "Module unloaded successfully: \"{}\"", static_cast<int>(type));
 		}
-		std::string ModuleService::getLoaderClassName()
-		{
-			return "ModuleLoader";
+		else {
+			triple::log::Logger::ModuleError(this->getLoaderClassName(), "Module not found: \"{}\"", "ModuleType::OpenGLRenderer");
 		}
-		ModuleService::~ModuleService()
-		{
-			for (auto& pair : m_modules) {
-				pair.second->unload();
-			}
-			m_modules.clear();
+	}
+	IModule* ModuleService::getModule(ModuleType type)
+	{
+		auto it = m_modules.find(type);
+		if (it != m_modules.end()) {
+			return it->second.get();
 		}
+		return nullptr;
+	}
+	std::string ModuleService::getLoaderClassName()
+	{
+		return "ModuleLoader";
+	}
+	ModuleService::~ModuleService()
+	{
+		for (auto& pair : m_modules) {
+			pair.second->unload();
+		}
+		m_modules.clear();
 	}
 }

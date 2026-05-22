@@ -1,25 +1,25 @@
-#include "EditorApp.h"
+#include "triple/editor/EditorApp.h"
 
-#include <Scene/TransformComponent.h>
-#include <Scene/CameraComponent.h>
-#include <Scene/MeshComponent.h>
-#include <Scene/Scene.h>
+#include <triple/core/Scene/TransformComponent.h>
+#include <triple/core/Scene/CameraComponent.h>
+#include <triple/core/Scene/MeshComponent.h>
+#include <triple/core/Scene/Scene.h>
 
-#include <TLogger.h>
-#include <MathCommon.h>
-#include <Utils/TransformUtils.h>
-#include <Event/EngineLoadedEvent.h>
+#include <triple/log/Logger.h>
+#include <triple/math/MathCommon.h>
+#include <triple/core/Utils/TransformUtils.h>
+#include <triple/core/Event/EngineLoadedEvent.h>
 
-#include <System/InputSystem.h>
-#include <System/InputActionSystem.h>
+#include <triple/core/System/InputSystem.h>
+#include <triple/core/System/InputActionSystem.h>
 
-#include <Service/AssetService.h>
-#include <Service/EventService.h>
+#include <triple/core/Service/AssetService.h>
+#include <triple/core/Service/EventService.h>
 
-using namespace TripleEngineCore;
-using namespace TripleMath;
+using namespace triple::core;
+using namespace triple::math;
 
-namespace TripleEngineEditor {
+namespace triple::editor {
 	void EditorApp::onUpdate(float dt)
 	{
 		cameraUpdate(dt);
@@ -27,32 +27,32 @@ namespace TripleEngineEditor {
 
 	void EditorApp::cameraUpdate(float dt)
 	{
-		Scene::TransformComponent* cameraTransform = getActiveScene()->getComponent<Scene::TransformComponent>(1);
+		TransformComponent* cameraTransform = getActiveScene()->getComponent<TransformComponent>(1);
 		if (!cameraTransform) return;
 
-		System::InputSystem* input = getSystem<System::InputSystem>();
+		InputSystem* input = getSystem<InputSystem>();
 
-		TripleMath::Vec2 delta = input->getMouseDelta();
+		Vec2 delta = input->getMouseDelta();
 		cameraTransform->rotationEuler.y += -delta.x * _cameraSettings.sensitivity; // yaw
 		cameraTransform->rotationEuler.x += delta.y * _cameraSettings.sensitivity; // pitch
-		cameraTransform->rotationEuler.x = TripleMath::clamp(cameraTransform->rotationEuler.x, -89.0f, 89.0f);
+		cameraTransform->rotationEuler.x = clamp(cameraTransform->rotationEuler.x, -89.0f, 89.0f);
 
-		TripleMath::Vec3 dir(0, 0, 0);
-		if (input->isKeyDown(Input::KeyCode::W)) dir.z += 1;
-		if (input->isKeyDown(Input::KeyCode::S)) dir.z -= 1;
-		if (input->isKeyDown(Input::KeyCode::A)) dir.x -= 1;
-		if (input->isKeyDown(Input::KeyCode::D)) dir.x += 1;
-		if (input->isKeyDown(Input::KeyCode::Space)) dir.y += 1;
-		if (input->isKeyDown(Input::KeyCode::LeftShift)) dir.y -= 1;
+		Vec3 dir(0, 0, 0);
+		if (input->isKeyDown(KeyCode::W)) dir.z += 1;
+		if (input->isKeyDown(KeyCode::S)) dir.z -= 1;
+		if (input->isKeyDown(KeyCode::A)) dir.x -= 1;
+		if (input->isKeyDown(KeyCode::D)) dir.x += 1;
+		if (input->isKeyDown(KeyCode::Space)) dir.y += 1;
+		if (input->isKeyDown(KeyCode::LeftShift)) dir.y -= 1;
 
-		if (input->isMouseButtonDown(Input::MouseButton::Button5)) {
+		if (input->isMouseButtonDown(MouseButton::Button5)) {
 			_cameraSettings.cameraSpeed += _cameraSettings.cameraSpeedChange * dt;
 		}
-		else if (input->isMouseButtonDown(Input::MouseButton::Button4)) {
+		else if (input->isMouseButtonDown(MouseButton::Button4)) {
 			_cameraSettings.cameraSpeed -= _cameraSettings.cameraSpeedChange * dt;
 		}
 
-		_cameraSettings.cameraSpeed = TripleMath::clamp(
+		_cameraSettings.cameraSpeed = clamp(
 			_cameraSettings.cameraSpeed,
 			_cameraSettings.cameraSpeedMin,
 			_cameraSettings.cameraSpeedMax
@@ -61,79 +61,79 @@ namespace TripleEngineEditor {
 		if (dir.length() > 0) {
 			dir = dir.normalized() * _cameraSettings.cameraSpeed * dt;
 
-			TripleMath::Vec3 fwd = Utils::forward(*cameraTransform);
-			TripleMath::Vec3 right = Utils::right(*cameraTransform);
-			TripleMath::Vec3 up(0, 1, 0);
+			Vec3 fwd = forward(*cameraTransform);
+			Vec3 rightVec = right(*cameraTransform);
+			Vec3 up(0, 1, 0);
 
 			cameraTransform->position += fwd * dir.z;
-			cameraTransform->position += right * dir.x;
+			cameraTransform->position += rightVec * dir.x;
 			cameraTransform->position += up * dir.y;
 		}
 	}
 
 	void EditorApp::demoScene()
 	{
-		Scene::Scene* scene = getActiveScene();
+		Scene* scene = getActiveScene();
 
-		Scene::Entity camera = scene->createEntity("camera");
-		auto cameraComp = scene->addComponent<Scene::CameraComponent>(camera);
+		Entity camera = scene->createEntity("camera");
+		auto cameraComp = scene->addComponent<CameraComponent>(camera);
 		cameraComp->aspectRatio = 1920.0f / 1080.0f;
 		cameraComp->nearPlane = 0.1f;
 		cameraComp->farPlane = 100000.0f;
 		cameraComp->fov = 70.0f;
 
-		auto transformComp = scene->addComponent<Scene::TransformComponent>(camera);
-		transformComp->position = TripleMath::Vec3(0, 0, 10);
-		transformComp->rotationEuler = TripleMath::Vec3(0, 0, 0);
-		transformComp->scale = TripleMath::Vec3(1, 1, 1);
+		auto transformComp = scene->addComponent<TransformComponent>(camera);
+		transformComp->position = Vec3(0, 0, 10);
+		transformComp->rotationEuler = Vec3(0, 0, 0);
+		transformComp->scale = Vec3(1, 1, 1);
 
 		setActiveCamera(camera);
 
-		Service::AssetService* assets = getService<Service::AssetService>();
+		AssetService* assets = getService<AssetService>();
 
-		Service::ModelID areaId = assets->loadModelFromFile("area", "assets/models/area.glb");
-		Service::ModelID characterId = assets->loadModelFromFile("character", "assets/models/character.glb");
+		ModelID areaId = assets->loadModelFromFile("area", "assets/models/area.glb");
+		ModelID characterId = assets->loadModelFromFile("character", "assets/models/character.glb");
 
-		Scene::Entity areaEntity = scene->createEntity();
-		auto meshComp = scene->addComponent<Scene::MeshComponent>(areaEntity);
+		Entity areaEntity = scene->createEntity();
+		auto meshComp = scene->addComponent<MeshComponent>(areaEntity);
 		meshComp->modelIndex = areaId;
 
-		auto areaTransform = scene->addComponent<Scene::TransformComponent>(areaEntity);
-		areaTransform->position = TripleMath::Vec3(0, 0, 0);
-		areaTransform->rotationEuler = TripleMath::Vec3(0, 0, 0);
-		areaTransform->scale = TripleMath::Vec3(5.0, 5.0, 5.0);
+		auto areaTransform = scene->addComponent<TransformComponent>(areaEntity);
+		areaTransform->position = Vec3(0, 0, 0);
+		areaTransform->rotationEuler = Vec3(0, 0, 0);
+		areaTransform->scale = Vec3(5.0, 5.0, 5.0);
 
-		Scene::Entity characterEntity = scene->createEntity();
-		auto characterMeshComp = scene->addComponent<Scene::MeshComponent>(characterEntity);
+		Entity characterEntity = scene->createEntity();
+		auto characterMeshComp = scene->addComponent<MeshComponent>(characterEntity);
 		characterMeshComp->modelIndex = characterId;
 
-		auto characterTransform = scene->addComponent<Scene::TransformComponent>(characterEntity);
-		characterTransform->position = TripleMath::Vec3(7, -0.25, -1.3);
-		characterTransform->rotationEuler = TripleMath::Vec3(0, 90, 0);
-		characterTransform->scale = TripleMath::Vec3(1.5, 1.5, 1.5);
+		auto characterTransform = scene->addComponent<TransformComponent>(characterEntity);
+		characterTransform->position = Vec3(7, -0.25, -1.3);
+		characterTransform->rotationEuler = Vec3(0, 90, 0);
+		characterTransform->scale = Vec3(1.5, 1.5, 1.5);
 	}
 
 	void EditorApp::loadCallbacks()
 	{
-		getService<Service::EventService>()->addListener<Event::EngineLoadedEvent>([this](Event::EngineLoadedEvent& e) {
+		getService<EventService>()->addListener<EngineLoadedEvent>([this](EngineLoadedEvent& e) {
 			demoScene();
 		});
 
-		Input::InputTrigger fullscreenTrigger;
-		fullscreenTrigger.type = Input::InputTriggerType::Key;
-		fullscreenTrigger.state = Input::TriggerState::Pressed;
-		fullscreenTrigger.key = Input::KeyCode::F11;
+		InputTrigger fullscreenTrigger;
+		fullscreenTrigger.type = InputTriggerType::Key;
+		fullscreenTrigger.state = TriggerState::Pressed;
+		fullscreenTrigger.key = KeyCode::F11;
 
-		getSystem<System::InputActionSystem>()->bind("ToggleFullscreen", {fullscreenTrigger}, [this]() {
+		getSystem<InputActionSystem>()->bind("ToggleFullscreen", {fullscreenTrigger}, [this]() {
 			getWindow()->setFullscreen(!getWindow()->isFullscreen());
 		});
 
-		Input::InputTrigger captureMouseTrigger;
-		captureMouseTrigger.type = Input::InputTriggerType::Key;
-		captureMouseTrigger.state = Input::TriggerState::Pressed;
-		captureMouseTrigger.key = Input::KeyCode::F10;
+		InputTrigger captureMouseTrigger;
+		captureMouseTrigger.type = InputTriggerType::Key;
+		captureMouseTrigger.state = TriggerState::Pressed;
+		captureMouseTrigger.key = KeyCode::F10;
 		
-		getSystem<System::InputActionSystem>()->bind("ToggleCaptureMouse", { captureMouseTrigger }, [this]() {
+		getSystem<InputActionSystem>()->bind("ToggleCaptureMouse", { captureMouseTrigger }, [this]() {
 			getWindow()->setCursorCapture(!getWindow()->isCursorCaptured());
 		});
 	}
