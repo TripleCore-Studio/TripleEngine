@@ -1,20 +1,20 @@
 #include "triple/editor/EditorApp.h"
 
-#include <triple/core/Scene/TransformComponent.h>
-#include <triple/core/Scene/CameraComponent.h>
-#include <triple/core/Scene/MeshComponent.h>
-#include <triple/core/Scene/Scene.h>
+#include <triple/core/ecs/TransformComponent.h>
+#include <triple/core/ecs/CameraComponent.h>
+#include <triple/core/ecs/MeshComponent.h>
+#include <triple/core/ecs/Scene.h>
 
 #include <triple/log/Logger.h>
 #include <triple/math/MathCommon.h>
 #include <triple/core/Utils/TransformUtils.h>
 #include <triple/core/Event/EngineLoadedEvent.h>
 
-#include <triple/core/System/InputSystem.h>
-#include <triple/core/System/InputActionSystem.h>
+#include <triple/core/input/InputSystem.h>
+#include <triple/core/input/InputActionSystem.h>
 
-#include <triple/core/Service/AssetService.h>
-#include <triple/core/Service/EventService.h>
+#include <triple/core/asset/AssetService.h>
+#include <triple/core/event/EventService.h>
 
 using namespace triple::core;
 using namespace triple::math;
