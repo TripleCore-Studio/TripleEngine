@@ -1,7 +1,7 @@
 #ifndef EDITOR_APP_H
 #define EDITOR_APP_H
 
-#include <triple/core/Engine/Engine.h>
+#include <triple/core/base/Engine.h>
 
 namespace triple::editor {
 	class EditorApp : public core::Engine {
