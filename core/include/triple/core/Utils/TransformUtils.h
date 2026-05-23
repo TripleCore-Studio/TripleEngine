@@ -2,8 +2,8 @@
 #define TRANSFORM_UTILS_H
 
 #include <triple/math/Mat4.h>
-#include "triple/core/ExportMacros.h"
-#include "triple/core/Scene/TransformComponent.h"
+#include "triple/core/base/ExportMacros.h"
+#include "triple/core/ecs/TransformComponent.h"
 
 namespace triple::core {
 	CORE_API triple::math::Mat4 getModelMatrix(const TransformComponent& t);

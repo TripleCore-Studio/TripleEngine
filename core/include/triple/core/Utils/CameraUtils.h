@@ -1,8 +1,8 @@
 #ifndef CAMERA_UTILS_H
 #define CAMERA_UTILS_H
 
-#include "triple/core/Scene/CameraComponent.h"
-#include "triple/core/Scene/TransformComponent.h"
+#include "triple/core/ecs/CameraComponent.h"
+#include "triple/core/ecs/TransformComponent.h"
 #include <triple/math/Mat4.h>
 
 namespace triple::core {
