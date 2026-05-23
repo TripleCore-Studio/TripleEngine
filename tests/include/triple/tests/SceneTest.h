@@ -12,24 +12,22 @@
 namespace TEC = TripleEngineCore;
 
 namespace TripleEngineTests {
-    class SceneTest : public ::testing::Test {
-    protected:
-        TEC::ComponentManager cm;
-        TEC::Scene::Scene* scene;
+	class SceneTest : public ::testing::Test {
+	  protected:
+		TEC::ComponentManager cm;
+		TEC::Scene::Scene *scene;
 
-        void SetUp() override {
-            cm.registerComponent<TEC::Scene::TransformComponent>();
-            cm.registerComponent<TEC::Scene::NameComponent>();
-            cm.registerComponent<TEC::Scene::ParentComponent>();
-            cm.registerComponent<TEC::Scene::ChildrenComponent>();
+		void SetUp() override {
+			cm.registerComponent<TEC::Scene::TransformComponent>();
+			cm.registerComponent<TEC::Scene::NameComponent>();
+			cm.registerComponent<TEC::Scene::ParentComponent>();
+			cm.registerComponent<TEC::Scene::ChildrenComponent>();
 
-            scene = new TEC::Scene::Scene(&cm);
-        }
+			scene = new TEC::Scene::Scene(&cm);
+		}
 
-        void TearDown() override {
-            delete scene;
-        }
-    };
-}
+		void TearDown() override { delete scene; }
+	};
+} // namespace TripleEngineTests
 
 #endif // SCENE_TEST_H

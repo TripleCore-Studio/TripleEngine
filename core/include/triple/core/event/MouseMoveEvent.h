@@ -5,21 +5,18 @@
 
 namespace triple::core {
 	class CORE_API MouseMoveEvent : public Event {
-	public:
-		MouseMoveEvent(float x, float y)
-			: m_x(x), m_y(y) {
-		}
+	  public:
+		MouseMoveEvent(float x, float y) : m_x(x), m_y(y) {}
 
-		EventID getTypeID() const override {
-			return typeid(MouseMoveEvent);
-		}
+		EventID getTypeID() const override { return typeid(MouseMoveEvent); }
 
 		float getX() const { return m_x; }
 		float getY() const { return m_y; }
-	private:
+
+	  private:
 		float m_x;
 		float m_y;
 	};
-}
+} // namespace triple::core
 
 #endif // MOUSE_MOVE_EVENT_H

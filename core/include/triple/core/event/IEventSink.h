@@ -5,10 +5,10 @@
 
 namespace triple::core {
 	class IEventSink {
-	public:
+	  public:
 		virtual ~IEventSink() = default;
-		virtual void pushEvent(Event& event) = 0;
+		virtual void pushEvent(Event &event) = 0;
 	};
-}
+} // namespace triple::core
 
 #endif // IEVENT_SINK_H

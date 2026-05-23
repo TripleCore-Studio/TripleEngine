@@ -2,12 +2,12 @@
 #define ISERVICE_SYSTEM_H
 
 namespace triple::core {
-    class IService {
-    public:
-        virtual ~IService() = default;
-        virtual void init() {}
-        virtual void shutdown() {}
-    };
-}
+	class IService {
+	  public:
+		virtual ~IService() = default;
+		virtual void init() {}
+		virtual void shutdown() {}
+	};
+} // namespace triple::core
 
 #endif // ISERVICE_SYSTEM_H

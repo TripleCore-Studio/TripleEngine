@@ -6,13 +6,13 @@
 
 namespace triple::core {
 
-    struct Texture : public Asset {
-        uint16_t width = 0;
-        uint16_t height = 0;
-        uint8_t channels = 4;
-        std::vector<unsigned char> pixels;
-    };
+	struct Texture : public Asset {
+		uint16_t width = 0;
+		uint16_t height = 0;
+		uint8_t channels = 4;
+		std::vector<unsigned char> pixels;
+	};
 
-}
+} // namespace triple::core
 
 #endif // TEXTURE_H

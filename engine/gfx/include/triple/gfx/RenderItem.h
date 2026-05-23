@@ -5,12 +5,12 @@
 #include "RenderMaterial.h"
 
 namespace triple::gfx {
-    struct RenderItem {
-        GPUHandle geometry;
-        uint32_t indexOffset;
-        uint32_t indexCount;
-        RenderMaterial material;
-    };
-}
+	struct RenderItem {
+		GPUHandle geometry;
+		uint32_t indexOffset;
+		uint32_t indexCount;
+		RenderMaterial material;
+	};
+} // namespace triple::gfx
 
 #endif // RENDER_ITEM_H

@@ -1,6 +1,5 @@
 Checks: >
   readability-identifier-naming,
-  readability-braces-around-statements,
   readability-const-return-type,
   readability-container-size-empty,
   readability-delete-null-pointer,

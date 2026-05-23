@@ -3,9 +3,9 @@
 
 namespace triple::gfx {
 	struct ShaderDesc {
-		const char* vCode;
-		const char* fCode;
+		const char *vCode;
+		const char *fCode;
 	};
-}
+} // namespace triple::gfx
 
 #endif // SHADER_DESC_H

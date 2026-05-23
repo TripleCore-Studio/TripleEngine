@@ -5,8 +5,7 @@
 #include "triple/math/Vec4.h"
 
 namespace triple::gfx {
-	struct RenderMaterial
-	{
+	struct RenderMaterial {
 		triple::math::Vec4 albedoColor;
 		float metallic;
 		float roughness;
@@ -18,6 +17,6 @@ namespace triple::gfx {
 
 		GPUHandle shaderHandle;
 	};
-}
+} // namespace triple::gfx
 
 #endif // RENDER_MATERIAL_H

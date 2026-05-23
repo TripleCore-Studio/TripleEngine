@@ -6,11 +6,11 @@
 
 namespace triple::gfx {
 	struct GeometryDesc {
-		const Vertex* vertices;
+		const Vertex *vertices;
 		uint32_t vertexCount;
-		const uint32_t* indices;
+		const uint32_t *indices;
 		uint32_t indexCount;
 	};
-}
+} // namespace triple::gfx
 
 #endif // GEOMETRY_DESC_H

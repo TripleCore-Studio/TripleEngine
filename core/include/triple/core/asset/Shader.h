@@ -6,11 +6,11 @@
 
 namespace triple::core {
 
-    struct Shader : public Asset {
-        std::string vertexSource;
-        std::string fragmentSource;
-    };
+	struct Shader : public Asset {
+		std::string vertexSource;
+		std::string fragmentSource;
+	};
 
-}
+} // namespace triple::core
 
 #endif // SHADER_H

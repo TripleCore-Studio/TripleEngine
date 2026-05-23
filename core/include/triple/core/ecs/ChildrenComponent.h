@@ -5,9 +5,9 @@
 #include "Scene.h"
 
 namespace triple::core {
-    struct ChildrenComponent {
-        std::vector<Entity> children;
-    };
-}
+	struct ChildrenComponent {
+		std::vector<Entity> children;
+	};
+} // namespace triple::core
 
 #endif // CHILDREN_COMPONENT_H

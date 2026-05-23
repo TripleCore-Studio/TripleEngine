@@ -15,41 +15,27 @@ namespace triple::gl {
 		}
 	}
 
-	VertexBufferObject::VertexBufferObject()
-	{
-		glGenBuffers(1, &this->m_ID);
-	}
-	VertexBufferObject::~VertexBufferObject()
-	{
+	VertexBufferObject::VertexBufferObject() { glGenBuffers(1, &this->m_ID); }
+	VertexBufferObject::~VertexBufferObject() {
 		if (this->m_ID != 0) {
 			glDeleteBuffers(1, &this->m_ID);
 			this->m_ID = 0;
 		}
 	}
-	void VertexBufferObject::bind() const
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, this->m_ID);
-	}
-	void VertexBufferObject::unbind() const
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-	}
-	void VertexBufferObject::setData(const void* data, unsigned int size, VertexBufferObject::Usage usage)
-	{
+	void VertexBufferObject::bind() const { glBindBuffer(GL_ARRAY_BUFFER, this->m_ID); }
+	void VertexBufferObject::unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+	void VertexBufferObject::setData(const void *data, unsigned int size,
+	                                 VertexBufferObject::Usage usage) {
 		glBindBuffer(GL_ARRAY_BUFFER, this->m_ID);
 		glBufferData(GL_ARRAY_BUFFER, size, data, usageToGLenum(usage));
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
-	unsigned int VertexBufferObject::getID() const
-	{
-		return this->m_ID;
-	}
-	VertexBufferObject::VertexBufferObject(VertexBufferObject&& other) noexcept {
+	unsigned int VertexBufferObject::getID() const { return this->m_ID; }
+	VertexBufferObject::VertexBufferObject(VertexBufferObject &&other) noexcept {
 		this->m_ID = other.m_ID;
 		other.m_ID = 0;
 	}
-	VertexBufferObject& VertexBufferObject::operator=(VertexBufferObject&& other) noexcept
-	{
+	VertexBufferObject &VertexBufferObject::operator=(VertexBufferObject &&other) noexcept {
 		if (this != &other) {
 			if (this->m_ID != 0)
 				glDeleteBuffers(1, &this->m_ID);
@@ -58,4 +44,4 @@ namespace triple::gl {
 		}
 		return *this;
 	}
-}
+} // namespace triple::gl

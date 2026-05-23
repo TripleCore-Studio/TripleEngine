@@ -20,23 +20,19 @@ using namespace triple::core;
 using namespace triple::math;
 
 namespace triple::editor {
-	void EditorApp::onUpdate(float dt)
-	{
-		cameraUpdate(dt);
-	}
+	void EditorApp::onUpdate(float dt) { cameraUpdate(dt); }
 
-	void EditorApp::cameraUpdate(float dt)
-	{
-		TransformComponent* cameraTransform = getActiveScene()->getComponent<TransformComponent>(1);
+	void EditorApp::cameraUpdate(float dt) {
+		TransformComponent *cameraTransform = getActiveScene()->getComponent<TransformComponent>(1);
 		if (!cameraTransform) {
 			return;
 		}
 
-		InputSystem* input = getSystem<InputSystem>();
+		InputSystem *input = getSystem<InputSystem>();
 
 		Vec2 delta = input->getMouseDelta();
 		cameraTransform->rotationEuler.y += -delta.x * _cameraSettings.sensitivity; // yaw
-		cameraTransform->rotationEuler.x += delta.y * _cameraSettings.sensitivity; // pitch
+		cameraTransform->rotationEuler.x += delta.y * _cameraSettings.sensitivity;  // pitch
 		cameraTransform->rotationEuler.x = clamp(cameraTransform->rotationEuler.x, -89.0f, 89.0f);
 
 		Vec3 dir(0, 0, 0);
@@ -61,16 +57,13 @@ namespace triple::editor {
 
 		if (input->isMouseButtonDown(MouseButton::Button5)) {
 			_cameraSettings.cameraSpeed += _cameraSettings.cameraSpeedChange * dt;
-		}
-		else if (input->isMouseButtonDown(MouseButton::Button4)) {
+		} else if (input->isMouseButtonDown(MouseButton::Button4)) {
 			_cameraSettings.cameraSpeed -= _cameraSettings.cameraSpeedChange * dt;
 		}
 
-		_cameraSettings.cameraSpeed = clamp(
-			_cameraSettings.cameraSpeed,
-			_cameraSettings.cameraSpeedMin,
-			_cameraSettings.cameraSpeedMax
-		);
+		_cameraSettings.cameraSpeed =
+		    clamp(_cameraSettings.cameraSpeed, _cameraSettings.cameraSpeedMin,
+		          _cameraSettings.cameraSpeedMax);
 
 		if (dir.length() > 0) {
 			dir = dir.normalized() * _cameraSettings.cameraSpeed * dt;
@@ -85,9 +78,8 @@ namespace triple::editor {
 		}
 	}
 
-	void EditorApp::demoScene()
-	{
-		Scene* scene = getActiveScene();
+	void EditorApp::demoScene() {
+		Scene *scene = getActiveScene();
 
 		Entity camera = scene->createEntity("camera");
 		auto cameraComp = scene->addComponent<CameraComponent>(camera);
@@ -103,7 +95,7 @@ namespace triple::editor {
 
 		setActiveCamera(camera);
 
-		AssetService* assets = getService<AssetService>();
+		AssetService *assets = getService<AssetService>();
 
 		ModelID areaId = assets->loadModelFromFile("area", "assets/models/area.glb");
 		ModelID characterId = assets->loadModelFromFile("character", "assets/models/character.glb");
@@ -127,11 +119,9 @@ namespace triple::editor {
 		characterTransform->scale = Vec3(1.5, 1.5, 1.5);
 	}
 
-	void EditorApp::loadCallbacks()
-	{
-		getService<EventService>()->addListener<EngineLoadedEvent>([this](EngineLoadedEvent& e) {
-			demoScene();
-		});
+	void EditorApp::loadCallbacks() {
+		getService<EventService>()->addListener<EngineLoadedEvent>(
+		    [this](EngineLoadedEvent &e) { demoScene(); });
 
 		InputTrigger fullscreenTrigger;
 		fullscreenTrigger.type = InputTriggerType::Key;
@@ -146,9 +136,9 @@ namespace triple::editor {
 		captureMouseTrigger.type = InputTriggerType::Key;
 		captureMouseTrigger.state = TriggerState::Pressed;
 		captureMouseTrigger.key = KeyCode::F10;
-		
-		getSystem<InputActionSystem>()->bind("ToggleCaptureMouse", { captureMouseTrigger }, [this]() {
+
+		getSystem<InputActionSystem>()->bind("ToggleCaptureMouse", {captureMouseTrigger}, [this]() {
 			getWindow()->setCursorCapture(!getWindow()->isCursorCaptured());
 		});
 	}
-} // namespace TripleEngineEditor
+} // namespace triple::editor

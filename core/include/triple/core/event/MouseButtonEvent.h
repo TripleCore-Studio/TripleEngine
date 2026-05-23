@@ -9,14 +9,11 @@
 
 namespace triple::core {
 	class CORE_API MouseButtonEvent : public Event {
-	public:
+	  public:
 		MouseButtonEvent(MouseButton button, KeyAction action, int mods)
-			: m_button(button), m_action(action), m_mods(mods) {
-		}
+		    : m_button(button), m_action(action), m_mods(mods) {}
 
-		EventID getTypeID() const override {
-			return typeid(MouseButtonEvent);
-		}
+		EventID getTypeID() const override { return typeid(MouseButtonEvent); }
 
 		MouseButton getButton() const { return m_button; }
 		KeyAction getAction() const { return m_action; }
@@ -26,11 +23,11 @@ namespace triple::core {
 		bool isReleased() const { return m_action == KeyAction::Release; }
 		bool isRepeat() const { return m_action == KeyAction::Repeat; }
 
-	private:
+	  private:
 		MouseButton m_button;
 		KeyAction m_action;
 		int m_mods;
 	};
-}
+} // namespace triple::core
 
 #endif // MOUSE_BUTTON_EVENT_H

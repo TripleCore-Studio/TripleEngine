@@ -6,8 +6,8 @@
 #include <triple/math/Mat4.h>
 
 namespace triple::core {
-	triple::math::Mat4 getProjectionMatrix(const CameraComponent& camera);
-	triple::math::Mat4 getViewMatrix(const TransformComponent& transform);
-}
+	triple::math::Mat4 getProjectionMatrix(const CameraComponent &camera);
+	triple::math::Mat4 getViewMatrix(const TransformComponent &transform);
+} // namespace triple::core
 
 #endif // CAMERA_UTILS_H

@@ -5,12 +5,10 @@
 
 namespace triple::core {
 	class CORE_API EngineLoadedEvent : public Event {
-	public:
+	  public:
 		EngineLoadedEvent() {}
-		EventID getTypeID() const override {
-			return typeid(EngineLoadedEvent);
-		}
+		EventID getTypeID() const override { return typeid(EngineLoadedEvent); }
 	};
-}
+} // namespace triple::core
 
 #endif // ENGINE_LOADED_EVENT_H

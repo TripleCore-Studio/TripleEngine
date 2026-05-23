@@ -7,32 +7,32 @@
 
 namespace triple::core {
 	class OpenGLRenderModule : public IModule {
-	public:
-		OpenGLRenderModule(const std::string& modulesPath, const std::string& moduleName);
-		virtual const std::string& getModuleName() const override;
+	  public:
+		OpenGLRenderModule(const std::string &modulesPath, const std::string &moduleName);
+		virtual const std::string &getModuleName() const override;
 		virtual bool load() override;
 		virtual void unload() override;
 
-		gfx::IRenderer* getRenderer() const;
+		gfx::IRenderer *getRenderer() const;
 		std::string getModuleClassName();
 
 		~OpenGLRenderModule();
 
-	private:
+	  private:
 		struct ModuleData {
 			LibHandle libHandle = nullptr;
 			gfx::CreateRendererFunc createFunc = nullptr;
 			gfx::DestroyRendererFunc destroyFunc = nullptr;
-			gfx::IRenderer* renderer = nullptr;
+			gfx::IRenderer *renderer = nullptr;
 		};
 
 		ModuleData m_data;
 		std::string m_path;
 		std::string m_name;
 
-		OpenGLRenderModule(const OpenGLRenderModule&) = delete;
-		OpenGLRenderModule& operator=(const OpenGLRenderModule&) = delete;
+		OpenGLRenderModule(const OpenGLRenderModule &) = delete;
+		OpenGLRenderModule &operator=(const OpenGLRenderModule &) = delete;
 	};
-}
+} // namespace triple::core
 
 #endif
