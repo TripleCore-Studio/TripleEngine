@@ -1,7 +1,7 @@
 #ifndef IEVENT_SINK_H
 #define IEVENT_SINK_H
 
-#include "triple/core/Event/Event.h"
+#include "triple/core/event/Event.h"
 
 namespace triple::core {
 	class IEventSink {

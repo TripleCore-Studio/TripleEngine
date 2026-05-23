@@ -9,9 +9,9 @@
 #include "KeyCode.h"
 #include "MouseButton.h"
 
-#include "triple/core/Event/KeyboardInputEvent.h"
-#include "triple/core/Event/MouseButtonEvent.h"
-#include "triple/core/Event/MouseMoveEvent.h"
+#include "triple/core/event/KeyboardInputEvent.h"
+#include "triple/core/event/MouseButtonEvent.h"
+#include "triple/core/event/MouseMoveEvent.h"
 
 namespace triple::core {
     class CORE_API InputSystem : public ISystem {

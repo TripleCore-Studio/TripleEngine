@@ -7,7 +7,7 @@
 
 #include "triple/core/platform/OpenGLModule.h"
 #include "triple/core/platform/OpenGLModule.h"
-#include "triple/core/Utils/CameraUtils.h"
+#include "triple/core/utils/CameraUtils.h"
 
 #include "triple/core/platform/GLWindow.h"
 #include "triple/core/platform/ModuleService.h"
@@ -19,47 +19,47 @@
 #include "triple/core/ecs/NameComponent.h"
 #include "triple/core/ecs/SceneTypes.h"
 
-#include "triple/core/Event/EngineLoadedEvent.h"
-#include "triple/core/Event/WindowCloseEvent.h"
-#include "triple/core/Event/WindowResizeEvent.h"
-#include "triple/core/Event/KeyboardInputEvent.h"
-#include "triple/core/Event/MouseMoveEvent.h"
-#include "triple/core/Event/MouseButtonEvent.h"
+#include "triple/core/event/EngineLoadedEvent.h"
+#include "triple/core/event/WindowCloseEvent.h"
+#include "triple/core/event/WindowResizeEvent.h"
+#include "triple/core/event/KeyboardInputEvent.h"
+#include "triple/core/event/MouseMoveEvent.h"
+#include "triple/core/event/MouseButtonEvent.h"
 
-#include "triple/core/Input/InputSystem.h"
-#include "triple/core/Input/InputActionSystem.h"
+#include "triple/core/input/InputSystem.h"
+#include "triple/core/input/InputActionSystem.h"
 
 #include "triple/core/ecs/ComponentService.h"
-#include "triple/core/Event/EventService.h"
-#include "triple/core/Asset/AssetService.h"
+#include "triple/core/event/EventService.h"
+#include "triple/core/asset/AssetService.h"
 
 
 #include "triple/core/render/RenderSystem.h"
 
 namespace triple::core {
 	struct Engine::Impl {
-		std::unordered_map<std::type_index, void*> m_servicesFast;
-		std::unordered_map<std::type_index, void*> m_systemsFast;
+		std::unordered_map<std::type_index, void*> servicesFast;
+		std::unordered_map<std::type_index, void*> systemsFast;
 
-		std::unordered_map<std::type_index, std::unique_ptr<IService>> m_services;
-		std::unordered_map<std::type_index, std::unique_ptr<ISystem>> m_systems;
+		std::unordered_map<std::type_index, std::unique_ptr<IService>> services;
+		std::unordered_map<std::type_index, std::unique_ptr<ISystem>> systems;
 
-		RenderSystem* m_renderSystem = nullptr;
-		InputSystem* m_inputSystem = nullptr;
-		InputActionSystem* m_inputActionSystem = nullptr;
+		RenderSystem* renderSystem = nullptr;
+		InputSystem* inputSystem = nullptr;
+		InputActionSystem* inputActionSystem = nullptr;
 
-		EventService* m_eventService = nullptr;
-		AssetService* m_assetsService = nullptr;
-		ModuleService* m_moduleService = nullptr;
-		ComponentService* m_componentService = nullptr;
+		EventService* eventService = nullptr;
+		AssetService* assetsService = nullptr;
+		ModuleService* moduleService = nullptr;
+		ComponentService* componentService = nullptr;
 
-		std::unique_ptr<IWindow> m_window;
-		std::unique_ptr<Scene> m_scene;
-		Entity m_cameraEntity = INVALID_ENTITY;
+		std::unique_ptr<IWindow> window;
+		std::unique_ptr<Scene> scene;
+		Entity cameraEntity = INVALID_ENTITY;
 	};
 
 	template<typename T>
-	T* registerService(std::unique_ptr<T> ptr, Engine::Impl* _impl)
+	T* registerService(std::unique_ptr<T> ptr, Engine::Impl* impl)
 	{
 		static_assert(std::is_base_of_v<IService, T>, "T must derive from IService");
 
@@ -67,14 +67,14 @@ namespace triple::core {
 
 		std::unique_ptr<IService> basePtr = std::move(ptr);
 
-		_impl->m_services.emplace(std::type_index(typeid(T)), std::move(basePtr));
-		_impl->m_servicesFast[std::type_index(typeid(T))] = raw;
+		impl->services.emplace(std::type_index(typeid(T)), std::move(basePtr));
+		impl->servicesFast[std::type_index(typeid(T))] = raw;
 
 		return raw;
 	}
 
 	template<typename T>
-	T* registerSystem(std::unique_ptr<T> ptr,	Engine::Impl* _impl)
+	T* registerSystem(std::unique_ptr<T> ptr,	Engine::Impl* impl)
 	{
 		static_assert(std::is_base_of_v<ISystem, T>, "T must derive from ISystem");
 
@@ -82,22 +82,18 @@ namespace triple::core {
 
 		std::unique_ptr<ISystem> basePtr = std::move(ptr);
 
-		_impl->m_systems.emplace(std::type_index(typeid(T)), std::move(basePtr));
-		_impl->m_systemsFast[std::type_index(typeid(T))] = raw;
+		impl->systems.emplace(std::type_index(typeid(T)), std::move(basePtr));
+		impl->systemsFast[std::type_index(typeid(T))] = raw;
 
 		return raw;
 	}
 
-	Engine::Engine() : m_impl(new Impl())
+	Engine::Engine() : impl(new Impl()), m_isRunning(false), m_isInitialized(false), m_lastTime(0.0f)
 	{
 		triple::log::Logger::Info("Engine starting...");
-
-		this->m_isRunning = false;
-		this->m_isInitialized = false;
-		this->m_lastTime = 0.0f;
-		m_impl->m_cameraEntity = INVALID_ENTITY;
+		impl->cameraEntity = INVALID_ENTITY;
 	}
-
+	
 	bool Engine::init()
 	{
 		if (m_isInitialized) {
@@ -105,18 +101,18 @@ namespace triple::core {
 			return true;
 		}
 
-		m_impl->m_eventService = registerService(std::make_unique<EventService>(), m_impl);
-		m_impl->m_componentService = registerService(std::make_unique<ComponentService>(), m_impl);
-		m_impl->m_moduleService = registerService(std::make_unique<ModuleService>("modules"), m_impl);
-		m_impl->m_assetsService = registerService(std::make_unique<AssetService>(), m_impl);
+		impl->eventService = registerService(std::make_unique<EventService>(), impl);
+		impl->componentService = registerService(std::make_unique<ComponentService>(), impl);
+		impl->moduleService = registerService(std::make_unique<ModuleService>("modules"), impl);
+		impl->assetsService = registerService(std::make_unique<AssetService>(), impl);
 
-		m_impl->m_renderSystem = registerSystem(std::make_unique<RenderSystem>(m_impl->m_assetsService), m_impl);
-		m_impl->m_inputSystem = registerSystem(std::make_unique<InputSystem>(), m_impl);
-		m_impl->m_inputActionSystem = registerSystem(std::make_unique<InputActionSystem>(m_impl->m_inputSystem), m_impl);
+		impl->renderSystem = registerSystem(std::make_unique<RenderSystem>(impl->assetsService), impl);
+		impl->inputSystem = registerSystem(std::make_unique<InputSystem>(), impl);
+		impl->inputActionSystem = registerSystem(std::make_unique<InputActionSystem>(impl->inputSystem), impl);
 
-		m_impl->m_moduleService->loadModule(ModuleType::OpenGLRenderer);
-		m_impl->m_inputSystem->init();
-		m_impl->m_scene = std::make_unique<Scene>(m_impl->m_componentService);
+		impl->moduleService->loadModule(ModuleType::OpenGLRenderer);
+		impl->inputSystem->init();
+		impl->scene = std::make_unique<Scene>(impl->componentService);
 		loadSystemCallbacks();
 		loadAssetsCallbacks();
 
@@ -136,7 +132,7 @@ namespace triple::core {
 			return ErrorCode::FailedInitEngine;
 		}
 
-		OpenGLRenderModule* openGLModule = dynamic_cast<OpenGLRenderModule*>(m_impl->m_moduleService->getModule(ModuleType::OpenGLRenderer));
+		OpenGLRenderModule* openGLModule = dynamic_cast<OpenGLRenderModule*>(impl->moduleService->getModule(ModuleType::OpenGLRenderer));
 		if (openGLModule == nullptr) {
 			triple::log::Logger::ModuleCritical(this->getModuleName(), "Failed to get OpenGL module");
 			return ErrorCode::ModuleLoadError;
@@ -147,7 +143,7 @@ namespace triple::core {
 			triple::log::Logger::ModuleCritical(this->getModuleName(), "Failed to get OpenGL renderer from module");
 			return ErrorCode::ModuleLoadError;
 		}
-		m_impl->m_renderSystem->setRenderer(renderer);
+		impl->renderSystem->setRenderer(renderer);
 
 		gfx::IOpenGLRenderer* pGLRenderer = dynamic_cast<gfx::IOpenGLRenderer*>(renderer);
 		if (!pGLRenderer) {
@@ -155,13 +151,13 @@ namespace triple::core {
 			return ErrorCode::ModuleLoadError;
 		}
 
-		auto window = std::make_unique<GLWindow>(title, width, height, m_impl->m_eventService);
+		auto window = std::make_unique<GLWindow>(title, width, height, impl->eventService);
 		void* loader = nullptr;
 		if (window->init(&loader) != GLWindow::ErrorCode::None) {
 			triple::log::Logger::ModuleCritical(this->getModuleName(), "Failed to initialize window");
 			return ErrorCode::FailedToLoadWindow;
 		}
-		m_impl->m_window = std::move(window);
+		impl->window = std::move(window);
 
 		if (loader == nullptr) {
 			triple::log::Logger::ModuleCritical(this->getModuleName(), "Loader for OpenGL not initialized");
@@ -177,31 +173,31 @@ namespace triple::core {
 		}
 
 		pGLRenderer->Initialize();
-		m_impl->m_renderSystem->setRenderer(pGLRenderer);
+		impl->renderSystem->setRenderer(pGLRenderer);
 
 		if (!bootstrapResources()) {
-			m_impl->m_window->shutdown();
+			impl->window->shutdown();
 			triple::log::Logger::ModuleCritical(this->getModuleName(), "Error: bootstrapResources");
 			return ErrorCode::FailedBootstrapResources;
 		}
 
 		auto event = EngineLoadedEvent();
-		m_impl->m_eventService->dispatch(event);
+		impl->eventService->dispatch(event);
 
-		m_lastTime = m_impl->m_window->getTime();
+		m_lastTime = impl->window->getTime();
 		this->m_isRunning = true;
 		while (m_isRunning) {
-			float currentTime = m_impl->m_window->getTime();
+			float currentTime = impl->window->getTime();
 			float dt = currentTime - m_lastTime;
 			m_lastTime = currentTime;
 
-			m_impl->m_window->PollEvents();
-			m_impl->m_window->SwapBuffers();
+			impl->window->PollEvents();
+			impl->window->SwapBuffers();
 
 			this->onUpdate(dt);
 
-			m_impl->m_inputActionSystem->update(dt);
-			m_impl->m_inputSystem->update(dt);
+			impl->inputActionSystem->update(dt);
+			impl->inputSystem->update(dt);
 
 			this->onRender(m_lastTime);
 		}
@@ -215,9 +211,9 @@ namespace triple::core {
 
 	void Engine::onRender(float t)
 	{
-		Scene* scene = m_impl->m_scene.get();
-		auto* transform = scene->getComponent<TransformComponent>(m_impl->m_cameraEntity);
-		auto* cameraComp = scene->getComponent<CameraComponent>(m_impl->m_cameraEntity);
+		Scene* scene = impl->scene.get();
+		auto* transform = scene->getComponent<TransformComponent>(impl->cameraEntity);
+		auto* cameraComp = scene->getComponent<CameraComponent>(impl->cameraEntity);
 
 		if (!transform || !cameraComp) {
 			triple::log::Logger::ModuleWarn(this->getModuleName(), "Active camera missing on render");
@@ -229,38 +225,38 @@ namespace triple::core {
 		ctx.camera = gfx::CameraData{ getViewMatrix(*transform),
 			getProjectionMatrix(*cameraComp), transform->position};
 
-		m_impl->m_renderSystem->buildRenderCommands(m_impl->m_scene.get(), ctx.commands);
+		impl->renderSystem->buildRenderCommands(impl->scene.get(), ctx.commands);
 		ctx.time = t;
 
-		m_impl->m_renderSystem->getRenderer()->BeginFrame(t);
-		m_impl->m_renderSystem->getRenderer()->RenderFrame(ctx);
-		m_impl->m_renderSystem->getRenderer()->EndFrame();
+		impl->renderSystem->getRenderer()->BeginFrame(t);
+		impl->renderSystem->getRenderer()->RenderFrame(ctx);
+		impl->renderSystem->getRenderer()->EndFrame();
 	}
 
-	Scene* Engine::getActiveScene()
+	Scene* Engine::getActiveScene() const
 	{
-		return m_impl->m_scene.get();
+		return impl->scene.get();
 	}
 
-	IWindow* Engine::getWindow()
+	IWindow* Engine::getWindow() const
 	{
-		return m_impl->m_window.get();
+		return impl->window.get();
 	}
 
-	void Engine::setActiveCamera(Entity camera)
+	void Engine::setActiveCamera(Entity camera) const
 	{
-		m_impl->m_cameraEntity = camera;
+		impl->cameraEntity = camera;
 	}
 
-	bool Engine::bootstrapComponents()
+	bool Engine::bootstrapComponents() const
 	{
 		std::vector<ComponentTypeID> ids;
-		ids.push_back(m_impl->m_componentService->registerComponent<TransformComponent>());
-		ids.push_back(m_impl->m_componentService->registerComponent<MeshComponent>());
-		ids.push_back(m_impl->m_componentService->registerComponent<CameraComponent>());
-		ids.push_back(m_impl->m_componentService->registerComponent<ParentComponent>());
-		ids.push_back(m_impl->m_componentService->registerComponent<ChildrenComponent>());
-		ids.push_back(m_impl->m_componentService->registerComponent<NameComponent>());
+		ids.push_back(impl->componentService->registerComponent<TransformComponent>());
+		ids.push_back(impl->componentService->registerComponent<MeshComponent>());
+		ids.push_back(impl->componentService->registerComponent<CameraComponent>());
+		ids.push_back(impl->componentService->registerComponent<ParentComponent>());
+		ids.push_back(impl->componentService->registerComponent<ChildrenComponent>());
+		ids.push_back(impl->componentService->registerComponent<NameComponent>());
 
 		for (auto& id : ids) {
 			if (id == INVALID_COMPONENT_TYPE_ID) {
@@ -273,70 +269,70 @@ namespace triple::core {
 	
 	void Engine::loadSystemCallbacks()
 	{
-		m_impl->m_eventService->addListener<WindowCloseEvent>([this](WindowCloseEvent& e) {
+		impl->eventService->addListener<WindowCloseEvent>([this](WindowCloseEvent& e) {
 			triple::log::Logger::Warn("Window ({}) closed", e.getTitle());
-			m_impl->m_window->shutdown();
+			impl->window->shutdown();
 			this->m_isRunning = false;
 			});
 
-		m_impl->m_eventService->addListener<WindowResizeEvent>([this](WindowResizeEvent& e) {
-			m_impl->m_renderSystem->getRenderer()->SetViewport(0, 0, e.getWidth(), e.getHeight());
+		impl->eventService->addListener<WindowResizeEvent>([this](WindowResizeEvent& e) {
+			impl->renderSystem->getRenderer()->SetViewport(0, 0, e.getWidth(), e.getHeight());
 			});
 
-		m_impl->m_eventService->addListener<KeyboardInputEvent>([this](KeyboardInputEvent& e) {
-			m_impl->m_inputSystem->onKeyboard(e);
+		impl->eventService->addListener<KeyboardInputEvent>([this](KeyboardInputEvent& e) {
+			impl->inputSystem->onKeyboard(e);
 			});
 
-		m_impl->m_eventService->addListener<MouseMoveEvent>([this](MouseMoveEvent& e) {
-			m_impl->m_inputSystem->onMouseMove(e);
+		impl->eventService->addListener<MouseMoveEvent>([this](MouseMoveEvent& e) {
+			impl->inputSystem->onMouseMove(e);
 			});
 
-		m_impl->m_eventService->addListener<MouseButtonEvent>([this](MouseButtonEvent& e) {
-			m_impl->m_inputSystem->onMouseButton(e);
+		impl->eventService->addListener<MouseButtonEvent>([this](MouseButtonEvent& e) {
+			impl->inputSystem->onMouseButton(e);
 		});
 	}
 
 	void Engine::loadAssetsCallbacks()
 	{
-		m_impl->m_assetsService->setTextureLoadedCallback([this](const Texture* tex) {
-			m_impl->m_renderSystem->uploadTexture(tex);
+		impl->assetsService->setTextureLoadedCallback([this](const Texture* tex) {
+			impl->renderSystem->uploadTexture(tex);
 		});
 
-		m_impl->m_assetsService->setModelLoadedCallback([this](const Model* model) {
-			m_impl->m_renderSystem->uploadGeometry(model);
+		impl->assetsService->setModelLoadedCallback([this](const Model* model) {
+			impl->renderSystem->uploadGeometry(model);
 		});
 
-		m_impl->m_assetsService->setShaderLoadedCallback([this](const Shader* shader) {
-			m_impl->m_renderSystem->uploadShader(shader);
+		impl->assetsService->setShaderLoadedCallback([this](const Shader* shader) {
+			impl->renderSystem->uploadShader(shader);
 		});
 	}
 
-	void* Engine::getServiceRaw(const std::type_info& type)
+	void* Engine::getServiceRaw(const std::type_info& type) const
 	{
-		auto it = m_impl->m_servicesFast.find(std::type_index(type));
-		if (it != m_impl->m_servicesFast.end()) {
+		auto it = impl->servicesFast.find(std::type_index(type));
+		if (it != impl->servicesFast.end()) {
 			return it->second;
 		}
 		return nullptr;
 	}
 
-	void* Engine::getSystemRaw(const std::type_info& type)
+	void* Engine::getSystemRaw(const std::type_info& type) const
 	{
-		auto it = m_impl->m_systemsFast.find(std::type_index(type));
-		if (it != m_impl->m_systemsFast.end()) {
+		auto it = impl->systemsFast.find(std::type_index(type));
+		if (it != impl->systemsFast.end()) {
 			return it->second;
 		}
 		return nullptr;
 	}
 
-	bool Engine::bootstrapResources()
+	bool Engine::bootstrapResources() const
 	{
-		return m_impl->m_assetsService->loadDefaultAssets();
+		return impl->assetsService->loadDefaultAssets();
 	}
 
 	Engine::~Engine()
 	{
 		triple::log::Logger::Info("Engine stoping...");
-		delete m_impl;
+		delete impl;
 	}
 }

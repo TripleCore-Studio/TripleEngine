@@ -7,71 +7,72 @@
 
 #include "stb_image.h"
 
-#include "triple/core/Asset/AssimpHelper.h"
-#include "triple/core/Asset/AssetStorage.h"
+#include "triple/core/asset/AssimpHelper.h"
+#include "triple/core/asset/AssetStorage.h"
 
 namespace triple::core {
-    MaterialID processMaterial(const AssimpHelper::LoadedMesh& _mesh,
+    MaterialID processMaterial(const AssimpHelper::LoadedMesh& mesh,
         const AssimpHelper::LoadedModel& loadedModel,
         AssetService* system)
     {
-        AssimpHelper::LoadedMaterial _mat = loadedModel.materials[_mesh.materialIndex];
-        AssimpHelper::LoadedTexture _difftex;
+        AssimpHelper::LoadedMaterial mat = loadedModel.materials[mesh.materialIndex];
+        AssimpHelper::LoadedTexture difftex;
         bool isEmpty = true;
-        if (!_mat.diffuseTextures.empty()) {
-            _difftex = _mat.diffuseTextures[0];
+        if (!mat.diffuseTextures.empty()) {
+            difftex = mat.diffuseTextures[0];
             isEmpty = false;
         }
         Texture texture;
-        texture.name = _difftex.name;
-        texture.width = static_cast<uint16_t>(_difftex.width);
-        texture.height = static_cast<uint16_t>(_difftex.height);
-        texture.channels = static_cast<uint8_t>(_difftex.channels);
-        texture.pixels = std::move(_difftex.pixels);
+        texture.name = difftex.name;
+        texture.width = static_cast<uint16_t>(difftex.width);
+        texture.height = static_cast<uint16_t>(difftex.height);
+        texture.channels = static_cast<uint8_t>(difftex.channels);
+        texture.pixels = std::move(difftex.pixels);
 
         Material material;
-        material.name = _mat.name;
+        material.name = mat.name;
         if (!isEmpty) {
             material.albedoTextureId = system->loadTexture(material.name, std::move(texture));
         }
         else {
-            material.albedoTextureId = system->getTextureId(DefaultAlbedoRoughnessName);
+            material.albedoTextureId = system->getTextureId(DEFAULT_ALBEDO_ROUGHNESS_NAME.data());
         }
         material.albedoColor = { 1.0f, 1.0f, 1.0f, 1.0f };
         material.metallic = 0.0f;
         material.roughness = 1.0f;
-        material.metallicTextureId = system->getTextureId(DefaultMetallicName);
-        material.normalTextureId = system->getTextureId(DefaultNormalName);
-        material.roughnessTextureId = system->getTextureId(DefaultAlbedoRoughnessName);
-        material.shaderId = system->getShaderId(DefaultShaderName);
+        material.metallicTextureId = system->getTextureId(DEFAULT_METALLIC_NAME.data());
+        material.normalTextureId = system->getTextureId(DEFAULT_NORMAL_NAME.data());
+        material.roughnessTextureId = system->getTextureId(DEFAULT_ALBEDO_ROUGHNESS_NAME.data());
+        material.shaderId = system->getShaderId(DEFAULT_SHADER_NAME.data());
 
         return system->createMaterial(material.name, material);
     }
 
     void processMeshes(Model* model, const AssimpHelper::LoadedModel& loadedModel, AssetService* system) {
-        for (const auto& _mesh : loadedModel.meshes) {
-            Mesh mesh;
-            mesh.name = _mesh.name;
+        for (const auto& mesh : loadedModel.meshes) {
+            Mesh eMesh;
+            eMesh.name = mesh.name;
 
             uint32_t baseVertex = model->vertices.size();
             uint32_t baseIndex = model->indices.size();
 
             model->vertices.insert(
                 model->vertices.end(),
-                _mesh.vertices.begin(),
-                _mesh.vertices.end()
+                mesh.vertices.begin(),
+                mesh.vertices.end()
             );
 
-            for (uint32_t idx : _mesh.indices)
+            for (uint32_t idx : mesh.indices) {
                 model->indices.push_back(idx + baseVertex);
+            }
 
             Primitive prim;
             prim.indexOffset = baseIndex;
-            prim.indexCount = _mesh.indices.size();
-            prim.materialId = processMaterial(_mesh, loadedModel, system);
-            mesh.primitives.push_back(std::move(prim));
+            prim.indexCount = mesh.indices.size();
+            prim.materialId = processMaterial(mesh, loadedModel, system);
+            eMesh.primitives.push_back(prim);
 
-            model->meshes.push_back(std::move(mesh));
+            model->meshes.push_back(std::move(eMesh));
         }
     }
 }
@@ -95,8 +96,9 @@ namespace triple::core {
 
     ModelID AssetService::loadModelFromFile(const std::string& name, const std::string& path)
     {
-        if (m_impl->m_models.exists(name))
+        if (m_impl->m_models.exists(name)) {
             return m_impl->m_models.getID(name);
+        }
 
         AssimpHelper::LoadedModel loadedModel = AssimpHelper::LoadModel(path);
         if (loadedModel.meshes.size() <= 0) {
@@ -119,13 +121,14 @@ namespace triple::core {
     }
 
     ModelID AssetService::loadModelFromModel(const std::string& name, Model&& model) {
-        if (m_impl->m_models.exists(name))
+        if (m_impl->m_models.exists(name)) {
             return m_impl->m_models.getID(name);
+        }
 
-        auto _model = std::make_unique<Model>(std::move(model));
+        auto copyModel = std::make_unique<Model>(std::move(model));
 
-		auto ptr = _model.get();
-        AssetID id = m_impl->m_models.add(name, std::move(_model));
+		auto ptr = copyModel.get();
+        AssetID id = m_impl->m_models.add(name, std::move(copyModel));
 
         if (m_impl->m_onModelLoaded) {
             m_impl->m_onModelLoaded(ptr);
@@ -148,8 +151,9 @@ namespace triple::core {
     }
 
     ShaderID AssetService::loadShaderFromFile(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath) {
-        if (m_impl->m_shaders.exists(name))
+        if (m_impl->m_shaders.exists(name)) {
             return m_impl->m_shaders.getID(name);
+        }
 
         std::ifstream vsFile(vertexPath);
         std::ifstream fsFile(fragmentPath);
@@ -185,8 +189,9 @@ namespace triple::core {
     }
 
     MaterialID AssetService::createMaterial(const std::string& name, const Material& material) {
-        if (m_impl->m_materials.exists(name))
+        if (m_impl->m_materials.exists(name)) {
             return m_impl->m_materials.getID(name);
+        }
 
         auto ptr = std::make_unique<Material>(material);
         return m_impl->m_materials.add(name, std::move(ptr));
@@ -202,17 +207,18 @@ namespace triple::core {
 
     TextureID AssetService::loadTexture(const std::string& name, Texture&& texture)
     {
-        if (m_impl->m_textures.exists(name))
+        if (m_impl->m_textures.exists(name)) {
             return m_impl->m_textures.getID(name);
+        }
 
         if (texture.pixels.empty()) {
             triple::log::Logger::ModuleError("AssetService", "The {} texture is empty", name);
             return INVALID_ASSET_ID;
         }
 
-		auto _texture = std::make_unique<Texture>(std::move(texture));
-        auto ptr = _texture.get();
-        AssetID id = m_impl->m_textures.add(name, std::move(_texture));
+		auto loadTexture = std::make_unique<Texture>(std::move(texture));
+        auto ptr = loadTexture.get();
+        AssetID id = m_impl->m_textures.add(name, std::move(loadTexture));
 
         if (m_impl->m_onTextureLoaded) {
             m_impl->m_onTextureLoaded(ptr);
@@ -222,8 +228,9 @@ namespace triple::core {
     }
 
     TextureID AssetService::loadTextureFromFile(const std::string& name, const std::string& path) {
-        if (m_impl->m_textures.exists(name))
+        if (m_impl->m_textures.exists(name)) {
             return m_impl->m_textures.getID(name);
+        }
 
         stbi_set_flip_vertically_on_load(true);
 
@@ -260,8 +267,9 @@ namespace triple::core {
         const std::string& name,
         uint8_t r, uint8_t g, uint8_t b, uint8_t a
     ) {
-        if (m_impl->m_textures.exists(name))
+        if (m_impl->m_textures.exists(name)) {
             return m_impl->m_textures.getID(name);
+        }
 
         auto tex = std::make_unique<Texture>();
         tex->width = 1;
@@ -285,11 +293,11 @@ namespace triple::core {
 
     bool AssetService::loadDefaultAssets()
     {
-        TextureID ard = this->genSolidTexture(DefaultAlbedoRoughnessName, 255, 255, 255, 255); // albedo, roughness
-        TextureID mtd = this->genSolidTexture(DefaultMetallicName, 0, 0, 0, 255); // metallic
-        TextureID nd = this->genSolidTexture(DefaultNormalName, 128, 128, 255, 255); // normal
+        TextureID ard = this->genSolidTexture(DEFAULT_ALBEDO_ROUGHNESS_NAME.data(), 255, 255, 255, 255); // albedo, roughness
+        TextureID mtd = this->genSolidTexture(DEFAULT_METALLIC_NAME.data(), 0, 0, 0, 255); // metallic
+        TextureID nd = this->genSolidTexture(DEFAULT_NORMAL_NAME.data(), 128, 128, 255, 255); // normal
 
-        ShaderID sd = this->loadShaderFromFile(DefaultShaderName,
+        ShaderID sd = this->loadShaderFromFile(DEFAULT_SHADER_NAME.data(),
             "assets\\shaders\\__default_shader.vert",
             "assets\\shaders\\__default_shader.frag");
 
@@ -311,7 +319,7 @@ namespace triple::core {
         mtdd.shaderId = sd;
         mtdd.metallic = 0.1;
         mtdd.roughness = 1.0;
-        MaterialID mdid = this->createMaterial(DefaultMaterialName, mtdd);
+        MaterialID mdid = this->createMaterial(DEFAULT_MATERIAL_NAME.data(), mtdd);
         if (mdid == INVALID_ASSET_ID) {
             triple::log::Logger::ModuleCritical("AssetService", "The default resources were not loaded properly, and the program cannot continue working normally.");
             return false;

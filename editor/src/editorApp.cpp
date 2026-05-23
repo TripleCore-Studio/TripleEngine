@@ -7,8 +7,8 @@
 
 #include <triple/log/Logger.h>
 #include <triple/math/MathCommon.h>
-#include <triple/core/Utils/TransformUtils.h>
-#include <triple/core/Event/EngineLoadedEvent.h>
+#include <triple/core/utils/TransformUtils.h>
+#include <triple/core/event/EngineLoadedEvent.h>
 
 #include <triple/core/input/InputSystem.h>
 #include <triple/core/input/InputActionSystem.h>
@@ -28,7 +28,9 @@ namespace triple::editor {
 	void EditorApp::cameraUpdate(float dt)
 	{
 		TransformComponent* cameraTransform = getActiveScene()->getComponent<TransformComponent>(1);
-		if (!cameraTransform) return;
+		if (!cameraTransform) {
+			return;
+		}
 
 		InputSystem* input = getSystem<InputSystem>();
 
@@ -38,12 +40,24 @@ namespace triple::editor {
 		cameraTransform->rotationEuler.x = clamp(cameraTransform->rotationEuler.x, -89.0f, 89.0f);
 
 		Vec3 dir(0, 0, 0);
-		if (input->isKeyDown(KeyCode::W)) dir.z += 1;
-		if (input->isKeyDown(KeyCode::S)) dir.z -= 1;
-		if (input->isKeyDown(KeyCode::A)) dir.x -= 1;
-		if (input->isKeyDown(KeyCode::D)) dir.x += 1;
-		if (input->isKeyDown(KeyCode::Space)) dir.y += 1;
-		if (input->isKeyDown(KeyCode::LeftShift)) dir.y -= 1;
+		if (input->isKeyDown(KeyCode::W)) {
+			dir.z += 1;
+		}
+		if (input->isKeyDown(KeyCode::S)) {
+			dir.z -= 1;
+		}
+		if (input->isKeyDown(KeyCode::A)) {
+			dir.x -= 1;
+		}
+		if (input->isKeyDown(KeyCode::D)) {
+			dir.x += 1;
+		}
+		if (input->isKeyDown(KeyCode::Space)) {
+			dir.y += 1;
+		}
+		if (input->isKeyDown(KeyCode::LeftShift)) {
+			dir.y += 1;
+		}
 
 		if (input->isMouseButtonDown(MouseButton::Button5)) {
 			_cameraSettings.cameraSpeed += _cameraSettings.cameraSpeedChange * dt;

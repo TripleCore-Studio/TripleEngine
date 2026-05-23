@@ -22,16 +22,16 @@ namespace triple::core {
 		};
 
 		Engine();
-		~Engine();
+		virtual ~Engine();
 
 		bool init();
 		ErrorCode run(const char* title, unsigned int width, unsigned int height);
 		virtual void onUpdate(float dt);
 		void onRender(float t);
 
-		Scene* getActiveScene();
-		IWindow* getWindow();
-		void setActiveCamera(Entity camera);
+		[[nodiscard]] Scene* getActiveScene() const;
+		[[nodiscard]] IWindow* getWindow() const;
+		void setActiveCamera(Entity camera) const;
 
 		template<typename T>
 		T* getService(){
@@ -43,24 +43,24 @@ namespace triple::core {
 			return static_cast<T*>(getSystemRaw(typeid(T)));
 		}
 
-		struct Impl;
-		Impl* m_impl;
-	private:
 		Engine(const Engine&) = delete;
 		Engine(Engine&&) = delete;
 		Engine& operator=(const Engine&) = delete;
 		Engine& operator=(Engine&&) = delete;
 
-		bool bootstrapResources();
-		bool bootstrapComponents();
+		struct Impl;
+		Impl* impl;
+	private:
+		[[nodiscard]] bool bootstrapResources() const;
+		[[nodiscard]] bool bootstrapComponents() const;
 
 		void loadSystemCallbacks();
 		void loadAssetsCallbacks();
 
-		const char* getModuleName() const { return "Engine"; }
+		[[nodiscard]] const char* getModuleName() const { return "Engine"; }
 
-		void* getServiceRaw(const std::type_info& type);
-		void* getSystemRaw(const std::type_info& type);
+		[[nodiscard]] void* getServiceRaw(const std::type_info& type) const;
+		[[nodiscard]] void* getSystemRaw(const std::type_info& type) const;
 
 		bool m_isInitialized;
 		bool m_isRunning;

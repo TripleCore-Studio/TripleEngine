@@ -5,7 +5,7 @@
 
 #include "Event.h"
 #include "KeyAction.h"
-#include "triple/core/Input/MouseButton.h"
+#include "triple/core/input/MouseButton.h"
 
 namespace triple::core {
 	class CORE_API MouseButtonEvent : public Event {

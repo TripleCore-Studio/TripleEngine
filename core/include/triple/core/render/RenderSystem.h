@@ -7,8 +7,8 @@
 #include <triple/gfx/RenderCommand.h>
 
 #include "triple/core/ecs/Scene.h"
-#include "triple/core/Asset/AssetService.h"
-#include "triple/core/Asset/Asset.h"
+#include "triple/core/asset/AssetService.h"
+#include "triple/core/asset/Asset.h"
 
 #include <vector>
 #include <unordered_map>
@@ -20,10 +20,10 @@ namespace triple::core {
 		RenderSystem() = default;
 		~RenderSystem() = default;
 
-		virtual void update(float dt) {};
-		virtual void init() {}
-		virtual void shutdown() {}
-		virtual SystemPriority priority() const { return SystemPriority::Late; }
+		void update(float dt) override {};
+		void init() override {}
+		void shutdown() override {}
+		[[nodiscard]] SystemPriority priority() const override { return SystemPriority::Late; }
 
 		void uploadTexture(const Texture* texture);
 		void uploadGeometry(const Model* model);
