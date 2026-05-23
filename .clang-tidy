@@ -1,0 +1,89 @@
+Checks: >
+  readability-identifier-naming,
+  readability-braces-around-statements,
+  readability-const-return-type,
+  readability-container-size-empty,
+  readability-delete-null-pointer,
+  readability-make-member-function-const,
+  modernize-use-override,
+  modernize-use-nullptr,
+  modernize-use-default-member-init,
+  modernize-use-emplace,
+  modernize-use-nodiscard,
+  modernize-loop-convert,
+  modernize-use-equals-default,
+  modernize-use-equals-delete,
+  performance-unnecessary-copy-initialization,
+  performance-move-const-arg,
+  performance-noexcept-move-constructor,
+  bugprone-use-after-move,
+  bugprone-integer-division,
+  bugprone-misplaced-widening-cast,
+  bugprone-virtual-near-miss,
+  cppcoreguidelines-virtual-class-destructor,
+  cppcoreguidelines-prefer-member-initializer,
+  clang-analyzer-core.NullDereference,
+  clang-analyzer-core.DivideZero,
+  clang-analyzer-cplusplus.NewDelete,
+  clang-analyzer-cplusplus.NewDeleteLeaks
+
+CheckOptions:
+  # --- Classes and structs ---
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+
+  # --- Methods and functions ---
+  - key: readability-identifier-naming.MethodCase
+    value: camelBack
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+
+  # --- Variables ---
+  - key: readability-identifier-naming.VariableCase
+    value: camelBack
+  - key: readability-identifier-naming.LocalVariableCase
+    value: camelBack
+  - key: readability-identifier-naming.ParameterCase
+    value: camelBack
+
+  # --- Class member fields (m_ prefix required) ---
+  - key: readability-identifier-naming.MemberCase
+    value: camelBack
+  - key: readability-identifier-naming.MemberPrefix
+    value: m_
+
+  # --- Struct member fields (no prefix) ---
+  - key: readability-identifier-naming.PublicMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.PublicMemberPrefix
+    value: ''
+
+  # --- Constants ---
+  - key: readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: UPPER_CASE
+
+  # --- Enums ---
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+
+  # --- Template parameters ---
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+
+  # --- Namespaces ---
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+
+  # --- Macros ---
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE

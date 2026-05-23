@@ -5,7 +5,7 @@
 
 #include "Event.h"
 #include "KeyAction.h"
-#include "triple/core/Input/KeyCode.h"
+#include "triple/core/input/KeyCode.h"
 
 namespace triple::core {
 	class CORE_API KeyboardInputEvent : public Event {

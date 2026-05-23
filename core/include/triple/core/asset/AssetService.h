@@ -1,17 +1,18 @@
 #ifndef ASSET_SERVICE_H
 #define ASSET_SERVICE_H
 
+#include <string_view>
 #include <string>
 #include <functional>
 
 #include "triple/core/base/ExportMacros.h"
 #include "triple/core/base/IService.h"
 
-#include "triple/core/Asset/Asset.h"
-#include "triple/core/Asset/Model.h"
-#include "triple/core/Asset/Shader.h"
-#include "triple/core/Asset/Material.h"
-#include "triple/core/Asset/Texture.h"
+#include "triple/core/asset/Asset.h"
+#include "triple/core/asset/Model.h"
+#include "triple/core/asset/Shader.h"
+#include "triple/core/asset/Material.h"
+#include "triple/core/asset/Texture.h"
 
 namespace triple::core {
     class Engine;
@@ -23,11 +24,11 @@ namespace triple::core {
     using MaterialID = AssetID;
     using TextureID = AssetID;
 
-	inline const std::string DefaultAlbedoRoughnessName = "__default_white";
-    inline const std::string DefaultMetallicName = "__default_black";
-    inline const std::string DefaultNormalName = "__default_normal";
-	inline const std::string DefaultShaderName = "__default_shader";
-	inline const std::string DefaultMaterialName = "__default_material";
+	inline const std::string_view DEFAULT_ALBEDO_ROUGHNESS_NAME = "__default_white";
+    inline const std::string_view DEFAULT_METALLIC_NAME = "__default_black";
+    inline const std::string_view DEFAULT_NORMAL_NAME = "__default_normal";
+	inline const std::string_view DEFAULT_SHADER_NAME = "__default_shader";
+	inline const std::string_view DEFAULT_MATERIAL_NAME = "__default_material";
 
     class CORE_API AssetService : public IService {
     public:
@@ -36,28 +37,28 @@ namespace triple::core {
         AssetService();
         ~AssetService();
 
-        virtual void init() {}
-        virtual void shutdown() {}
+        virtual void init() override {}
+        virtual void shutdown() override {}
 
         ModelID loadModelFromFile(const std::string& name, const std::string& path);
         ModelID loadModelFromModel(const std::string& name, Model&& model);
-        ModelID getModelId(const std::string& name) const;
-        const Model* getModel(ModelID id) const;
+        [[nodiscard]] ModelID getModelId(const std::string& name) const;
+        [[nodiscard]] const Model* getModel(ModelID id) const;
         Model* getModelMutable(ModelID id);
 
         ShaderID loadShaderFromFile(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath);
-        ShaderID getShaderId(const std::string& name) const;
-        const Shader* getShader(ShaderID id) const;
+        [[nodiscard]] ShaderID getShaderId(const std::string& name) const;
+        [[nodiscard]] const Shader* getShader(ShaderID id) const;
 
         MaterialID createMaterial(const std::string& name, const Material& material);
-        MaterialID getMaterialId(const std::string& name) const;
-        const Material* getMaterial(MaterialID id) const;
+        [[nodiscard]] MaterialID getMaterialId(const std::string& name) const;
+        [[nodiscard]] const Material* getMaterial(MaterialID id) const;
 
         TextureID loadTexture(const std::string& name, Texture&& texture);
         TextureID loadTextureFromFile(const std::string& name, const std::string& path);
-        TextureID getTextureId(const std::string& name) const;
+        [[nodiscard]] TextureID getTextureId(const std::string& name) const;
         TextureID genSolidTexture(const std::string& name, uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255);
-        const Texture* getTexture(TextureID id) const;
+        [[nodiscard]] const Texture* getTexture(TextureID id) const;
 
 		bool loadDefaultAssets();
 

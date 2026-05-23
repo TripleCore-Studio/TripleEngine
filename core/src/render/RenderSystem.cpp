@@ -8,10 +8,10 @@
 #include <triple/math/Vec4.h>
 #include <triple/log/Logger.h>
 
-#include "triple/core/Utils/TransformUtils.h"
+#include "triple/core/utils/TransformUtils.h"
 
-#include "triple/core/Asset/Model.h"
-#include "triple/core/Asset/Material.h"
+#include "triple/core/asset/Model.h"
+#include "triple/core/asset/Material.h"
 
 #include <triple/gfx/RenderItem.h>
 
@@ -34,8 +34,9 @@ namespace triple::core {
                 buildRenderCmd(cmd, model);
             }
 
-            if (!cmd.items.empty())
+            if (!cmd.items.empty()) {
                 commands.push_back(std::move(cmd));
+            }
         }
 
         if (auto childrenComp = static_cast<ChildrenComponent*>(scene->getComponent<ChildrenComponent>(e))) {
@@ -50,21 +51,27 @@ namespace triple::core {
         case ResourceType::Texture:
         {
             auto it = m_uploadedTextures.find(id);
-            if (it == m_uploadedTextures.end()) return false;
+            if (it == m_uploadedTextures.end()) {
+                return false;
+            }
             out = it->second;
             return true;
         }
         case ResourceType::Model:
         {
             auto it = m_uploadedModels.find(id);
-            if (it == m_uploadedModels.end()) return false;
+            if (it == m_uploadedModels.end()) {
+                return false;
+            }
             out = it->second;
             return true;
         }
         case ResourceType::Shader:
         {
             auto it = m_uploadedShaders.find(id);
-            if (it == m_uploadedShaders.end()) return false;
+            if (it == m_uploadedShaders.end()) {
+                 return false;
+            }
             out = it->second;
             return true;
         }
@@ -76,14 +83,18 @@ namespace triple::core {
     {
         if (obj) {
             gfx::GPUHandle gpuGeometry;
-            if (!getGPU(ResourceType::Model, obj->id, gpuGeometry)) return;
+            if (!getGPU(ResourceType::Model, obj->id, gpuGeometry)) {
+                return;
+            }
 
             for (auto& mesh : obj->meshes) {
                 for (auto& p : mesh.primitives) {
                     gfx::RenderItem item;
 
                     const Material* mat = m_assets->getMaterial(p.materialId);
-                    if (!mat) mat = m_assets->getMaterial(m_assets->getMaterialId(DefaultMaterialName));
+                    if (!mat) {
+                        mat = m_assets->getMaterial(m_assets->getMaterialId(DEFAULT_MATERIAL_NAME.data()));
+                    }
                     if (!mat) {
                         triple::log::Logger::ModuleWarn("Core::RenderSystem", "Primitive in mesh({}) skipped", mesh.name);
                         continue;
@@ -94,18 +105,28 @@ namespace triple::core {
                     rMat.metallic = mat->metallic;
                     rMat.roughness = mat->roughness;
 
-                    if (!getGPU(ResourceType::Texture, mat->albedoTextureId, rMat.albedoTexHandle)) continue;
-                    if (!getGPU(ResourceType::Texture, mat->metallicTextureId, rMat.metallicTexHandle)) continue;
-                    if (!getGPU(ResourceType::Texture, mat->normalTextureId, rMat.normalTexHandle)) continue;
-                    if (!getGPU(ResourceType::Texture, mat->roughnessTextureId, rMat.roughnessTexHandle)) continue;
-                    if (!getGPU(ResourceType::Shader, mat->shaderId, rMat.shaderHandle)) continue;
+                    if (!getGPU(ResourceType::Texture, mat->albedoTextureId, rMat.albedoTexHandle)) {
+                        continue;
+                    }
+                    if (!getGPU(ResourceType::Texture, mat->metallicTextureId, rMat.metallicTexHandle)) {
+                        continue;
+                    }
+                    if (!getGPU(ResourceType::Texture, mat->normalTextureId, rMat.normalTexHandle)) {
+                        continue;
+                    }
+                    if (!getGPU(ResourceType::Texture, mat->roughnessTextureId, rMat.roughnessTexHandle)) {
+                        continue;
+                    }
+                    if (!getGPU(ResourceType::Shader, mat->shaderId, rMat.shaderHandle)) {
+                        continue;
+                    }
 
                     item.material = rMat;
                     item.geometry = gpuGeometry;
                     item.indexCount = p.indexCount;
                     item.indexOffset = p.indexOffset;
 
-                    cmd.items.push_back(std::move(item));
+                    cmd.items.push_back(item);
                 }
             }
         }
@@ -128,7 +149,9 @@ namespace triple::core {
 
     void RenderSystem::uploadGeometry(const Model* model) {
         auto it = m_uploadedModels.find(model->id);
-        if (it != m_uploadedModels.end()) return;
+        if (it != m_uploadedModels.end()) {
+            return;
+        }
         gfx::GeometryDesc desc;
         desc.vertices = model->vertices.data();
         desc.vertexCount = model->vertices.size();

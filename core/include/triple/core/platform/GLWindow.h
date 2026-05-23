@@ -4,8 +4,8 @@
 #include <triple/core/base/ExportMacros.h>
 #include "triple/core/base/IWindow.h"
 
-#include "triple/core/Event/Event.h"
-#include "triple/core/Event/IEventSink.h"
+#include "triple/core/event/Event.h"
+#include "triple/core/event/IEventSink.h"
 
 struct GLFWwindow;
 
