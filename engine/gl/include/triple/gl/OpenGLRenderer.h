@@ -8,47 +8,47 @@
 
 // ===================== RENDERER ======================
 #if defined(_WIN32) || defined(_WIN64)
-#  if defined(RENDERER_EXPORTS)
-#    define RENDERER_API __declspec(dllexport)
-#  else
-#    define RENDERER_API __declspec(dllimport)
-#  endif
+#if defined(RENDERER_EXPORTS)
+#define RENDERER_API __declspec(dllexport)
 #else
-#  define RENDERER_API
+#define RENDERER_API __declspec(dllimport)
+#endif
+#else
+#define RENDERER_API
 #endif
 
-namespace triple::gl
-{
+namespace triple::gl {
 	class OpenGLRenderer : public gfx::IOpenGLRenderer {
-	public:
+	  public:
 		OpenGLRenderer() = default;
 		virtual void Initialize() override;
 		virtual void BeginFrame(float time) override;
-		virtual void RenderFrame(gfx::FrameContext& ctx) override;
+		virtual void RenderFrame(gfx::FrameContext &ctx) override;
 		virtual void EndFrame() override;
 		virtual void Shutdown() override;
-		virtual bool initGlad(void* loader) override;
+		virtual bool initGlad(void *loader) override;
 		virtual void SetViewport(int x, int y, int width, int height) override;
 
-		virtual gfx::GPUHandle UploadTexture(const gfx::TextureDesc& texture) override;
-		virtual gfx::GPUHandle UploadShader(const gfx::ShaderDesc& shader) override;
-		virtual gfx::GPUHandle UploadGeometry(const gfx::GeometryDesc& geometry) override;
+		virtual gfx::GPUHandle UploadTexture(const gfx::TextureDesc &texture) override;
+		virtual gfx::GPUHandle UploadShader(const gfx::ShaderDesc &shader) override;
+		virtual gfx::GPUHandle UploadGeometry(const gfx::GeometryDesc &geometry) override;
 
 		virtual bool UnloadTexture(gfx::GPUHandle handle) override;
 		virtual bool UnloadShader(gfx::GPUHandle handle) override;
 		virtual bool UnloadGeometry(gfx::GPUHandle handle) override;
-	private:
+
+	  private:
 		bool m_initGlad = false;
 		std::unique_ptr<RenderResourceManager> m_resourceManager;
 	};
-}
+} // namespace triple::gl
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-	RENDERER_API triple::gfx::IRenderer* CreateRenderer();
-	RENDERER_API void DestroyRenderer(triple::gfx::IRenderer* renderer);
+RENDERER_API triple::gfx::IRenderer *CreateRenderer();
+RENDERER_API void DestroyRenderer(triple::gfx::IRenderer *renderer);
 
 #ifdef __cplusplus
 }

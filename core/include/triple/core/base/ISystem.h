@@ -2,20 +2,16 @@
 #define ISYSTEM_H
 
 namespace triple::core {
-    enum class SystemPriority {
-        Early = 0,
-        Normal = 1,
-        Late = 2 
-    };
+	enum class SystemPriority { Early = 0, Normal = 1, Late = 2 };
 
-    class ISystem {
-    public:
-        virtual ~ISystem() = default;
-        virtual void update(float dt) = 0;
-        virtual void init() {}
-        virtual void shutdown() {}
-        virtual SystemPriority priority() const { return SystemPriority::Normal; }
-    };
-}
+	class ISystem {
+	  public:
+		virtual ~ISystem() = default;
+		virtual void update(float dt) = 0;
+		virtual void init() {}
+		virtual void shutdown() {}
+		virtual SystemPriority priority() const { return SystemPriority::Normal; }
+	};
+} // namespace triple::core
 
 #endif // ISYSTEM_H

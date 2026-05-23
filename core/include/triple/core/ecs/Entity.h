@@ -6,6 +6,6 @@
 namespace triple::core {
 	using Entity = Index;
 	inline constexpr Entity INVALID_ENTITY = (std::numeric_limits<Entity>::max)();
-}
+} // namespace triple::core
 
 #endif // ENTITY_H

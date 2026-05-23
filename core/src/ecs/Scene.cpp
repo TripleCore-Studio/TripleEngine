@@ -9,238 +9,227 @@
 #include "triple/core/ecs/ComponentService.h"
 
 namespace triple::core {
-    static size_t alignUp(size_t size, size_t align) {
-        return (size + align - 1) & ~(align - 1);
-    }
+	static size_t alignUp(size_t size, size_t align) { return (size + align - 1) & ~(align - 1); }
 
-    struct ComponentPool {
-        ComponentTypeID type = 0;
-        size_t stride;
-        
-        std::vector<Entity> dense;        // index -> entity
-        std::vector<size_t> sparse;       // entity -> index
-        std::vector<std::byte> data;      // index -> components
-    };
+	struct ComponentPool {
+		ComponentTypeID type = 0;
+		size_t stride;
 
-    struct Scene::Impl {
-        ComponentService* componentService = nullptr;
-        std::unordered_map<ComponentTypeID, ComponentPool> pools;
-        std::unordered_set<Entity> entities;
-        Entity nextEntity = 1;
-    };
+		std::vector<Entity> dense;   // index -> entity
+		std::vector<size_t> sparse;  // entity -> index
+		std::vector<std::byte> data; // index -> components
+	};
 
-    Scene::Scene(void* compSrv) : m_impl(new Impl{ static_cast<ComponentService*>(compSrv) }) {}
-    Scene::~Scene() { delete m_impl; }
+	struct Scene::Impl {
+		ComponentService *componentService = nullptr;
+		std::unordered_map<ComponentTypeID, ComponentPool> pools;
+		std::unordered_set<Entity> entities;
+		Entity nextEntity = 1;
+	};
 
-    Entity Scene::createEntity()
-    {
-        Entity e = m_impl->nextEntity++;
-        m_impl->entities.insert(e);
-        return e;
-    }
+	Scene::Scene(void *compSrv) : m_impl(new Impl{static_cast<ComponentService *>(compSrv)}) {}
+	Scene::~Scene() { delete m_impl; }
 
-    Entity Scene::createEntity(const std::string& name) {
-        Entity e = m_impl->nextEntity++;
-        m_impl->entities.insert(e);
+	Entity Scene::createEntity() {
+		Entity e = m_impl->nextEntity++;
+		m_impl->entities.insert(e);
+		return e;
+	}
 
-        if (!name.empty()) {
-            auto comp = addComponent<NameComponent>(e);
-            if (comp) {
-                comp->name = name;
-            }
-        }
+	Entity Scene::createEntity(const std::string &name) {
+		Entity e = m_impl->nextEntity++;
+		m_impl->entities.insert(e);
 
-        return e;
-    }
+		if (!name.empty()) {
+			auto comp = addComponent<NameComponent>(e);
+			if (comp) {
+				comp->name = name;
+			}
+		}
 
-    void Scene::destroyEntity(Entity e)
-    {
-        if (m_impl->entities.find(e) == m_impl->entities.end())
-            return;
+		return e;
+	}
 
-        m_impl->entities.erase(e);
+	void Scene::destroyEntity(Entity e) {
+		if (m_impl->entities.find(e) == m_impl->entities.end())
+			return;
 
-        for (auto& [type, pool] : m_impl->pools)
-        {
-            if (e >= pool.sparse.size())
-                continue;
+		m_impl->entities.erase(e);
 
-            size_t idx = pool.sparse[e];
+		for (auto &[type, pool] : m_impl->pools) {
+			if (e >= pool.sparse.size())
+				continue;
 
-            if (idx == SIZE_MAX || idx >= pool.dense.size() || pool.dense[idx] != e)
-                continue;
+			size_t idx = pool.sparse[e];
 
-            const auto& info = m_impl->componentService->getInfo(type);
+			if (idx == SIZE_MAX || idx >= pool.dense.size() || pool.dense[idx] != e)
+				continue;
 
-            size_t last = pool.dense.size() - 1;
+			const auto &info = m_impl->componentService->getInfo(type);
 
-            size_t offset = idx * pool.stride;
-            size_t lastOffset = last * pool.stride;
+			size_t last = pool.dense.size() - 1;
 
-            info.destruct(pool.data.data() + offset);
+			size_t offset = idx * pool.stride;
+			size_t lastOffset = last * pool.stride;
 
-            if (idx != last)
-            {
-                if (info.move)
-                {
-                    info.move(
-                        pool.data.data() + offset,
-                        pool.data.data() + lastOffset
-                    );
-                }
-                else
-                {
-                    std::memcpy(
-                        pool.data.data() + offset,
-                        pool.data.data() + lastOffset,
-                        info.size
-                    );
-                }
+			info.destruct(pool.data.data() + offset);
 
-                info.destruct(pool.data.data() + lastOffset);
+			if (idx != last) {
+				if (info.move) {
+					info.move(pool.data.data() + offset, pool.data.data() + lastOffset);
+				} else {
+					std::memcpy(pool.data.data() + offset, pool.data.data() + lastOffset,
+					            info.size);
+				}
 
-                Entity movedEntity = pool.dense[last];
-                pool.dense[idx] = movedEntity;
-                pool.sparse[movedEntity] = idx;
-            }
+				info.destruct(pool.data.data() + lastOffset);
 
-            pool.dense.pop_back();
-            pool.data.resize(pool.data.size() - pool.stride);
+				Entity movedEntity = pool.dense[last];
+				pool.dense[idx] = movedEntity;
+				pool.sparse[movedEntity] = idx;
+			}
 
-            pool.sparse[e] = SIZE_MAX;
-        }
-    }
+			pool.dense.pop_back();
+			pool.data.resize(pool.data.size() - pool.stride);
 
-    std::vector<Entity> Scene::getEntities() const
-    {
-        return std::vector<Entity>(m_impl->entities.begin(), m_impl->entities.end());
-    }
+			pool.sparse[e] = SIZE_MAX;
+		}
+	}
 
-    bool Scene::addChild(Entity parent, Entity child) {
-        if (m_impl->entities.find(parent) == m_impl->entities.end()) return false;
-        if (m_impl->entities.find(child) == m_impl->entities.end()) return false;
+	std::vector<Entity> Scene::getEntities() const {
+		return std::vector<Entity>(m_impl->entities.begin(), m_impl->entities.end());
+	}
 
-        ComponentTypeID parentComponentID = m_impl->componentService->getType<ParentComponent>();
-        ComponentTypeID childrenComponentID = m_impl->componentService->getType<ChildrenComponent>();
+	bool Scene::addChild(Entity parent, Entity child) {
+		if (m_impl->entities.find(parent) == m_impl->entities.end())
+			return false;
+		if (m_impl->entities.find(child) == m_impl->entities.end())
+			return false;
 
-        auto existingParent = static_cast<ParentComponent*>(getComponent(child, parentComponentID));
-        if (existingParent && existingParent->parent != 0) return false;
+		ComponentTypeID parentComponentID = m_impl->componentService->getType<ParentComponent>();
+		ComponentTypeID childrenComponentID =
+		    m_impl->componentService->getType<ChildrenComponent>();
 
-        if (addComponent(child, parentComponentID)) {
-            auto parentComp = static_cast<ParentComponent*>(getComponent(child, parentComponentID));
-            parentComp->parent = parent;
-        }
+		auto existingParent =
+		    static_cast<ParentComponent *>(getComponent(child, parentComponentID));
+		if (existingParent && existingParent->parent != 0)
+			return false;
 
-        auto childrenComp = static_cast<ChildrenComponent*>(getComponent(parent, childrenComponentID));
-        if (!childrenComp) {
-            addComponent(parent, childrenComponentID);
-            childrenComp = static_cast<ChildrenComponent*>(getComponent(parent, childrenComponentID));
-        }
+		if (addComponent(child, parentComponentID)) {
+			auto parentComp =
+			    static_cast<ParentComponent *>(getComponent(child, parentComponentID));
+			parentComp->parent = parent;
+		}
 
-        childrenComp->children.push_back(child);
-        return true;
-    }
+		auto childrenComp =
+		    static_cast<ChildrenComponent *>(getComponent(parent, childrenComponentID));
+		if (!childrenComp) {
+			addComponent(parent, childrenComponentID);
+			childrenComp =
+			    static_cast<ChildrenComponent *>(getComponent(parent, childrenComponentID));
+		}
 
-    void* Scene::addComponent(Entity e, ComponentTypeID type)
-    {
-        if (m_impl->entities.find(e) == m_impl->entities.end())
-            return nullptr;
+		childrenComp->children.push_back(child);
+		return true;
+	}
 
-        ComponentPool& pool = m_impl->pools[type];
-        const auto& info = m_impl->componentService->getInfo(type);
+	void *Scene::addComponent(Entity e, ComponentTypeID type) {
+		if (m_impl->entities.find(e) == m_impl->entities.end())
+			return nullptr;
 
-        if (pool.data.empty()) {
-            pool.type = type;
-            pool.stride = alignUp(info.size, info.align);
-        }
+		ComponentPool &pool = m_impl->pools[type];
+		const auto &info = m_impl->componentService->getInfo(type);
 
-        if (e >= pool.sparse.size())
-            pool.sparse.resize(e + 1, SIZE_MAX);
+		if (pool.data.empty()) {
+			pool.type = type;
+			pool.stride = alignUp(info.size, info.align);
+		}
 
-        size_t idx = pool.sparse[e];
-        if (idx != SIZE_MAX && idx < pool.dense.size() && pool.dense[idx] == e)
-            return pool.data.data() + idx * pool.stride;
+		if (e >= pool.sparse.size())
+			pool.sparse.resize(e + 1, SIZE_MAX);
 
-        size_t index = pool.dense.size();
+		size_t idx = pool.sparse[e];
+		if (idx != SIZE_MAX && idx < pool.dense.size() && pool.dense[idx] == e)
+			return pool.data.data() + idx * pool.stride;
 
-        pool.dense.push_back(e);
-        pool.sparse[e] = index;
+		size_t index = pool.dense.size();
 
-        size_t offset = pool.data.size();
-        pool.data.resize(offset + pool.stride);
+		pool.dense.push_back(e);
+		pool.sparse[e] = index;
 
-        info.construct(pool.data.data() + offset);
+		size_t offset = pool.data.size();
+		pool.data.resize(offset + pool.stride);
 
-        return pool.data.data() + offset;
-    }
+		info.construct(pool.data.data() + offset);
 
-    void* Scene::getComponent(Entity e, ComponentTypeID type)
-    {
-        auto poolIt = m_impl->pools.find(type);
-        if (poolIt == m_impl->pools.end()) return nullptr;
+		return pool.data.data() + offset;
+	}
 
-        ComponentPool& pool = poolIt->second;
+	void *Scene::getComponent(Entity e, ComponentTypeID type) {
+		auto poolIt = m_impl->pools.find(type);
+		if (poolIt == m_impl->pools.end())
+			return nullptr;
 
-        if (e >= pool.sparse.size()) return nullptr;
+		ComponentPool &pool = poolIt->second;
 
-        size_t idx = pool.sparse[e];
-        if (idx == SIZE_MAX || idx >= pool.dense.size() || pool.dense[idx] != e)
-            return nullptr;
+		if (e >= pool.sparse.size())
+			return nullptr;
 
-        return pool.data.data() + idx * pool.stride;
-    }
+		size_t idx = pool.sparse[e];
+		if (idx == SIZE_MAX || idx >= pool.dense.size() || pool.dense[idx] != e)
+			return nullptr;
 
-    Scene::ComponentViewRaw Scene::getViewRaw(ComponentTypeID type)
-    {
-        auto it = m_impl->pools.find(type);
-        if (it == m_impl->pools.end()) {
-            return {};
-        }
+		return pool.data.data() + idx * pool.stride;
+	}
 
-        ComponentPool& pool = it->second;
-        return {
-            &pool.dense,
-            pool.data.data(),
-            pool.dense.size(),
-            pool.stride
-        };
-    }
+	Scene::ComponentViewRaw Scene::getViewRaw(ComponentTypeID type) {
+		auto it = m_impl->pools.find(type);
+		if (it == m_impl->pools.end()) {
+			return {};
+		}
 
-    size_t Scene::getComponentIndex(ComponentTypeID type, Entity e)
-    {
-        auto it = m_impl->pools.find(type);
-        if (it == m_impl->pools.end()) return SIZE_MAX;
+		ComponentPool &pool = it->second;
+		return {&pool.dense, pool.data.data(), pool.dense.size(), pool.stride};
+	}
 
-        ComponentPool& pool = it->second;
-        if (e >= pool.sparse.size()) return SIZE_MAX;
+	size_t Scene::getComponentIndex(ComponentTypeID type, Entity e) {
+		auto it = m_impl->pools.find(type);
+		if (it == m_impl->pools.end())
+			return SIZE_MAX;
 
-        size_t idx = pool.sparse[e];
-        if (idx == SIZE_MAX || idx >= pool.dense.size() || pool.dense[idx] != e)
-            return SIZE_MAX;
+		ComponentPool &pool = it->second;
+		if (e >= pool.sparse.size())
+			return SIZE_MAX;
 
-        return idx;
-    }
+		size_t idx = pool.sparse[e];
+		if (idx == SIZE_MAX || idx >= pool.dense.size() || pool.dense[idx] != e)
+			return SIZE_MAX;
 
-    void* Scene::getComponentByIndexChecked(size_t index, ComponentTypeID type, Entity expectedEntity)
-    {
-        auto it = m_impl->pools.find(type);
-        if (it == m_impl->pools.end()) return nullptr;
+		return idx;
+	}
 
-        ComponentPool& pool = it->second;
+	void *Scene::getComponentByIndexChecked(size_t index, ComponentTypeID type,
+	                                        Entity expectedEntity) {
+		auto it = m_impl->pools.find(type);
+		if (it == m_impl->pools.end())
+			return nullptr;
 
-        if (index >= pool.dense.size()) return nullptr;
-        if (pool.dense[index] != expectedEntity) return nullptr;
+		ComponentPool &pool = it->second;
 
-        return pool.data.data() + index * pool.stride;
-    }
+		if (index >= pool.dense.size())
+			return nullptr;
+		if (pool.dense[index] != expectedEntity)
+			return nullptr;
 
-    uint32_t Scene::getEntityCount() const {
-        return static_cast<uint32_t>(m_impl->entities.size());
-    }
+		return pool.data.data() + index * pool.stride;
+	}
 
-    ComponentTypeID Scene::getComponentTypeID(const std::type_info& type) const
-    {
-        return m_impl->componentService->getTypeByIndex(std::type_index(type));
-    }
+	uint32_t Scene::getEntityCount() const {
+		return static_cast<uint32_t>(m_impl->entities.size());
+	}
 
-}
+	ComponentTypeID Scene::getComponentTypeID(const std::type_info &type) const {
+		return m_impl->componentService->getTypeByIndex(std::type_index(type));
+	}
+
+} // namespace triple::core

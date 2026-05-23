@@ -5,12 +5,13 @@
 
 namespace triple::editor {
 	class EditorApp : public core::Engine {
-	public:
+	  public:
 		void onUpdate(float dt) override;
 		void cameraUpdate(float dt);
 		void demoScene();
 		void loadCallbacks();
-	private:
+
+	  private:
 		struct CameraSettings {
 			float cameraSpeed = 8.0f;
 			float cameraSpeedChange = 20.0f;
@@ -20,6 +21,6 @@ namespace triple::editor {
 			float sensitivity = 0.15f;
 		} _cameraSettings;
 	};
-}
+} // namespace triple::editor
 
 #endif // EDITOR_APP_H

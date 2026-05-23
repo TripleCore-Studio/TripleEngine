@@ -5,8 +5,7 @@
 #include "triple/math/Vec3.h"
 
 namespace triple::gfx {
-	struct Vertex
-	{
+	struct Vertex {
 		triple::math::Vec3 position;
 		triple::math::Vec3 normal;
 		triple::math::Vec3 tangent;
@@ -14,5 +13,5 @@ namespace triple::gfx {
 		triple::math::Vec3 color;
 		triple::math::Vec2 uv;
 	};
-}
+} // namespace triple::gfx
 #endif // VERTEX_H

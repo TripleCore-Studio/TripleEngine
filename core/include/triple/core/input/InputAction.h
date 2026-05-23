@@ -6,26 +6,19 @@
 #include "MouseButton.h"
 
 namespace triple::core {
-    enum class InputTriggerType {
-        Key,
-        MouseButton
-    };
+	enum class InputTriggerType { Key, MouseButton };
 
-    enum class TriggerState {
-        Pressed,
-        Held,
-        Released
-    };
+	enum class TriggerState { Pressed, Held, Released };
 
-    struct CORE_API InputTrigger {
-        InputTriggerType type;
-        TriggerState state;
+	struct CORE_API InputTrigger {
+		InputTriggerType type;
+		TriggerState state;
 
-        union {
-            KeyCode key;
-            MouseButton mouse;
-        };
-    };
-}
+		union {
+			KeyCode key;
+			MouseButton mouse;
+		};
+	};
+} // namespace triple::core
 
 #endif // INPUT_ACTION_H

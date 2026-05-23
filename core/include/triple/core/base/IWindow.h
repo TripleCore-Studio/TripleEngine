@@ -5,12 +5,12 @@
 
 namespace triple::core {
 	class IWindow {
-	public:
+	  public:
 		virtual ~IWindow() = default;
 		virtual void PollEvents() = 0;
 		virtual void SwapBuffers() = 0;
 		virtual bool ShouldClose() const = 0;
-		virtual void* GetNativeWindow() const = 0;
+		virtual void *GetNativeWindow() const = 0;
 		virtual bool isFullscreen() const = 0;
 		virtual void setFullscreen(bool enabled) = 0;
 		virtual void setSize(uint32_t width, uint32_t height) = 0;
@@ -21,6 +21,6 @@ namespace triple::core {
 		virtual double getTime() const = 0;
 		virtual void shutdown() = 0;
 	};
-}
+} // namespace triple::core
 
 #endif // IWINDOW_H

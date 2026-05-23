@@ -6,11 +6,11 @@
 #include "triple/core/ecs/TransformComponent.h"
 
 namespace triple::core {
-	CORE_API triple::math::Mat4 getModelMatrix(const TransformComponent& t);
-	CORE_API triple::math::Mat4 getRotationMatrix(const TransformComponent& t);
-	CORE_API triple::math::Vec3 forward(const TransformComponent& t);
-	CORE_API triple::math::Vec3 right(const TransformComponent& t);
-	CORE_API triple::math::Vec3 up(const TransformComponent& t);
-}
+	CORE_API triple::math::Mat4 getModelMatrix(const TransformComponent &t);
+	CORE_API triple::math::Mat4 getRotationMatrix(const TransformComponent &t);
+	CORE_API triple::math::Vec3 forward(const TransformComponent &t);
+	CORE_API triple::math::Vec3 right(const TransformComponent &t);
+	CORE_API triple::math::Vec3 up(const TransformComponent &t);
+} // namespace triple::core
 
 #endif // TRANSFORM_UTILS_H

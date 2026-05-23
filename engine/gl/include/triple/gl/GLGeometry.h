@@ -8,31 +8,28 @@
 #include "IndexBufferObject.h"
 
 namespace triple::gl {
-    struct GLGeometry {
-        VertexArrayObject vao;
-        VertexBufferObject vbo;
-        IndexBufferObject ibo;
+	struct GLGeometry {
+		VertexArrayObject vao;
+		VertexBufferObject vbo;
+		IndexBufferObject ibo;
 
-        GLGeometry() = default;
+		GLGeometry() = default;
 
-        GLGeometry(const GLGeometry&) = delete;
-        GLGeometry& operator=(const GLGeometry&) = delete;
+		GLGeometry(const GLGeometry &) = delete;
+		GLGeometry &operator=(const GLGeometry &) = delete;
 
-        GLGeometry(GLGeometry&& other) noexcept
-            : vao(std::move(other.vao)),
-            vbo(std::move(other.vbo)),
-            ibo(std::move(other.ibo))
-        {}
+		GLGeometry(GLGeometry &&other) noexcept
+		    : vao(std::move(other.vao)), vbo(std::move(other.vbo)), ibo(std::move(other.ibo)) {}
 
-        GLGeometry& operator=(GLGeometry&& other) noexcept {
-            if (this != &other) {
-                vao = std::move(other.vao);
-                vbo = std::move(other.vbo);
-                ibo = std::move(other.ibo);
-            }
-            return *this;
-        }
-    };
-}
+		GLGeometry &operator=(GLGeometry &&other) noexcept {
+			if (this != &other) {
+				vao = std::move(other.vao);
+				vbo = std::move(other.vbo);
+				ibo = std::move(other.ibo);
+			}
+			return *this;
+		}
+	};
+} // namespace triple::gl
 
 #endif // MESH_GPU

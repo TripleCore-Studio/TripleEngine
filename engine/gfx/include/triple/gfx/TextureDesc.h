@@ -8,8 +8,8 @@ namespace triple::gfx {
 		uint16_t width;
 		uint16_t height;
 		uint8_t channels;
-		const unsigned char* data;
+		const unsigned char *data;
 	};
-}
+} // namespace triple::gfx
 
 #endif // TEXTURE_DESC_H

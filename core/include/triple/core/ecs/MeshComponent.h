@@ -4,9 +4,9 @@
 #include <cstdint>
 
 namespace triple::core {
-    struct MeshComponent {
-        uint32_t modelIndex = UINT32_MAX;
-    };
-}
+	struct MeshComponent {
+		uint32_t modelIndex = UINT32_MAX;
+	};
+} // namespace triple::core
 
 #endif // MESH_COMPONENT_H

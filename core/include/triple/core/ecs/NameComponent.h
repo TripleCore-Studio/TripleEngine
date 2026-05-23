@@ -7,6 +7,6 @@ namespace triple::core {
 	struct NameComponent {
 		std::string name;
 	};
-}
+} // namespace triple::core
 
 #endif // NAME_COMPONENT_H

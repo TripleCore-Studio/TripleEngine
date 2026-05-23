@@ -13,6 +13,6 @@ namespace triple::core {
 		AssetID id;
 		virtual ~Asset() = default;
 	};
-}
+} // namespace triple::core
 
 #endif // ASSET_H

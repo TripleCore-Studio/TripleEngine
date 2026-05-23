@@ -10,7 +10,7 @@
 
 namespace triple::core {
 	class CORE_API Engine {
-	public:
+	  public:
 		enum class ErrorCode {
 			None = 0,
 			FailedToLoadWindow,
@@ -25,46 +25,47 @@ namespace triple::core {
 		virtual ~Engine();
 
 		bool init();
-		ErrorCode run(const char* title, unsigned int width, unsigned int height);
+		ErrorCode run(const char *title, unsigned int width, unsigned int height);
 		virtual void onUpdate(float dt);
 		void onRender(float t);
 
-		[[nodiscard]] Scene* getActiveScene() const;
-		[[nodiscard]] IWindow* getWindow() const;
+		[[nodiscard]] Scene *getActiveScene() const;
+		[[nodiscard]] IWindow *getWindow() const;
 		void setActiveCamera(Entity camera) const;
 
-		template<typename T>
-		T* getService(){
-			return static_cast<T*>(getServiceRaw(typeid(T)));
+		template <typename T>
+		T *getService() {
+			return static_cast<T *>(getServiceRaw(typeid(T)));
 		}
 
-		template<typename T>
-		T* getSystem() {
-			return static_cast<T*>(getSystemRaw(typeid(T)));
+		template <typename T>
+		T *getSystem() {
+			return static_cast<T *>(getSystemRaw(typeid(T)));
 		}
 
-		Engine(const Engine&) = delete;
-		Engine(Engine&&) = delete;
-		Engine& operator=(const Engine&) = delete;
-		Engine& operator=(Engine&&) = delete;
+		Engine(const Engine &) = delete;
+		Engine(Engine &&) = delete;
+		Engine &operator=(const Engine &) = delete;
+		Engine &operator=(Engine &&) = delete;
 
 		struct Impl;
-		Impl* impl;
-	private:
+		Impl *impl;
+
+	  private:
 		[[nodiscard]] bool bootstrapResources() const;
 		[[nodiscard]] bool bootstrapComponents() const;
 
 		void loadSystemCallbacks();
 		void loadAssetsCallbacks();
 
-		[[nodiscard]] const char* getModuleName() const { return "Engine"; }
+		[[nodiscard]] const char *getModuleName() const { return "Engine"; }
 
-		[[nodiscard]] void* getServiceRaw(const std::type_info& type) const;
-		[[nodiscard]] void* getSystemRaw(const std::type_info& type) const;
+		[[nodiscard]] void *getServiceRaw(const std::type_info &type) const;
+		[[nodiscard]] void *getSystemRaw(const std::type_info &type) const;
 
 		bool m_isInitialized;
 		bool m_isRunning;
 		float m_lastTime;
 	};
-}
+} // namespace triple::core
 #endif // APPLICATION_H

@@ -6,22 +6,21 @@
 #include "Mesh.h"
 #include "Asset.h"
 
-namespace triple::core
-{
-    struct Model : public Asset {
-    public:
-        Model() = default;
+namespace triple::core {
+	struct Model : public Asset {
+	  public:
+		Model() = default;
 
-        std::vector<Mesh> meshes;
-        std::vector<gfx::Vertex> vertices;
-        std::vector<uint32_t> indices;
+		std::vector<Mesh> meshes;
+		std::vector<gfx::Vertex> vertices;
+		std::vector<uint32_t> indices;
 
-        Model(const Model&) = delete;
-        Model& operator=(const Model&) = delete;
+		Model(const Model &) = delete;
+		Model &operator=(const Model &) = delete;
 
-        Model(Model&&) = default;
-        Model& operator=(Model&&) = default;
-    };
-}
+		Model(Model &&) = default;
+		Model &operator=(Model &&) = default;
+	};
+} // namespace triple::core
 
 #endif // MODEL_H

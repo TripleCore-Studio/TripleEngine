@@ -16,21 +16,22 @@
 
 namespace triple::gl {
 	class RenderResourceManager {
-	public:
-		GLGeometry* getGLGeometry(gfx::GPUHandle geometry);
-		gfx::GPUHandle createGLGeometry(const gfx::GeometryDesc& desc);
-		GLTexture* getGLTexture(gfx::GPUHandle texture);
-		gfx::GPUHandle createGLTexture(const gfx::TextureDesc& desc);
-		GLShader* getGLShader(gfx::GPUHandle shader);
-		gfx::GPUHandle createGLShader(const gfx::ShaderDesc& desc);
+	  public:
+		GLGeometry *getGLGeometry(gfx::GPUHandle geometry);
+		gfx::GPUHandle createGLGeometry(const gfx::GeometryDesc &desc);
+		GLTexture *getGLTexture(gfx::GPUHandle texture);
+		gfx::GPUHandle createGLTexture(const gfx::TextureDesc &desc);
+		GLShader *getGLShader(gfx::GPUHandle shader);
+		gfx::GPUHandle createGLShader(const gfx::ShaderDesc &desc);
 
-		void bindMaterial(gfx::RenderMaterial& material);
-	private:
+		void bindMaterial(gfx::RenderMaterial &material);
+
+	  private:
 		std::unordered_map<gfx::GPUHandle, GLGeometry> m_primitiveCache;
 		std::unordered_map<gfx::GPUHandle, GLTexture> m_textureCache;
 		std::unordered_map<gfx::GPUHandle, GLShader> m_shaderCache;
 		gfx::GPUHandle m_nextHandle = 0;
 	};
-}
+} // namespace triple::gl
 
 #endif // RENDER_RESOURCE_MANAGER
