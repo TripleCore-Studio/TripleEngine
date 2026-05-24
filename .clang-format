@@ -7,3 +7,5 @@ ColumnLimit: 100
 AlwaysBreakTemplateDeclarations: Yes
 NamespaceIndentation: All
 SortIncludes: Never
+IndentAccessModifiers: false
+AccessModifierOffset: -4
