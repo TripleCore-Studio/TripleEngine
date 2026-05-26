@@ -14,6 +14,12 @@ add_executable(${EDITOR_PROJECT_NAME}
 	${SOURCE_FILES}
 )
 
+add_custom_command(TARGET ${EDITOR_PROJECT_NAME} POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+	"${CMAKE_SOURCE_DIR}/assets"
+	"$<TARGET_FILE_DIR:editor>/assets"
+)
+
 target_include_directories(${EDITOR_PROJECT_NAME} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
