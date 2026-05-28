@@ -10,7 +10,7 @@
 
 namespace triple::core {
 	class CORE_API Engine {
-	  public:
+	public:
 		enum class ErrorCode {
 			None = 0,
 			FailedToLoadWindow,
@@ -27,6 +27,7 @@ namespace triple::core {
 		bool init();
 		ErrorCode run(const char *title, unsigned int width, unsigned int height);
 		virtual void onUpdate(float dt);
+		virtual void onRenderUI(float dt);
 		void onRender(float t);
 
 		[[nodiscard]] Scene *getActiveScene() const;
@@ -51,7 +52,7 @@ namespace triple::core {
 		struct Impl;
 		Impl *impl;
 
-	  private:
+	private:
 		[[nodiscard]] bool bootstrapResources() const;
 		[[nodiscard]] bool bootstrapComponents() const;
 

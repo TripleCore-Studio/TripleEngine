@@ -19,3 +19,9 @@
 [submodule "external/assimp"]
 	path = external/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "external/ImGuiFileDialog"]
+	path = external/ImGuiFileDialog
+	url = https://github.com/aiekick/ImGuiFileDialog.git

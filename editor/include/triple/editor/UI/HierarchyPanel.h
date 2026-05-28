@@ -1,0 +1,106 @@
+#pragma once
+
+#include <functional>
+#include <vector>
+
+#include <imgui.h>
+#include <ImGuiFileDialog.h>
+
+#include <triple/core/ecs/Scene.h>
+#include <triple/core/ecs/NameComponent.h>
+
+#include "UIPanel.h"
+
+namespace triple::editor {
+	class HierarchyPanel : public UIPanel {
+	public:
+		static constexpr int POS_X = 10;
+		static constexpr int POS_Y = 10;
+
+		static constexpr int WIDTH = 250;
+		static constexpr int HEIGHT = 400;
+
+		explicit HierarchyPanel(core::Scene *scene,
+		                        std::function<void(core::Entity)> entitySelected,
+		                        std::function<void(std::string modelPath)> addEntity,
+		                        std::function<void(core::Entity)> removeEntity)
+		    : UIPanel("Hierarchy"), m_scene(scene), m_onEntitySelected(entitySelected),
+		      m_onAddEntity(addEntity), m_onRemoveEntity(removeEntity) {}
+
+		void onRender() override {
+			if (m_scene->getEntityCount() != m_entities.size()) {
+				m_entities = m_scene->getEntities();
+			}
+
+			ImGuiIO &io = ImGui::GetIO();
+			ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always, ImVec2(0.0f, 0.0f));
+			ImGui::SetNextWindowSize(ImVec2(260, 400), ImGuiCond_FirstUseEver);
+
+			ImGui::Begin(m_title.c_str());
+
+			for (auto &entity : m_entities) {
+				bool selected = (m_selected == entity);
+				core::NameComponent *name = m_scene->getComponent<core::NameComponent>(entity);
+				if (ImGui::Selectable(name->name.c_str(), selected)) {
+					m_selected = entity;
+					if (m_onEntitySelected)
+						m_onEntitySelected(entity);
+				}
+			}
+
+			float buttonHeight = ImGui::GetFrameHeightWithSpacing();
+			float buttonWidth = 120.0f;
+
+			ImGui::SetCursorPosY(ImGui::GetWindowHeight() - buttonHeight -
+			                     ImGui::GetStyle().WindowPadding.y - 10);
+			ImGui::Separator();
+
+			ImGui::SetCursorPosY(ImGui::GetWindowHeight() - buttonHeight -
+			                     ImGui::GetStyle().WindowPadding.y);
+
+			if (ImGui::Button("- Remove", ImVec2(buttonWidth, 0))) {
+				if (m_selected != core::INVALID_ENTITY && m_onRemoveEntity)
+					m_onRemoveEntity(m_selected);
+			}
+
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() - buttonWidth -
+			                     ImGui::GetStyle().WindowPadding.x);
+
+			if (ImGui::Button("+ Add", ImVec2(buttonWidth, 0))) {
+				IGFD::FileDialogConfig config;
+				config.flags = ImGuiFileDialogFlags_Modal;
+				ImGuiFileDialog::Instance()->OpenDialog("ChooseModel", "Choose Model", ".glb",
+				                                        config);
+			}
+
+			if (ImGuiFileDialog::Instance()->IsOpened("ChooseModel")) {
+				ImVec2 size(io.DisplaySize.x * 0.33f, io.DisplaySize.y * 0.4f);
+				ImGui::SetNextWindowPos(
+				    ImVec2((io.DisplaySize.x - size.x) * 0.5f, (io.DisplaySize.y - size.y) * 0.5f),
+				    ImGuiCond_Always);
+				ImGui::SetNextWindowSize(size, ImGuiCond_FirstUseEver);
+
+				if (ImGuiFileDialog::Instance()->Display("ChooseModel")) {
+					if (ImGuiFileDialog::Instance()->IsOk()) {
+						std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
+						if (m_onAddEntity)
+							m_onAddEntity(path);
+					}
+					ImGuiFileDialog::Instance()->Close();
+				}
+			}
+
+			ImGui::End();
+		}
+
+	private:
+		core::Scene *m_scene;
+		core::Entity m_selected;
+
+		std::vector<core::Entity> m_entities;
+		std::function<void(core::Entity)> m_onEntitySelected;
+		std::function<void(std::string modelPath)> m_onAddEntity;
+		std::function<void(core::Entity)> m_onRemoveEntity;
+	};
+} // namespace triple::editor
