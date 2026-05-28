@@ -206,12 +206,15 @@ namespace triple::core {
 			impl->inputSystem->update(dt);
 
 			this->onRender(m_lastTime);
+			this->onRenderUI(dt);
 		}
 
 		return ErrorCode::None;
 	}
 
 	void Engine::onUpdate(float dt) {}
+
+	void Engine::onRenderUI(float dt) {}
 
 	void Engine::onRender(float t) {
 		Scene *scene = impl->scene.get();
