@@ -23,9 +23,10 @@ namespace triple::editor {
 		explicit HierarchyPanel(core::Scene *scene,
 		                        std::function<void(core::Entity)> entitySelected,
 		                        std::function<void(std::string modelPath)> addEntity,
-		                        std::function<void(core::Entity)> removeEntity)
+		                        std::function<void(core::Entity)> removeEntity,
+		                        std::function<void(core::Entity)> duplicate)
 		    : UIPanel("Hierarchy"), m_scene(scene), m_onEntitySelected(entitySelected),
-		      m_onAddEntity(addEntity), m_onRemoveEntity(removeEntity) {}
+		      m_onAddEntity(addEntity), m_onRemoveEntity(removeEntity), m_onDuplicate(duplicate) {}
 
 		void onRender() override {
 			if (m_scene->getEntityCount() != m_entities.size()) {
@@ -41,11 +42,29 @@ namespace triple::editor {
 			for (auto &entity : m_entities) {
 				bool selected = (m_selected == entity);
 				core::NameComponent *name = m_scene->getComponent<core::NameComponent>(entity);
+
+				ImGui::PushID(entity);
+
 				if (ImGui::Selectable(name->name.c_str(), selected)) {
 					m_selected = entity;
 					if (m_onEntitySelected)
 						m_onEntitySelected(entity);
 				}
+
+				if (ImGui::BeginPopupContextItem()) {
+					if (ImGui::MenuItem("Duplicate")) {
+						if (m_onDuplicate)
+							m_onDuplicate(entity);
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem("Remove")) {
+						if (m_onRemoveEntity)
+							m_onRemoveEntity(entity);
+					}
+					ImGui::EndPopup();
+				}
+
+				ImGui::PopID();
 			}
 
 			float buttonHeight = ImGui::GetFrameHeightWithSpacing();
@@ -58,12 +77,6 @@ namespace triple::editor {
 			ImGui::SetCursorPosY(ImGui::GetWindowHeight() - buttonHeight -
 			                     ImGui::GetStyle().WindowPadding.y);
 
-			if (ImGui::Button("- Remove", ImVec2(buttonWidth, 0))) {
-				if (m_selected != core::INVALID_ENTITY && m_onRemoveEntity)
-					m_onRemoveEntity(m_selected);
-			}
-
-			ImGui::SameLine();
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() - buttonWidth -
 			                     ImGui::GetStyle().WindowPadding.x);
 
@@ -102,5 +115,6 @@ namespace triple::editor {
 		std::function<void(core::Entity)> m_onEntitySelected;
 		std::function<void(std::string modelPath)> m_onAddEntity;
 		std::function<void(core::Entity)> m_onRemoveEntity;
+		std::function<void(core::Entity)> m_onDuplicate;
 	};
 } // namespace triple::editor

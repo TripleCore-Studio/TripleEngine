@@ -1,12 +1,15 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include "triple/core/base/ExportMacros.h"
-
 #include <typeinfo>
+#include <functional>
+
+#include <triple/gfx/FrameContext.h>
+
+#include "triple/core/base/ExportMacros.h"
+#include "triple/core/base/IWindow.h"
 
 #include "triple/core/ecs/Scene.h"
-#include "triple/core/base/IWindow.h"
 
 namespace triple::core {
 	class CORE_API Engine {
@@ -48,6 +51,8 @@ namespace triple::core {
 		Engine(Engine &&) = delete;
 		Engine &operator=(const Engine &) = delete;
 		Engine &operator=(Engine &&) = delete;
+
+		std::function<void(gfx::FrameContext &)> onFrame;
 
 		struct Impl;
 		Impl *impl;

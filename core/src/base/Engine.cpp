@@ -235,6 +235,9 @@ namespace triple::core {
 		impl->renderSystem->buildRenderCommands(impl->scene.get(), ctx.commands);
 		ctx.time = t;
 
+		if (onFrame)
+			onFrame(ctx);
+
 		impl->renderSystem->getRenderer()->BeginFrame(t);
 		impl->renderSystem->getRenderer()->RenderFrame(ctx);
 		impl->renderSystem->getRenderer()->EndFrame();

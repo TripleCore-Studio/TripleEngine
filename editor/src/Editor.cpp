@@ -131,11 +131,22 @@ namespace triple::editor {
 			}
 			if (!found)
 				return name;
-			name = baseName + " (" + std::to_string(counter++) + ")";
+			name = baseName + "(" + std::to_string(counter++) + ")";
 		}
 	}
 
 	void Editor::onLoaded() {
+		m_ambientColor = Vec3(0.53f, 0.65f, 0.85f);
+
+		m_sunLight.color = Vec3(1.0f, 0.95f, 0.8f);
+		m_sunLight.azimuth = 40.0f;
+		m_sunLight.elevation = 45.0f;
+		m_sunLight.intensity = 1.8f;
+
+		m_cameraLight.color = Vec3(0.9f, 0.95f, 1.0f);
+		m_cameraLight.intensity = 7.0f;
+		m_cameraLight.radius = 1.0f;
+
 		cameraInit();
 		m_imguiLayer.init(getWindow());
 
@@ -167,13 +178,49 @@ namespace triple::editor {
 			    if (e != m_camera) {
 				    getActiveScene()->destroyEntity(e);
 			    }
+		    },
+		    [this](core::Entity e) {
+			    if (e == m_camera)
+				    return;
+
+			    Scene *scene = getActiveScene();
+			    TransformComponent currentTransform = *scene->getComponent<TransformComponent>(e);
+			    MeshComponent currentMesh = *scene->getComponent<MeshComponent>(e);
+			    NameComponent currentName = *scene->getComponent<NameComponent>(e);
+
+			    std::string newName = uniqueName(scene, currentName.name);
+
+			    Entity newEntity = scene->createEntity();
+			    TransformComponent *newTransform =
+			        scene->addComponent<TransformComponent>(newEntity);
+
+			    newTransform->position = currentTransform.position + Vec3(1, 1, 1);
+			    newTransform->rotationEuler = currentTransform.rotationEuler;
+			    newTransform->scale = currentTransform.scale;
+
+			    scene->addComponent<MeshComponent>(newEntity)->modelIndex = currentMesh.modelIndex;
+			    scene->addComponent<NameComponent>(newEntity)->name = newName;
 		    });
 
 		m_inspector = m_uiManager.addPanel<InspectorPanel>();
 		m_inspector->setCamera(&m_cameraSettings.cameraSpeed, m_cameraSettings.cameraSpeedMin,
 		                       m_cameraSettings.cameraSpeedMax, &m_cameraSettings.lockY);
+		m_inspector->setLight(&m_sunLight, &m_cameraLight, &m_ambientColor);
 
 		m_uiManager.addPanel<DescPanel>();
+
+		onFrame = [this](gfx::FrameContext &ctx) {
+			ctx.ambientColor = m_ambientColor;
+			ctx.cameraLight = m_cameraLight;
+
+			ctx.sunLight.color = m_sunLight.color;
+			ctx.sunLight.intensity = m_sunLight.intensity;
+			float elRad = math::radians(m_sunLight.elevation);
+			float azRad = math::radians(m_sunLight.azimuth);
+			ctx.sunLight.direction =
+			    math::normalize(Vec3(std::cos(elRad) * std::sin(azRad), std::sin(elRad),
+			                         std::cos(elRad) * std::cos(azRad)));
+		};
 	}
 
 	void Editor::loadCallbacks() {

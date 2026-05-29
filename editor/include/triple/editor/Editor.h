@@ -6,6 +6,9 @@
 
 #include <triple/core/base/Engine.h>
 
+#include <triple/gfx/LightSources.h>
+#include <triple/editor/SunLight.h>
+
 #include "triple/editor/UI/ImGuiLayer.h"
 #include "triple/editor/UI/UIManager.h"
 #include "triple/editor/UI/InspectorPanel.h"
@@ -34,6 +37,11 @@ namespace triple::editor {
 
 		core::Entity m_camera;
 		std::vector<std::string> m_loadedModels;
+
+	private:
+		math::Vec3 m_ambientColor;
+		editor::SunLight m_sunLight;
+		gfx::CameraLight m_cameraLight;
 
 	private:
 		ImGuiLayer m_imguiLayer;
