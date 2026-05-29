@@ -32,26 +32,45 @@ namespace triple::gl {
 
 		triple::math::Mat4 VP = ctx.camera.proj * ctx.camera.view;
 
+		GLShader *currentShader = nullptr;
+
 		for (auto &cmd : ctx.commands) {
 			triple::math::Mat4 MVP = VP * cmd.worldMat;
+
 			for (auto &item : cmd.items) {
 				const GLGeometry *geom = m_resourceManager->getGLGeometry(item.geometry);
 				GLShader *shader = m_resourceManager->getGLShader(item.material.shaderHandle);
 				GLTexture *albedo = m_resourceManager->getGLTexture(item.material.albedoTexHandle);
 
-				shader->bind();
+				if (shader != currentShader) {
+					currentShader = shader;
+					shader->bind();
+
+					shader->setUniform3fv("u_CameraPos", ctx.camera.pos.data());
+					shader->setUniform1f("u_Time", ctx.time);
+
+					shader->setUniform3fv("u_Sun.direction", ctx.sunLight.direction.data());
+					shader->setUniform3fv("u_Sun.color", ctx.sunLight.color.data());
+					shader->setUniform1f("u_Sun.intensity", ctx.sunLight.intensity);
+
+					shader->setUniform3fv("u_CamLight.color", ctx.cameraLight.color.data());
+					shader->setUniform1f("u_CamLight.intensity", ctx.cameraLight.intensity);
+					shader->setUniform1f("u_CamLight.radius", ctx.cameraLight.radius);
+
+					shader->setUniform3fv("u_AmbientColor", ctx.ambientColor.data());
+				}
+
 				shader->setUniformMat4("u_MVP", MVP.data);
 				shader->setUniformMat4("u_Model", cmd.worldMat.data);
-				shader->setUniform3fv("u_CameraPos", ctx.camera.pos.data());
-				shader->setUniform1f("u_Time", ctx.time);
 				shader->setTexture("u_AlbedoTex", albedo->id, 0);
 
 				geom->vao.bind();
 				glDrawElements(GL_TRIANGLES, item.indexCount, GL_UNSIGNED_INT,
 				               (void *)(item.indexOffset * sizeof(uint32_t)));
-				geom->vao.unbind();
 			}
 		}
+
+		glBindVertexArray(0);
 	}
 
 	void OpenGLRenderer::EndFrame() {}

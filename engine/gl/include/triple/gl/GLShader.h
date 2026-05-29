@@ -3,9 +3,11 @@
 
 #include <string>
 
+#include <triple/math/Vec3.h>
+
 namespace triple::gl {
 	struct GLShader {
-	  public:
+	public:
 		GLShader();
 		bool compileProgram(const std::string &verSource, const std::string &fragSource);
 		void bind();
@@ -29,7 +31,7 @@ namespace triple::gl {
 		GLShader(GLShader &&other) noexcept;
 		GLShader &operator=(GLShader &&other) noexcept;
 
-	  private:
+	private:
 		unsigned int m_programID;
 		bool m_compiled;
 		std::string m_errorLog;

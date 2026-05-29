@@ -8,29 +8,29 @@ in vec3 v_FragPos;
 uniform vec3      u_CameraPos;
 uniform float     u_Time;
 uniform sampler2D u_AlbedoTex;
+uniform vec3 u_AmbientColor;
 
 out vec4 o_FragColor;
 
-struct PointLight {
-    vec3  pos;
-    vec3  color;
+struct SunLight {
+    vec3 direction;
+    vec3 color;
+    float intensity;
+};
+
+struct CameraLight {
+    vec3 color;
     float intensity;
     float radius;
 };
 
-const int LIGHT_COUNT = 2;
+uniform SunLight u_Sun;
+uniform CameraLight u_CamLight;
 
-PointLight lights[LIGHT_COUNT] = PointLight[LIGHT_COUNT](
-    // Оружие — ближние
-    // PointLight(u_CameraPos + vec3( 1.0,  0.2,  0.0), vec3(0.2, 0.5, 1.0), 10.0,  0.0),
-    PointLight(u_CameraPos + vec3(0.0, -0.1,  0.0), vec3(0.8, 0.29, 0.97),  7.0, 10.0),
-
-    PointLight(vec3(u_CameraPos.x, 1.0, u_CameraPos.z), vec3(0.7, 0.67, 0.58), 10.0, 80.0)
-);
-
-vec3 CalcPointLight(PointLight l, vec3 N, vec3 albedo)
+vec3 CalcPointLight(CameraLight l, vec3 N, vec3 albedo)
 {
-    vec3  toLight = l.pos - v_FragPos;
+    vec3  lightPos = u_CameraPos + vec3(0.0, -0.1, 0.0);
+    vec3  toLight = lightPos - v_FragPos;
     float dist    = length(toLight);
     vec3  L       = toLight / dist;
 
@@ -45,21 +45,33 @@ vec3 CalcPointLight(PointLight l, vec3 N, vec3 albedo)
     return (diff + spec) * l.color * l.intensity * att * albedo;
 }
 
+vec3 CalcDirectionalLight(SunLight sun, vec3 N, vec3 albedo)
+{
+    vec3 L = normalize(sun.direction);
+
+    float diff = max(dot(N, L), 0.0);
+
+    vec3 V    = normalize(u_CameraPos - v_FragPos);
+    vec3 H    = normalize(L + V);
+    float spec = pow(max(dot(N, H), 0.0), 64.0) * 1.5;
+
+    return (diff + spec) * sun.color * sun.intensity * albedo;
+}
+
 void main()
 {
     vec4 albedoSample = texture(u_AlbedoTex, v_UV);
-
     vec3 albedo = (albedoSample.a < 0.1) ? v_Color : albedoSample.rgb;
-
     albedo = pow(albedo, vec3(2.2));
 
     vec3 N = normalize(v_Normal);
 
-    vec3 ambientColor = vec3(0.16, 0.16, 0.27) * albedo;
+    float ambientStrength = mix(0.02, 0.16, clamp(u_Sun.intensity, 0.0, 1.0));
+    vec3  ambientColor    = vec3(ambientStrength, ambientStrength, ambientStrength * 1.7) * u_AmbientColor * albedo;
 
     vec3 lighting = ambientColor;
-    for (int i = 0; i < LIGHT_COUNT; i++)
-        lighting += CalcPointLight(lights[i], N, albedo);
+    lighting += CalcDirectionalLight(u_Sun, N, albedo);
+    lighting += CalcPointLight(u_CamLight, N, albedo);
 
     lighting = lighting / (lighting + vec3(1.0));
     lighting = pow(lighting, vec3(1.0 / 2.2));

@@ -2,8 +2,6 @@
 #include <triple/math/Mat4Operations.h>
 #include <triple/math/MathCommon.h>
 
-constexpr float DEG2RAD = 3.14159265359f / 180.0f;
-
 using namespace triple::math;
 
 namespace triple::core {
