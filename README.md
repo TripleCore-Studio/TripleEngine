@@ -4,7 +4,7 @@
 ![OpenGL](https://img.shields.io/badge/OpenGL-Renderer-5586A4?logo=opengl)
 ![CMake](https://img.shields.io/badge/CMake-Build-064F8C?logo=cmake)
 
-TripleEngine is a custom game engine written in C++
+TripleEngine is a custom game engine written in C++20
 
 > Current status: Pre-Alpha (0.1.0)
 
@@ -13,6 +13,8 @@ TripleEngine is a custom game engine written in C++
 TripleEngine is a personal project focused on learning graphics programming, engine architecture, and game engine development from scratch.
 
 ## Screenshots
+
+![TripleEngine Preview](docs/screenshots/v0.1.0/overview.jpg)
 
 ## Features
 
