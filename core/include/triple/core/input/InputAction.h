@@ -1,22 +1,21 @@
 #ifndef INPUT_ACTION_H
 #define INPUT_ACTION_H
 
-#include "triple/core/base/ExportMacros.h"
-#include "KeyCode.h"
-#include "MouseButton.h"
+#include <triple/core/input/KeyCode.h>
+#include <triple/core/input/MouseButton.h>
 
 namespace triple::core {
 	enum class InputTriggerType { Key, MouseButton };
 
 	enum class TriggerState { Pressed, Held, Released };
 
-	struct CORE_API InputTrigger {
+	struct InputTrigger {
 		InputTriggerType type;
 		TriggerState state;
 
 		union {
-			KeyCode key;
-			MouseButton mouse;
+			core::KeyCode key;
+			core::MouseButton mouse;
 		};
 	};
 } // namespace triple::core

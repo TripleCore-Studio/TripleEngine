@@ -17,6 +17,7 @@ add_library(triple::game ALIAS triple_game)
 
 target_include_directories(${GAME_LAYER} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${CMAKE_SOURCE_DIR}/external/stb
 )
 
 file(GLOB_RECURSE HEADER_FILES
@@ -35,6 +36,7 @@ target_compile_features(${GAME_LAYER} PUBLIC cxx_std_20)
 target_link_libraries(${GAME_LAYER} 
 	PUBLIC 
 		triple::core
+        assimp
 )
 
 set_target_properties(${GAME_LAYER} PROPERTIES

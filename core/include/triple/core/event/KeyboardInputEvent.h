@@ -3,27 +3,25 @@
 
 #include <triple/core/base/ExportMacros.h>
 
-#include "Event.h"
+#include "EventBase.h"
 #include "KeyAction.h"
 #include "triple/core/input/KeyCode.h"
 
 namespace triple::core {
-	class CORE_API KeyboardInputEvent : public Event {
-	  public:
+	class CORE_API KeyboardInputEvent : public EventBase<KeyboardInputEvent> {
+	public:
 		KeyboardInputEvent(KeyCode key, KeyAction action, int mods)
 		    : m_key(key), m_action(action), m_mods(mods) {}
 
-		EventID getTypeID() const override { return typeid(KeyboardInputEvent); }
+		[[nodiscard]] KeyCode getKey() const { return m_key; }
+		[[nodiscard]] KeyAction getAction() const { return m_action; }
+		[[nodiscard]] int getMods() const { return m_mods; }
 
-		KeyCode getKey() const { return m_key; }
-		KeyAction getAction() const { return m_action; }
-		int getMods() const { return m_mods; }
+		[[nodiscard]] bool isPressed() const { return m_action == KeyAction::Press; }
+		[[nodiscard]] bool isReleased() const { return m_action == KeyAction::Release; }
+		[[nodiscard]] bool isRepeat() const { return m_action == KeyAction::Repeat; }
 
-		bool isPressed() const { return m_action == KeyAction::Press; }
-		bool isReleased() const { return m_action == KeyAction::Release; }
-		bool isRepeat() const { return m_action == KeyAction::Repeat; }
-
-	  private:
+	private:
 		KeyCode m_key;
 		KeyAction m_action;
 		int m_mods;

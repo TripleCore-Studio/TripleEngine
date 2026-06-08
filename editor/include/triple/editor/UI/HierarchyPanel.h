@@ -6,8 +6,8 @@
 #include <imgui.h>
 #include <ImGuiFileDialog.h>
 
-#include <triple/core/ecs/Scene.h>
-#include <triple/core/ecs/NameComponent.h>
+#include <triple/game/ecs/Scene.h>
+#include <triple/game/ecs/NameComponent.h>
 
 #include "UIPanel.h"
 
@@ -20,11 +20,11 @@ namespace triple::editor {
 		static constexpr int WIDTH = 250;
 		static constexpr int HEIGHT = 400;
 
-		explicit HierarchyPanel(core::Scene *scene,
-		                        std::function<void(core::Entity)> entitySelected,
+		explicit HierarchyPanel(game::Scene *scene,
+		                        std::function<void(game::Entity)> entitySelected,
 		                        std::function<void(std::string modelPath)> addEntity,
-		                        std::function<void(core::Entity)> removeEntity,
-		                        std::function<void(core::Entity)> duplicate)
+		                        std::function<void(game::Entity)> removeEntity,
+		                        std::function<void(game::Entity)> duplicate)
 		    : UIPanel("Hierarchy"), m_scene(scene), m_onEntitySelected(entitySelected),
 		      m_onAddEntity(addEntity), m_onRemoveEntity(removeEntity), m_onDuplicate(duplicate) {}
 
@@ -41,7 +41,7 @@ namespace triple::editor {
 
 			for (auto &entity : m_entities) {
 				bool selected = (m_selected == entity);
-				core::NameComponent *name = m_scene->getComponent<core::NameComponent>(entity);
+				game::NameComponent *name = m_scene->getComponent<game::NameComponent>(entity);
 
 				ImGui::PushID(entity);
 
@@ -108,13 +108,13 @@ namespace triple::editor {
 		}
 
 	private:
-		core::Scene *m_scene;
-		core::Entity m_selected;
+		game::Scene *m_scene;
+		game::Entity m_selected;
 
-		std::vector<core::Entity> m_entities;
-		std::function<void(core::Entity)> m_onEntitySelected;
+		std::vector<game::Entity> m_entities;
+		std::function<void(game::Entity)> m_onEntitySelected;
 		std::function<void(std::string modelPath)> m_onAddEntity;
-		std::function<void(core::Entity)> m_onRemoveEntity;
-		std::function<void(core::Entity)> m_onDuplicate;
+		std::function<void(game::Entity)> m_onRemoveEntity;
+		std::function<void(game::Entity)> m_onDuplicate;
 	};
 } // namespace triple::editor
