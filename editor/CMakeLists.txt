@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
-set(EDITOR_PROJECT_NAME editor)
+set(EDITOR_PROJECT_NAME triple_editor)
 
 include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
 
@@ -17,13 +17,13 @@ add_executable(${EDITOR_PROJECT_NAME}
 add_custom_command(TARGET ${EDITOR_PROJECT_NAME} POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 	"${CMAKE_SOURCE_DIR}/assets"
-	"$<TARGET_FILE_DIR:editor>/assets"
+	"$<TARGET_FILE_DIR:triple_editor>/assets"
 )
 
-add_custom_command(TARGET editor POST_BUILD
+add_custom_command(TARGET ${EDITOR_PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:glfw>
-        $<TARGET_FILE_DIR:editor>
+        $<TARGET_FILE_DIR:triple_editor>
 )
 
 target_include_directories(${EDITOR_PROJECT_NAME} PUBLIC
@@ -74,8 +74,7 @@ PUBLIC
 target_link_libraries(${EDITOR_PROJECT_NAME} 
 	PRIVATE 
 		triple::core
-		triple::log
-		triple::math
+        triple::game
 		imgui
 )
 

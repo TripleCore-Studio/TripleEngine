@@ -18,6 +18,7 @@ add_subdirectory(engine/gfx)
 add_subdirectory(engine/gl)
 
 add_subdirectory(core)
+add_subdirectory(game)
 add_subdirectory(editor)
 
 if(BUILD_TESTS)
