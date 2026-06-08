@@ -2,8 +2,8 @@
 
 #include <imgui.h>
 
-#include <triple/core/ecs/Scene.h>
-#include <triple/core/ecs/TransformComponent.h>
+#include <triple/game/ecs/Scene.h>
+#include <triple/game/ecs/TransformComponent.h>
 
 #include <triple/gfx/LightSources.h>
 #include <triple/editor/SunLight.h>
@@ -15,7 +15,7 @@ namespace triple::editor {
 	public:
 		InspectorPanel() : UIPanel("Inspector") {}
 
-		void setTarget(core::Entity entity, core::Scene *scene) {
+		void setTarget(game::Entity entity, game::Scene *scene) {
 			m_entity = entity;
 			m_scene = scene;
 		}
@@ -35,7 +35,7 @@ namespace triple::editor {
 			ImGui::Begin(m_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
 			if (m_scene) {
-				auto *t = m_scene->getComponent<core::TransformComponent>(m_entity);
+				auto *t = m_scene->getComponent<game::TransformComponent>(m_entity);
 				if (t) {
 					ImGui::Text("Transform");
 					ImGui::DragFloat3("Position", &t->position.x, 0.05f);
@@ -89,8 +89,8 @@ namespace triple::editor {
 		}
 
 	private:
-		core::Entity m_entity = {};
-		core::Scene *m_scene = nullptr;
+		game::Entity m_entity = {};
+		game::Scene *m_scene = nullptr;
 
 		float *m_cameraSpeed = nullptr;
 		float m_cameraSpeedMin = 1.0f;

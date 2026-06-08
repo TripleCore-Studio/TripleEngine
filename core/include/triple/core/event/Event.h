@@ -8,9 +8,11 @@ namespace triple::core {
 	using EventID = std::type_index;
 
 	class CORE_API Event {
-	  public:
+	public:
 		virtual ~Event() = default;
-		virtual EventID getTypeID() const = 0;
+		[[nodiscard]] virtual EventID getTypeID() const = 0;
+
+		bool handled = false;
 	};
 } // namespace triple::core
 

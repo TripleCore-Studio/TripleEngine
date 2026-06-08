@@ -17,7 +17,6 @@ add_library(triple::core ALIAS triple_core)
 
 target_include_directories(${LIB_NAME}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-	PRIVATE ${CMAKE_SOURCE_DIR}/external/stb
 )
 
 file(GLOB_RECURSE HEADER_FILES
@@ -42,7 +41,6 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 target_link_libraries(${LIB_NAME} PRIVATE 
 	glfw
 	glad
-	assimp
 )
 
 target_link_libraries(${LIB_NAME} PUBLIC

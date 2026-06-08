@@ -1,18 +1,16 @@
 #ifndef WINDOW_CLOSE_EVENT_H
 #define WINDOW_CLOSE_EVENT_H
 
-#include "Event.h"
+#include "EventBase.h"
 
 namespace triple::core {
-	class CORE_API WindowCloseEvent : public Event {
-	  public:
+	class CORE_API WindowCloseEvent : public EventBase<WindowCloseEvent> {
+	public:
 		WindowCloseEvent(const char *title) : m_title(const_cast<char *>(title)) {}
 
-		EventID getTypeID() const override { return typeid(WindowCloseEvent); }
+		[[nodiscard]] const char *getTitle() const { return m_title; }
 
-		const char *getTitle() const { return m_title; }
-
-	  private:
+	private:
 		char *m_title;
 	};
 } // namespace triple::core
