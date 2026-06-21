@@ -1,10 +1,10 @@
-#include "triple/core/Input/InputSystem.h"
+#include "triple/core/input/InputSystem.h"
 
 #include <unordered_map>
 
 #include <triple/log/Logger.h>
-#include "triple/core/Input/KeyCode.h"
-#include "triple/core/Input/MouseButton.h"
+#include "triple/core/input/KeyCode.h"
+#include "triple/core/input/MouseButton.h"
 
 namespace triple::core {
 	struct InputSystem::Impl {
@@ -47,37 +47,57 @@ namespace triple::core {
 		auto key = ke.getKey();
 
 		if (ke.isPressed()) {
+			if (ke.handled)
+				return;
+
 			if (!m_impl->m_keys[key])
 				m_impl->m_keysPressed[key] = true;
 
 			m_impl->m_keys[key] = true;
 		} else if (ke.isReleased()) {
 			m_impl->m_keys[key] = false;
-			m_impl->m_keysReleased[key] = true;
+
+			if (!ke.handled)
+				m_impl->m_keysReleased[key] = true;
 		}
 	}
 
 	void InputSystem::onMouseMove(MouseMoveEvent &me) {
+		float currentX = me.getX();
+		float currentY = me.getY();
+
 		if (m_firstMouse) {
-			m_mouseX = m_lastMouseX = me.getX();
-			m_mouseY = m_lastMouseY = me.getY();
+			m_mouseX = currentX;
+			m_mouseY = currentY;
 			m_firstMouse = false;
-		} else {
-			m_mouseDelta = triple::math::Vec2(me.getX() - m_mouseX, m_mouseY - me.getY());
-			m_mouseX = me.getX();
-			m_mouseY = me.getY();
+			m_mouseDelta = triple::math::Vec2(0, 0);
+			return;
 		}
+
+		if (me.handled) {
+			m_mouseDelta = triple::math::Vec2(0, 0);
+		} else {
+			m_mouseDelta = triple::math::Vec2(currentX - m_mouseX, m_mouseY - currentY);
+		}
+
+		m_mouseX = currentX;
+		m_mouseY = currentY;
 	}
 
 	void InputSystem::onMouseButton(MouseButtonEvent &me) {
 		auto btn = me.getButton();
 
 		if (me.isPressed()) {
+			if (me.handled)
+				return;
+
 			m_impl->m_mouseButtons[btn] = true;
 			m_impl->m_mouseButtonsPressed[btn] = true;
 		} else if (me.isReleased()) {
 			m_impl->m_mouseButtons[btn] = false;
-			m_impl->m_mouseButtonsReleased[btn] = true;
+
+			if (!me.handled)
+				m_impl->m_mouseButtonsReleased[btn] = true;
 		}
 	}
 

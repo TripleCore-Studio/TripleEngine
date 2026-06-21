@@ -10,15 +10,15 @@
 #include "InputAction.h"
 
 namespace triple::core {
-	class CORE_API InputActionSystem {
+	class CORE_API ActionMap {
 	public:
-		InputActionSystem(core::InputSystem *inputSystem);
-		~InputActionSystem();
+		ActionMap(core::InputSystem *inputSystem);
+		~ActionMap();
 
 		void bind(const std::string &name, std::vector<InputTrigger> triggers,
 		          std::function<void()> callback);
 
-		void update(float dt);
+		void update();
 
 	private:
 		struct Impl;

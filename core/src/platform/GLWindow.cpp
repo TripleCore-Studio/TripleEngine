@@ -4,15 +4,15 @@
 #include <GLFW/glfw3.h>
 #include <triple/log/Logger.h>
 
-#include "triple/core/Input/KeyCode.h"
-#include "triple/core/Input/MouseButton.h"
+#include "triple/core/input/KeyCode.h"
+#include "triple/core/input/MouseButton.h"
 
-#include "triple/core/Event/KeyAction.h"
-#include "triple/core/Event/KeyboardInputEvent.h"
-#include "triple/core/Event/MouseButtonEvent.h"
-#include "triple/core/Event/MouseMoveEvent.h"
-#include "triple/core/Event/WindowCloseEvent.h"
-#include "triple/core/Event/WindowResizeEvent.h"
+#include "triple/core/event/KeyAction.h"
+#include "triple/core/event/KeyboardInputEvent.h"
+#include "triple/core/event/MouseButtonEvent.h"
+#include "triple/core/event/MouseMoveEvent.h"
+#include "triple/core/event/WindowCloseEvent.h"
+#include "triple/core/event/WindowResizeEvent.h"
 
 namespace triple::core {
 
@@ -139,13 +139,13 @@ namespace triple::core {
 		return ErrorCode::None;
 	}
 
-	void GLWindow::PollEvents() { glfwPollEvents(); }
+	void GLWindow::pollEvents() { glfwPollEvents(); }
 
-	void GLWindow::SwapBuffers() { glfwSwapBuffers(this->m_window); }
+	void GLWindow::swapBuffers() { glfwSwapBuffers(this->m_window); }
 
-	bool GLWindow::ShouldClose() const { return glfwWindowShouldClose(this->m_window); }
+	bool GLWindow::shouldClose() const { return glfwWindowShouldClose(this->m_window); }
 
-	void *GLWindow::GetNativeWindow() const { return this->m_window; }
+	void *GLWindow::getNativeWindow() const { return this->m_window; }
 
 	bool GLWindow::isFullscreen() const { return this->m_data.isFullscreen; }
 
@@ -269,6 +269,18 @@ namespace triple::core {
 			}
 			glfwTerminate();
 		}
+	}
+
+	int GLWindow::getWidth() {
+		int w, h;
+		glfwGetWindowSize(m_window, &w, &h);
+		return w;
+	}
+
+	int GLWindow::getHeight() {
+		int w, h;
+		glfwGetWindowSize(m_window, &w, &h);
+		return h;
 	}
 
 	GLWindow::~GLWindow() { shutdown(); }

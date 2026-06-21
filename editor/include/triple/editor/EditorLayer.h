@@ -3,11 +3,12 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 #include <triple/gfx/LightSources.h>
 
 #include <triple/core/base/Layer.h>
-#include <triple/core/input/InputActionSystem.h>
+#include <triple/core/input/ActionMap.h>
 
 #include <triple/game/GameLayer.h>
 
@@ -39,9 +40,9 @@ namespace triple::editor {
 		gfx::CameraLight m_cameraLight;
 		std::vector<std::string> m_loadedModels;
 
-		game::GameLayer *m_gameLayer;
+		game::GameLayer *m_gameLayer = nullptr;
 		core::IWindow *m_window = nullptr;
-		core::InputActionSystem *m_inputActionSystem = nullptr;
+		std::unique_ptr<core::ActionMap> m_actionMap;
 
 	private:
 		ImGuiLayer m_imguiLayer;
@@ -50,6 +51,7 @@ namespace triple::editor {
 
 		bool m_isDebugVisible = true;
 		bool m_lastCursorCaptureState = true;
+		float m_dt = 0.0f;
 	};
 } // namespace triple::editor
 

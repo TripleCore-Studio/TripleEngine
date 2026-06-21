@@ -87,9 +87,6 @@ namespace triple::game {
 		return true;
 	}
 	void GameLayer::cameraUpdate(float dt) {
-		if (m_isCameraBlocked)
-			return;
-
 		TransformComponent *cameraTransform =
 		    m_scene->getComponent<TransformComponent>(m_cameraEntity);
 

@@ -17,24 +17,22 @@ using namespace triple::math;
 namespace triple::editor {
 	void EditorLayer::onAttach(const core::EngineContext &ctx) {
 		m_window = ctx.window;
-		m_inputActionSystem = ctx.inputActionSystem;
+		m_actionMap = std::make_unique<core::ActionMap>(ctx.inputSystem);
 		load();
 		loadCallbacks();
-	};
-	void EditorLayer::onDetach() {
-
-	};
+	}
+	void EditorLayer::onDetach() {}
 	void EditorLayer::onUpdate(float dt) {
-
-	};
+		m_actionMap->update();
+		m_dt = dt;
+	}
 	void EditorLayer::onRender(float t) {
-		m_imguiLayer.beginFrame();
+		m_imguiLayer.beginFrame(m_dt);
 		m_uiManager.render();
 		m_imguiLayer.endFrame();
-	};
-	void EditorLayer::onEvent(core::Event &e) {
+	}
 
-	};
+	void EditorLayer::onEvent(core::Event &e) { m_imguiLayer.onEvent(e); }
 
 	void EditorLayer::load() {
 		m_ambientColor = Vec3(0.53f, 0.65f, 0.85f);
@@ -48,7 +46,8 @@ namespace triple::editor {
 		m_cameraLight.intensity = 7.0f;
 		m_cameraLight.radius = 1.0f;
 
-		m_imguiLayer.init(m_window);
+		m_imguiLayer.init();
+		m_imguiLayer.resize(m_window->getWidth(), m_window->getHeight());
 
 		m_uiManager.addPanel<HierarchyPanel>(
 		    m_gameLayer->getActiveScene(),
@@ -157,34 +156,33 @@ namespace triple::editor {
 		fullscreenTrigger.state = TriggerState::Pressed;
 		fullscreenTrigger.key = KeyCode::F11;
 
-		m_inputActionSystem->bind("ToggleFullscreen", {fullscreenTrigger},
-		                          [this]() { m_window->setFullscreen(!m_window->isFullscreen()); });
+		m_actionMap->bind("ToggleFullscreen", {fullscreenTrigger},
+		                  [this]() { m_window->setFullscreen(!m_window->isFullscreen()); });
 
 		InputTrigger captureMouseTrigger;
 		captureMouseTrigger.type = InputTriggerType::Key;
 		captureMouseTrigger.state = TriggerState::Pressed;
 		captureMouseTrigger.key = KeyCode::F10;
 
-		m_inputActionSystem->bind("ToggleCaptureMouse", {captureMouseTrigger}, [this]() {
-			m_window->setCursorCapture(!m_window->isCursorCaptured());
-		});
+		m_actionMap->bind("ToggleCaptureMouse", {captureMouseTrigger},
+		                  [this]() { m_window->setCursorCapture(!m_window->isCursorCaptured()); });
 
 		InputTrigger debugMenuTrigger;
 		debugMenuTrigger.type = InputTriggerType::Key;
 		debugMenuTrigger.state = TriggerState::Pressed;
 		debugMenuTrigger.key = KeyCode::F9;
-		m_inputActionSystem->bind("ToggleDebugMenu", {debugMenuTrigger}, [this]() {
+		m_actionMap->bind("ToggleDebugMenu", {debugMenuTrigger}, [this]() {
 			if (m_isDebugVisible) {
 				m_window->setCursorCapture(m_lastCursorCaptureState);
 				m_uiManager.hideAll();
+				m_imguiLayer.opened = false;
 				m_isDebugVisible = false;
-				m_gameLayer->setCameraBlock(m_isDebugVisible);
 			} else {
 				m_lastCursorCaptureState = m_window->isCursorCaptured();
 				m_window->setCursorCapture(false);
 				m_uiManager.showAll();
+				m_imguiLayer.opened = true;
 				m_isDebugVisible = true;
-				m_gameLayer->setCameraBlock(m_isDebugVisible);
 			}
 		});
 	}
