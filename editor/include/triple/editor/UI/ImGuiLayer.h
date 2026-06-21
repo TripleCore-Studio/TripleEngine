@@ -1,15 +1,19 @@
 #pragma once
 
-#include <triple/core/base/IWindow.h>
+#include <triple/core/event/Event.h>
 
 namespace triple::editor {
 	class ImGuiLayer {
 	public:
 		~ImGuiLayer();
-		void init(core::IWindow *window);
+		void init();
 		void shutdown() const;
-		void beginFrame();
+		void beginFrame(float dt);
 		void endFrame();
+		void onEvent(core::Event &e) const;
+		void resize(int width, int height);
+
+		bool opened = true;
 
 	private:
 		void stylesApply();

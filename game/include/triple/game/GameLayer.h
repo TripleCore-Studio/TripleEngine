@@ -27,7 +27,6 @@ namespace triple::game {
 		[[nodiscard]] AssetService *getAssetService() const { return m_assetService.get(); }
 
 		void setActiveCamera(Entity camera) { m_cameraEntity = camera; }
-		void setCameraBlock(bool isBlock) { m_isCameraBlocked = isBlock; }
 		void setFrameContextCallback(std::function<void(gfx::FrameContext &)> cb) {
 			m_onFrameContext = cb;
 		}
@@ -51,6 +50,5 @@ namespace triple::game {
 		std::unique_ptr<Scene> m_scene;
 		Entity m_cameraEntity;
 		std::function<void(gfx::FrameContext &)> m_onFrameContext;
-		bool m_isCameraBlocked = true;
 	};
 } // namespace triple::game

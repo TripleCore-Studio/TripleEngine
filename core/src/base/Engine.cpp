@@ -21,7 +21,6 @@
 namespace triple::core {
 	struct Engine::Impl {
 		std::unique_ptr<InputSystem> inputSystem;
-		std::unique_ptr<InputActionSystem> inputActionSystem;
 		std::unique_ptr<EventService> eventService;
 		std::unique_ptr<ModuleService> moduleService;
 		std::unique_ptr<IWindow> window;
@@ -42,7 +41,6 @@ namespace triple::core {
 		m_impl->eventService = std::make_unique<EventService>();
 		m_impl->moduleService = std::make_unique<ModuleService>("modules");
 		m_impl->inputSystem = std::make_unique<InputSystem>();
-		m_impl->inputActionSystem = std::make_unique<InputActionSystem>(m_impl->inputSystem.get());
 
 		m_impl->moduleService->loadModule(ModuleType::OpenGLRenderer);
 		m_impl->inputSystem->init();
@@ -114,7 +112,6 @@ namespace triple::core {
 		ctx.eventService = m_impl->eventService.get();
 		ctx.window = m_impl->window.get();
 		ctx.inputSystem = m_impl->inputSystem.get();
-		ctx.inputActionSystem = m_impl->inputActionSystem.get();
 
 		for (auto &layer : m_layerStack) {
 			layer->onAttach(ctx);
@@ -127,12 +124,11 @@ namespace triple::core {
 			float dt = currentTime - m_lastTime;
 			m_lastTime = currentTime;
 
-			m_impl->window->PollEvents();
+			m_impl->window->pollEvents();
 
 			for (auto &layer : m_layerStack)
 				layer->onUpdate(dt);
 
-			m_impl->inputActionSystem->update(dt);
 			m_impl->inputSystem->update(dt);
 
 			m_impl->renderer->BeginFrame(m_lastTime);
@@ -142,7 +138,7 @@ namespace triple::core {
 
 			m_impl->renderer->EndFrame();
 
-			m_impl->window->SwapBuffers();
+			m_impl->window->swapBuffers();
 		}
 
 		return ErrorCode::None;
@@ -152,30 +148,30 @@ namespace triple::core {
 
 	void Engine::loadSystemCallbacks() {
 		m_impl->eventService->addListener<WindowCloseEvent>([this](WindowCloseEvent &e) {
+			dispatchToLayers(e);
 			triple::log::Logger::Warn("Window ({}) closed", e.getTitle());
 			m_impl->window->shutdown();
 			this->m_isRunning = false;
-			dispatchToLayers(e);
 		});
 
 		m_impl->eventService->addListener<WindowResizeEvent>([this](WindowResizeEvent &e) {
-			m_impl->renderer->SetViewport(0, 0, e.getWidth(), e.getHeight());
 			dispatchToLayers(e);
+			m_impl->renderer->SetViewport(0, 0, e.getWidth(), e.getHeight());
 		});
 
 		m_impl->eventService->addListener<KeyboardInputEvent>([this](KeyboardInputEvent &e) {
-			m_impl->inputSystem->onKeyboard(e);
 			dispatchToLayers(e);
+			m_impl->inputSystem->onKeyboard(e);
 		});
 
 		m_impl->eventService->addListener<MouseMoveEvent>([this](MouseMoveEvent &e) {
-			m_impl->inputSystem->onMouseMove(e);
 			dispatchToLayers(e);
+			m_impl->inputSystem->onMouseMove(e);
 		});
 
 		m_impl->eventService->addListener<MouseButtonEvent>([this](MouseButtonEvent &e) {
-			m_impl->inputSystem->onMouseButton(e);
 			dispatchToLayers(e);
+			m_impl->inputSystem->onMouseButton(e);
 		});
 	}
 

@@ -17,8 +17,8 @@ int main() {
 		editorPtr->fillFrameContext(ctx);
 	});
 
-	app->pushOverlay(std::move(editor));
 	app->pushLayer(std::move(game));
+	app->pushLayer(std::move(editor));
 
 	triple::core::Engine::ErrorCode code = app->run("Triple Engine v(0.1.0-pre-alpha)", 1280, 720);
 

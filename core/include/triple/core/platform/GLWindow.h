@@ -11,16 +11,16 @@ struct GLFWwindow;
 
 namespace triple::core {
 	class CORE_API GLWindow : public IWindow {
-	  public:
+	public:
 		enum class ErrorCode { None = 0, GlfwInitError, CreateWindowError };
 
 		GLWindow(const char *title, int width, int height, IEventSink *sink);
 		ErrorCode init(void **outProc);
 
-		void PollEvents() override;
-		void SwapBuffers() override;
-		bool ShouldClose() const override;
-		void *GetNativeWindow() const override;
+		void pollEvents() override;
+		void swapBuffers() override;
+		bool shouldClose() const override;
+		void *getNativeWindow() const override;
 		bool isFullscreen() const override;
 		void setFullscreen(bool enabled) override;
 		void setSize(uint32_t width, uint32_t height) override;
@@ -30,17 +30,19 @@ namespace triple::core {
 		bool isCursorCaptured() const override;
 		double getTime() const override;
 		void shutdown() override;
+		int getWidth() override;
+		int getHeight() override;
 
 		~GLWindow();
 
-	  private:
+	private:
 		GLWindow(const GLWindow &) = delete;
 		GLWindow &operator=(const GLWindow &) = delete;
 		void initGLFWCallbacks();
 		void emit(Event &e);
 
 		struct WindowData {
-		  public:
+		public:
 			char *title = nullptr;
 			int width = 0;
 			int height = 0;

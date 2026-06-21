@@ -1,4 +1,4 @@
-#include "triple/core/input/InputActionSystem.h"
+#include "triple/core/input/ActionMap.h"
 
 #include <unordered_map>
 #include <triple/log/Logger.h>
@@ -9,16 +9,16 @@ namespace triple::core {
 		std::function<void()> callback;
 	};
 
-	struct InputActionSystem::Impl {
+	struct ActionMap::Impl {
 		std::unordered_map<std::string, InputAction> actions;
 	};
-	InputActionSystem::InputActionSystem(core::InputSystem *inputSystem)
+	ActionMap::ActionMap(core::InputSystem *inputSystem)
 	    : m_inputSystem(inputSystem), m_impl(new Impl()) {}
-	InputActionSystem::~InputActionSystem() { delete m_impl; }
-	void InputActionSystem::bind(const std::string &name, std::vector<InputTrigger> triggers,
-	                             std::function<void()> callback) {
+	ActionMap::~ActionMap() { delete m_impl; }
+	void ActionMap::bind(const std::string &name, std::vector<InputTrigger> triggers,
+	                     std::function<void()> callback) {
 		if (m_impl->actions.find(name) != m_impl->actions.end()) {
-			triple::log::Logger::ModuleWarn("InputActionSystem",
+			triple::log::Logger::ModuleWarn("ActionMap",
 			                                "InputAction '{}' already exists, overwriting", name);
 		}
 
@@ -28,7 +28,7 @@ namespace triple::core {
 
 		m_impl->actions[name] = std::move(action);
 	}
-	void InputActionSystem::update(float /*dt*/) {
+	void ActionMap::update() {
 		for (auto &[name, action] : m_impl->actions) {
 			bool allTriggered = true;
 
@@ -43,7 +43,7 @@ namespace triple::core {
 				action.callback();
 		}
 	}
-	bool InputActionSystem::checkTrigger(const InputTrigger &t) {
+	bool ActionMap::checkTrigger(const InputTrigger &t) {
 		switch (t.type) {
 		case InputTriggerType::Key:
 			switch (t.state) {
