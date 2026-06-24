@@ -4,6 +4,7 @@ add_subdirectory(glad)
 add_subdirectory(spdlog)
 add_subdirectory(fmt)
 add_subdirectory(glm)
+add_subdirectory(entt)
 
 set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 add_subdirectory(glfw)
