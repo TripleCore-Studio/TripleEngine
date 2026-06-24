@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <vector>
 
 #include <imgui.h>
 #include <ImGuiFileDialog.h>
@@ -21,17 +20,15 @@ namespace triple::editor {
 		static constexpr int HEIGHT = 400;
 
 		explicit HierarchyPanel(game::Scene *scene,
-		                        std::function<void(game::Entity)> entitySelected,
+		                        std::function<void(entt::entity)> entitySelected,
 		                        std::function<void(std::string modelPath)> addEntity,
-		                        std::function<void(game::Entity)> removeEntity,
-		                        std::function<void(game::Entity)> duplicate)
+		                        std::function<void(entt::entity)> removeEntity,
+		                        std::function<void(entt::entity)> duplicate)
 		    : UIPanel("Hierarchy"), m_scene(scene), m_onEntitySelected(entitySelected),
 		      m_onAddEntity(addEntity), m_onRemoveEntity(removeEntity), m_onDuplicate(duplicate) {}
 
 		void onRender() override {
-			if (m_scene->getEntityCount() != m_entities.size()) {
-				m_entities = m_scene->getEntities();
-			}
+			auto &registry = m_scene->getRegistry();
 
 			ImGuiIO &io = ImGui::GetIO();
 			ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always, ImVec2(0.0f, 0.0f));
@@ -39,13 +36,13 @@ namespace triple::editor {
 
 			ImGui::Begin(m_title.c_str());
 
-			for (auto &entity : m_entities) {
+			auto view = registry.view<game::NameComponent>();
+			for (auto [entity, name] : view.each()) {
 				bool selected = (m_selected == entity);
-				game::NameComponent *name = m_scene->getComponent<game::NameComponent>(entity);
 
-				ImGui::PushID(entity);
+				ImGui::PushID(static_cast<int>(entt::to_integral(entity)));
 
-				if (ImGui::Selectable(name->name.c_str(), selected)) {
+				if (ImGui::Selectable(name.name.c_str(), selected)) {
 					m_selected = entity;
 					if (m_onEntitySelected)
 						m_onEntitySelected(entity);
@@ -109,12 +106,11 @@ namespace triple::editor {
 
 	private:
 		game::Scene *m_scene;
-		game::Entity m_selected;
+		entt::entity m_selected;
 
-		std::vector<game::Entity> m_entities;
-		std::function<void(game::Entity)> m_onEntitySelected;
+		std::function<void(entt::entity)> m_onEntitySelected;
 		std::function<void(std::string modelPath)> m_onAddEntity;
-		std::function<void(game::Entity)> m_onRemoveEntity;
-		std::function<void(game::Entity)> m_onDuplicate;
+		std::function<void(entt::entity)> m_onRemoveEntity;
+		std::function<void(entt::entity)> m_onDuplicate;
 	};
 } // namespace triple::editor

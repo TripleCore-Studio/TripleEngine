@@ -2,11 +2,11 @@
 #define CHILDREN_COMPONENT_H
 
 #include <vector>
-#include "Scene.h"
+#include <entt/entity/entity.hpp>
 
 namespace triple::game {
 	struct ChildrenComponent {
-		std::vector<Entity> children;
+		std::vector<entt::entity> children;
 	};
 } // namespace triple::game
 

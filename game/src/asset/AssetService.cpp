@@ -57,6 +57,16 @@ namespace triple::game {
 			model->vertices.insert(model->vertices.end(), mesh.vertices.begin(),
 			                       mesh.vertices.end());
 
+			for (auto &vert : mesh.vertices) {
+				model->boundsMin.x = std::min(model->boundsMin.x, vert.position.x);
+				model->boundsMin.y = std::min(model->boundsMin.y, vert.position.y);
+				model->boundsMin.z = std::min(model->boundsMin.z, vert.position.z);
+
+				model->boundsMax.x = std::max(model->boundsMax.x, vert.position.x);
+				model->boundsMax.y = std::max(model->boundsMax.y, vert.position.y);
+				model->boundsMax.z = std::max(model->boundsMax.z, vert.position.z);
+			}
+
 			for (uint32_t idx : mesh.indices) {
 				model->indices.push_back(idx + baseVertex);
 			}
@@ -75,22 +85,22 @@ namespace triple::game {
 namespace triple::game {
 
 	struct AssetService::Impl {
-		AssetStorage<Model> m_models;
-		AssetStorage<Shader> m_shaders;
-		AssetStorage<Material> m_materials;
-		AssetStorage<Texture> m_textures;
+		AssetStorage<Model> models;
+		AssetStorage<Shader> shaders;
+		AssetStorage<Material> materials;
+		AssetStorage<Texture> textures;
 
-		std::function<void(const Texture *)> m_onTextureLoaded;
-		std::function<void(const Model *)> m_onModelLoaded;
-		std::function<void(const Shader *)> m_onShaderLoaded;
+		std::function<void(const Texture *)> onTextureLoaded;
+		std::function<void(const Model *)> onModelLoaded;
+		std::function<void(const Shader *)> onShaderLoaded;
 	};
 
 	AssetService::AssetService() : m_impl(new Impl()) {}
 	AssetService::~AssetService() { delete m_impl; }
 
 	ModelID AssetService::loadModelFromFile(const std::string &name, const std::string &path) {
-		if (m_impl->m_models.exists(name)) {
-			return m_impl->m_models.getID(name);
+		if (m_impl->models.exists(name)) {
+			return m_impl->models.getID(name);
 		}
 
 		AssimpHelper::LoadedModel loadedModel = AssimpHelper::LoadModel(path);
@@ -106,45 +116,45 @@ namespace triple::game {
 		processMeshes(engineModel.get(), loadedModel, this);
 
 		auto ptr = engineModel.get();
-		AssetID id = m_impl->m_models.add(name, std::move(engineModel));
+		AssetID id = m_impl->models.add(name, std::move(engineModel));
 
-		if (m_impl->m_onModelLoaded) {
-			m_impl->m_onModelLoaded(ptr);
+		if (m_impl->onModelLoaded) {
+			m_impl->onModelLoaded(ptr);
 		}
 
 		return id;
 	}
 
 	ModelID AssetService::loadModelFromModel(const std::string &name, Model &&model) {
-		if (m_impl->m_models.exists(name)) {
-			return m_impl->m_models.getID(name);
+		if (m_impl->models.exists(name)) {
+			return m_impl->models.getID(name);
 		}
 
 		auto copyModel = std::make_unique<Model>(std::move(model));
 
 		auto ptr = copyModel.get();
-		AssetID id = m_impl->m_models.add(name, std::move(copyModel));
+		AssetID id = m_impl->models.add(name, std::move(copyModel));
 
-		if (m_impl->m_onModelLoaded) {
-			m_impl->m_onModelLoaded(ptr);
+		if (m_impl->onModelLoaded) {
+			m_impl->onModelLoaded(ptr);
 		}
 
 		return id;
 	}
 
 	ModelID AssetService::getModelId(const std::string &name) const {
-		return m_impl->m_models.getID(name);
+		return m_impl->models.getID(name);
 	}
 
-	const Model *AssetService::getModel(ModelID id) const { return m_impl->m_models.get(id); }
+	const Model *AssetService::getModel(ModelID id) const { return m_impl->models.get(id); }
 
-	Model *AssetService::getModelMutable(ModelID id) { return m_impl->m_models.getMutable(id); }
+	Model *AssetService::getModelMutable(ModelID id) { return m_impl->models.getMutable(id); }
 
 	ShaderID AssetService::loadShaderFromFile(const std::string &name,
 	                                          const std::string &vertexPath,
 	                                          const std::string &fragmentPath) {
-		if (m_impl->m_shaders.exists(name)) {
-			return m_impl->m_shaders.getID(name);
+		if (m_impl->shaders.exists(name)) {
+			return m_impl->shaders.getID(name);
 		}
 
 		std::ifstream vsFile(vertexPath);
@@ -163,41 +173,41 @@ namespace triple::game {
 		shader->fragmentSource = fsStream.str();
 
 		auto ptr = shader.get();
-		AssetID id = m_impl->m_shaders.add(name, std::move(shader));
+		AssetID id = m_impl->shaders.add(name, std::move(shader));
 
-		if (m_impl->m_onShaderLoaded) {
-			m_impl->m_onShaderLoaded(ptr);
+		if (m_impl->onShaderLoaded) {
+			m_impl->onShaderLoaded(ptr);
 		}
 
 		return id;
 	}
 
 	ShaderID AssetService::getShaderId(const std::string &name) const {
-		return m_impl->m_shaders.getID(name);
+		return m_impl->shaders.getID(name);
 	}
 
-	const Shader *AssetService::getShader(ShaderID id) const { return m_impl->m_shaders.get(id); }
+	const Shader *AssetService::getShader(ShaderID id) const { return m_impl->shaders.get(id); }
 
 	MaterialID AssetService::createMaterial(const std::string &name, const Material &material) {
-		if (m_impl->m_materials.exists(name)) {
-			return m_impl->m_materials.getID(name);
+		if (m_impl->materials.exists(name)) {
+			return m_impl->materials.getID(name);
 		}
 
 		auto ptr = std::make_unique<Material>(material);
-		return m_impl->m_materials.add(name, std::move(ptr));
+		return m_impl->materials.add(name, std::move(ptr));
 	}
 
 	MaterialID AssetService::getMaterialId(const std::string &name) const {
-		return m_impl->m_materials.getID(name);
+		return m_impl->materials.getID(name);
 	}
 
 	const Material *AssetService::getMaterial(MaterialID id) const {
-		return m_impl->m_materials.get(id);
+		return m_impl->materials.get(id);
 	}
 
 	TextureID AssetService::loadTexture(const std::string &name, Texture &&texture) {
-		if (m_impl->m_textures.exists(name)) {
-			return m_impl->m_textures.getID(name);
+		if (m_impl->textures.exists(name)) {
+			return m_impl->textures.getID(name);
 		}
 
 		if (texture.pixels.empty()) {
@@ -207,18 +217,18 @@ namespace triple::game {
 
 		auto loadTexture = std::make_unique<Texture>(std::move(texture));
 		auto ptr = loadTexture.get();
-		AssetID id = m_impl->m_textures.add(name, std::move(loadTexture));
+		AssetID id = m_impl->textures.add(name, std::move(loadTexture));
 
-		if (m_impl->m_onTextureLoaded) {
-			m_impl->m_onTextureLoaded(ptr);
+		if (m_impl->onTextureLoaded) {
+			m_impl->onTextureLoaded(ptr);
 		}
 
 		return id;
 	}
 
 	TextureID AssetService::loadTextureFromFile(const std::string &name, const std::string &path) {
-		if (m_impl->m_textures.exists(name)) {
-			return m_impl->m_textures.getID(name);
+		if (m_impl->textures.exists(name)) {
+			return m_impl->textures.getID(name);
 		}
 
 		stbi_set_flip_vertically_on_load(true);
@@ -240,23 +250,23 @@ namespace triple::game {
 		stbi_image_free(pixels);
 
 		auto ptr = texture.get();
-		AssetID id = m_impl->m_textures.add(name, std::move(texture));
+		AssetID id = m_impl->textures.add(name, std::move(texture));
 
-		if (m_impl->m_onTextureLoaded) {
-			m_impl->m_onTextureLoaded(ptr);
+		if (m_impl->onTextureLoaded) {
+			m_impl->onTextureLoaded(ptr);
 		}
 
 		return id;
 	}
 
 	TextureID AssetService::getTextureId(const std::string &name) const {
-		return m_impl->m_textures.getID(name);
+		return m_impl->textures.getID(name);
 	}
 
 	TextureID AssetService::genSolidTexture(const std::string &name, uint8_t r, uint8_t g,
 	                                        uint8_t b, uint8_t a) {
-		if (m_impl->m_textures.exists(name)) {
-			return m_impl->m_textures.getID(name);
+		if (m_impl->textures.exists(name)) {
+			return m_impl->textures.getID(name);
 		}
 
 		auto tex = std::make_unique<Texture>();
@@ -266,18 +276,16 @@ namespace triple::game {
 		tex->pixels = {r, g, b, a};
 
 		auto ptr = tex.get();
-		AssetID id = m_impl->m_textures.add(name, std::move(tex));
+		AssetID id = m_impl->textures.add(name, std::move(tex));
 
-		if (m_impl->m_onTextureLoaded) {
-			m_impl->m_onTextureLoaded(ptr);
+		if (m_impl->onTextureLoaded) {
+			m_impl->onTextureLoaded(ptr);
 		}
 
 		return id;
 	}
 
-	const Texture *AssetService::getTexture(TextureID id) const {
-		return m_impl->m_textures.get(id);
-	}
+	const Texture *AssetService::getTexture(TextureID id) const { return m_impl->textures.get(id); }
 
 	bool AssetService::loadDefaultAssets() {
 		TextureID ard = this->genSolidTexture(DEFAULT_ALBEDO_ROUGHNESS_NAME.data(), 255, 255, 255,
@@ -320,14 +328,14 @@ namespace triple::game {
 	}
 
 	void AssetService::setTextureLoadedCallback(std::function<void(const Texture *)> cb) {
-		m_impl->m_onTextureLoaded = std::move(cb);
+		m_impl->onTextureLoaded = std::move(cb);
 	}
 
 	void AssetService::setModelLoadedCallback(std::function<void(const Model *)> cb) {
-		m_impl->m_onModelLoaded = std::move(cb);
+		m_impl->onModelLoaded = std::move(cb);
 	}
 
 	void AssetService::setShaderLoadedCallback(std::function<void(const Shader *)> cb) {
-		m_impl->m_onShaderLoaded = std::move(cb);
+		m_impl->onShaderLoaded = std::move(cb);
 	}
 } // namespace triple::game

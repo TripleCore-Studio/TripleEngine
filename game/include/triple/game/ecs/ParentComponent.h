@@ -1,11 +1,11 @@
 #ifndef PARENT_COMPONENT_H
 #define PARENT_COMPONENT_H
 
-#include "Scene.h"
+#include <entt/entity/entity.hpp>
 
 namespace triple::game {
 	struct ParentComponent {
-		Entity parent = 0; // 0 = no parent (root)
+		entt::entity parent = entt::null;
 	};
 } // namespace triple::game
 

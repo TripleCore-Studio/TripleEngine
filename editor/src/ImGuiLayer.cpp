@@ -156,6 +156,8 @@ namespace triple::editor {
 			if (btn.isPressed() && ImGui::GetIO().WantCaptureMouse)
 				e.handled = true;
 		} else if (e.getTypeID() == core::WindowResizeEvent::staticTypeID()) {
+			// TODO: WindowResizeEvent doesn't fire on fullscreen toggle — io.DisplaySize
+			// won't update in that case.
 			auto &size = static_cast<core::WindowResizeEvent &>(e);
 			io.DisplaySize = ImVec2(size.getWidth(), size.getHeight());
 		}

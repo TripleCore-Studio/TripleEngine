@@ -3,7 +3,10 @@
 #include <filesystem>
 
 #include <triple/math/MathCommon.h>
+
 #include <triple/core/event/EventService.h>
+
+#include <triple/game/utils/HierarchyUtils.h>
 
 #include <triple/game/ecs/NameComponent.h>
 #include <triple/game/ecs/MeshComponent.h>
@@ -21,11 +24,14 @@ namespace triple::editor {
 		load();
 		loadCallbacks();
 	}
+
 	void EditorLayer::onDetach() {}
+
 	void EditorLayer::onUpdate(float dt) {
 		m_actionMap->update();
 		m_dt = dt;
 	}
+
 	void EditorLayer::onRender(float t) {
 		m_imguiLayer.beginFrame(m_dt);
 		m_uiManager.render();
@@ -51,57 +57,59 @@ namespace triple::editor {
 
 		m_uiManager.addPanel<HierarchyPanel>(
 		    m_gameLayer->getActiveScene(),
-		    [this](game::Entity e) { m_inspector->setTarget(e, m_gameLayer->getActiveScene()); },
+		    [this](entt::entity e) { m_inspector->setTarget(e, m_gameLayer->getActiveScene()); },
 		    [this](std::string path) {
-			    game::Scene *scene = m_gameLayer->getActiveScene();
-			    game::Entity entity = scene->createEntity();
-			    std::string baseName = std::filesystem::path(path).stem().string();
-			    std::string name = uniqueName(scene, baseName);
+			    entt::registry &registry = m_gameLayer->getActiveScene()->getRegistry();
 
-			    scene->addComponent<game::NameComponent>(entity)->name = name;
-			    scene->addComponent<game::TransformComponent>(entity)->scale = Vec3(1, 1, 1);
+			    entt::entity entity = registry.create();
+			    std::string baseName = std::filesystem::path(path).stem().string();
+			    std::string name = uniqueName(registry, baseName);
+
+			    registry.emplace<game::NameComponent>(entity, name);
+			    registry.emplace<game::TransformComponent>(entity);
 
 			    if (!m_loadedModels.empty()) {
 				    for (auto &modelStr : m_loadedModels) {
 					    game::ModelID modelId =
 					        m_gameLayer->getAssetService()->getModelId(modelStr);
 					    if (modelId != game::INVALID_ASSET_ID) {
-						    scene->addComponent<game::MeshComponent>(entity)->modelIndex = modelId;
+						    registry.emplace<game::MeshComponent>(entity, modelId);
 					    }
 				    }
 			    } else {
-				    scene->addComponent<game::MeshComponent>(entity)->modelIndex =
-				        m_gameLayer->getAssetService()->loadModelFromFile(baseName, path);
+				    registry.emplace<game::MeshComponent>(
+				        entity, m_gameLayer->getAssetService()->loadModelFromFile(baseName, path));
 			    }
 		    },
-		    [this](game::Entity e) {
+		    [this](entt::entity e) {
 			    if (e != m_gameLayer->getActiveCamera()) {
-				    m_gameLayer->getActiveScene()->destroyEntity(e);
+				    game::HierarchyUtils::destroyEntityRecursive(
+				        m_gameLayer->getActiveScene()->getRegistry(), e);
 			    }
 		    },
-		    [this](game::Entity e) {
+		    [this](entt::entity e) {
 			    if (e == m_gameLayer->getActiveCamera())
 				    return;
 
-			    game::Scene *scene = m_gameLayer->getActiveScene();
+			    entt::registry &registry = m_gameLayer->getActiveScene()->getRegistry();
+
 			    game::TransformComponent currentTransform =
-			        *scene->getComponent<game::TransformComponent>(e);
-			    game::MeshComponent currentMesh = *scene->getComponent<game::MeshComponent>(e);
-			    game::NameComponent currentName = *scene->getComponent<game::NameComponent>(e);
+			        registry.get<game::TransformComponent>(e);
+			    game::MeshComponent currentMesh = registry.get<game::MeshComponent>(e);
+			    game::NameComponent currentName = registry.get<game::NameComponent>(e);
 
-			    std::string newName = uniqueName(scene, currentName.name);
+			    std::string newName = uniqueName(registry, currentName.name);
 
-			    game::Entity newEntity = scene->createEntity();
-			    game::TransformComponent *newTransform =
-			        scene->addComponent<game::TransformComponent>(newEntity);
+			    entt::entity newEntity = registry.create();
+			    game::TransformComponent &newTransform =
+			        registry.emplace<game::TransformComponent>(newEntity);
 
-			    newTransform->position = currentTransform.position + Vec3(1, 1, 1);
-			    newTransform->rotationEuler = currentTransform.rotationEuler;
-			    newTransform->scale = currentTransform.scale;
+			    newTransform.position = currentTransform.position + Vec3(1, 1, 1);
+			    newTransform.rotationEuler = currentTransform.rotationEuler;
+			    newTransform.scale = currentTransform.scale;
 
-			    scene->addComponent<game::MeshComponent>(newEntity)->modelIndex =
-			        currentMesh.modelIndex;
-			    scene->addComponent<game::NameComponent>(newEntity)->name = newName;
+			    registry.emplace<game::MeshComponent>(newEntity, currentMesh.modelIndex);
+			    registry.emplace<game::NameComponent>(newEntity, newName);
 		    });
 
 		m_inspector = m_uiManager.addPanel<InspectorPanel>();
@@ -129,22 +137,24 @@ namespace triple::editor {
 		    std::cos(elRad) * std::sin(azRad), std::sin(elRad), std::cos(elRad) * std::cos(azRad)));
 	}
 
-	std::string EditorLayer::uniqueName(game::Scene *scene, const std::string &baseName) {
-		auto entities = scene->getEntities();
+	std::string EditorLayer::uniqueName(entt::registry &registry, const std::string &baseName) {
 		std::string name = baseName;
 		int counter = 1;
 
 		while (true) {
 			bool found = false;
-			for (auto &e : entities) {
-				auto *n = scene->getComponent<game::NameComponent>(e);
-				if (n && n->name == name) {
+
+			auto view = registry.view<game::NameComponent>();
+			for (auto [entity, n] : view.each()) {
+				if (n.name == name) {
 					found = true;
 					break;
 				}
 			}
+
 			if (!found)
 				return name;
+
 			name = baseName + "(" + std::to_string(counter++) + ")";
 		}
 	}

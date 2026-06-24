@@ -15,7 +15,7 @@ namespace triple::editor {
 	public:
 		InspectorPanel() : UIPanel("Inspector") {}
 
-		void setTarget(game::Entity entity, game::Scene *scene) {
+		void setTarget(entt::entity entity, game::Scene *scene) {
 			m_entity = entity;
 			m_scene = scene;
 		}
@@ -35,7 +35,7 @@ namespace triple::editor {
 			ImGui::Begin(m_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
 			if (m_scene) {
-				auto *t = m_scene->getComponent<game::TransformComponent>(m_entity);
+				auto *t = m_scene->getRegistry().try_get<game::TransformComponent>(m_entity);
 				if (t) {
 					ImGui::Text("Transform");
 					ImGui::DragFloat3("Position", &t->position.x, 0.05f);
@@ -89,7 +89,7 @@ namespace triple::editor {
 		}
 
 	private:
-		game::Entity m_entity = {};
+		entt::entity m_entity = entt::null;
 		game::Scene *m_scene = nullptr;
 
 		float *m_cameraSpeed = nullptr;

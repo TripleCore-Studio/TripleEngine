@@ -4,13 +4,13 @@
 #include <vector>
 #include <unordered_map>
 
+#include <entt/entt.hpp>
+
 #include <triple/gfx/IRenderer.h>
 #include <triple/gfx/RenderCommand.h>
 
 #include <triple/game/asset/AssetService.h>
 #include <triple/game/asset/Asset.h>
-
-#include "triple/game/ecs/Scene.h"
 
 namespace triple::game {
 	class RenderSystem {
@@ -27,16 +27,13 @@ namespace triple::game {
 		void uploadGeometry(const Model *model);
 		void uploadShader(const Shader *shader);
 
-		void buildRenderCommands(Scene *scene, std::vector<gfx::RenderCommand> &cmd);
+		void buildRenderCommands(entt::registry &reg, std::vector<gfx::RenderCommand> &cmd);
 		void setRenderer(gfx::IRenderer *renderer) { this->m_renderer = renderer; }
 		gfx::IRenderer *getRenderer() { return this->m_renderer; }
 
 	private:
 		enum class ResourceType { Texture, Model, Shader };
 		bool getGPU(ResourceType type, AssetID id, gfx::GPUHandle &out);
-
-		void gatherFromEntity(Scene *scene, Entity e, std::vector<gfx::RenderCommand> &commands,
-		                      const triple::math::Mat4 &parentWorld);
 
 		void buildRenderCmd(gfx::RenderCommand &cmd, const Model *obj);
 

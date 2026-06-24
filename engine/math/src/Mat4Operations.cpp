@@ -14,42 +14,48 @@ namespace triple::math {
 		return out;
 	}
 
-	Mat4 translate(const Vec3 &v) {
+	Mat4 Mat4Operations::translate(const Vec3 &v) {
 		glm::mat4 m = glm::translate(glm::mat4(1.0f), glm::vec3(v.x, v.y, v.z));
 		return fromGlm(m);
 	}
 
-	Mat4 scale(const Vec3 &v) {
+	Mat4 Mat4Operations::scale(const Vec3 &v) {
 		glm::mat4 m = glm::scale(glm::mat4(1.0f), glm::vec3(v.x, v.y, v.z));
 		return fromGlm(m);
 	}
 
-	Mat4 rotate(float radians, const Vec3 &axis) {
+	Mat4 Mat4Operations::rotate(float radians, const Vec3 &axis) {
 		glm::mat4 m = glm::rotate(glm::mat4(1.0f), radians, glm::vec3(axis.x, axis.y, axis.z));
 		return fromGlm(m);
 	}
 
-	Mat4 lookAt(const Vec3 &eye, const Vec3 &target, const Vec3 &up) {
+	Mat4 Mat4Operations::lookAt(const Vec3 &eye, const Vec3 &target, const Vec3 &up) {
 		glm::mat4 m =
 		    glm::lookAt(glm::vec3(eye.x, eye.y, eye.z), glm::vec3(target.x, target.y, target.z),
 		                glm::vec3(up.x, up.y, up.z));
 		return fromGlm(m);
 	}
 
-	Mat4 perspective(float fov, float aspect, float nearP, float farP) {
+	Mat4 Mat4Operations::perspective(float fov, float aspect, float nearP, float farP) {
 		glm::mat4 m = glm::perspective(fov, aspect, nearP, farP);
 		return fromGlm(m);
 	}
 
-	Mat4 ortho(float left, float right, float bottom, float top, float nearP, float farP) {
+	Mat4 Mat4Operations::ortho(float left, float right, float bottom, float top, float nearP,
+	                           float farP) {
 		glm::mat4 m = glm::ortho(left, right, bottom, top, nearP, farP);
 		return fromGlm(m);
 	}
 
-	Mat4 multiply(const Mat4 &a, const Mat4 &b) {
+	Mat4 Mat4Operations::multiply(const Mat4 &a, const Mat4 &b) {
 		glm::mat4 ma = toGlm(a);
 		glm::mat4 mb = toGlm(b);
 		return fromGlm(ma * mb);
+	}
+
+	Mat4 Mat4Operations::inverse(const Mat4 &m) {
+		glm::mat4 gm = toGlm(m);
+		return fromGlm(glm::inverse(gm));
 	}
 
 } // namespace triple::math

@@ -90,8 +90,20 @@ namespace triple::game {
 
 		return LoadedTexture();
 	}
+	static float getUnitScaleToMeters(const aiScene *scene) {
+		if (scene->mMetaData) {
+			double unitScaleFactor = 0.0;
+			// FBX stores this as centimeters per unit, e.g. 1.0 = 1cm/unit, 100.0 = 1m/unit
+			if (scene->mMetaData->Get("UnitScaleFactor", unitScaleFactor) && unitScaleFactor > 0.0)
+				return static_cast<float>(unitScaleFactor / 100.0);
+		}
+		return 1.0f;
+	}
+
 	void AssimpHelper::LoadGeometry(const ::aiScene *scene, LoadedModel &outModel) {
 		outModel.meshes.reserve(scene->mNumMeshes);
+
+		const float SCALE = getUnitScaleToMeters(scene);
 
 		for (unsigned m = 0; m < scene->mNumMeshes; ++m) {
 			aiMesh *mesh = scene->mMeshes[m];
@@ -104,7 +116,8 @@ namespace triple::game {
 
 			for (unsigned i = 0; i < mesh->mNumVertices; ++i) {
 				gfx::Vertex v;
-				v.position = {mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z};
+				v.position = {mesh->mVertices[i].x * SCALE, mesh->mVertices[i].y * SCALE,
+				              mesh->mVertices[i].z * SCALE};
 
 				if (mesh->HasNormals())
 					v.normal = {mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z};
