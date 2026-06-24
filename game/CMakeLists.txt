@@ -36,6 +36,8 @@ target_compile_features(${GAME_LAYER} PUBLIC cxx_std_20)
 target_link_libraries(${GAME_LAYER} 
 	PUBLIC 
 		triple::core
+        EnTT
+    PRIVATE
         assimp
 )
 
