@@ -10,6 +10,9 @@ namespace triple::core {
 
 	using Handle = uint32_t;
 	inline constexpr Handle INVALID_HANDLE = (std::numeric_limits<Handle>::max)();
+
+	using EntityId = uint32_t;
+	inline constexpr EntityId INVALID_ENTITY_ID = (std::numeric_limits<EntityId>::max)();
 } // namespace triple::core
 
 #endif // CORE_TYPES_H

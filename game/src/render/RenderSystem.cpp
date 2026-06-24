@@ -9,43 +9,8 @@
 
 #include "triple/game/ecs/TransformComponent.h"
 #include "triple/game/ecs/MeshComponent.h"
-#include "triple/game/ecs/ChildrenComponent.h"
-#include "triple/game/ecs/ParentComponent.h"
-
-#include "triple/game/utils/TransformUtils.h"
 
 namespace triple::game {
-	void RenderSystem::gatherFromEntity(Scene *scene, Entity e,
-	                                    std::vector<gfx::RenderCommand> &commands,
-	                                    const triple::math::Mat4 &parentWorld) {
-		auto transform =
-		    static_cast<TransformComponent *>(scene->getComponent<TransformComponent>(e));
-		triple::math::Mat4 local =
-		    transform ? getModelMatrix(*transform) : triple::math::Mat4::identity();
-		triple::math::Mat4 world = parentWorld * local;
-
-		if (auto meshComp = static_cast<MeshComponent *>(scene->getComponent<MeshComponent>(e))) {
-			gfx::RenderCommand cmd;
-			cmd.worldMat = world;
-
-			if (meshComp->modelIndex != core::INVALID_INDEX && m_assets != nullptr) {
-				const Model *model = m_assets->getModel(meshComp->modelIndex);
-				buildRenderCmd(cmd, model);
-			}
-
-			if (!cmd.items.empty()) {
-				commands.push_back(std::move(cmd));
-			}
-		}
-
-		if (auto childrenComp =
-		        static_cast<ChildrenComponent *>(scene->getComponent<ChildrenComponent>(e))) {
-			for (Entity child : childrenComp->children) {
-				gatherFromEntity(scene, child, commands, world);
-			}
-		}
-	}
-
 	bool RenderSystem::getGPU(ResourceType type, AssetID id, gfx::GPUHandle &out) {
 		switch (type) {
 		case ResourceType::Texture: {
@@ -176,16 +141,25 @@ namespace triple::game {
 		}
 	}
 
-	void RenderSystem::buildRenderCommands(Scene *scene,
+	void RenderSystem::buildRenderCommands(entt::registry &reg,
 	                                       std::vector<gfx::RenderCommand> &commands) {
 		commands.clear();
-		commands.reserve(scene->getEntityCount());
 
-		for (Entity e : scene->getEntities()) {
-			auto parentComp =
-			    static_cast<ParentComponent *>(scene->getComponent<ParentComponent>(e));
-			if (!parentComp || parentComp->parent == 0) {
-				gatherFromEntity(scene, e, commands, triple::math::Mat4::identity());
+		auto view = reg.view<TransformComponent, MeshComponent>();
+		commands.reserve(view.size_hint());
+		for (auto [entity, t, m] : view.each()) {
+			if (m.modelIndex == core::INVALID_INDEX || m_assets == nullptr) {
+				continue;
+			}
+
+			gfx::RenderCommand cmd;
+			cmd.worldMat = t.worldMatrix;
+
+			const Model *model = m_assets->getModel(m.modelIndex);
+			buildRenderCmd(cmd, model);
+
+			if (!cmd.items.empty()) {
+				commands.push_back(std::move(cmd));
 			}
 		}
 	}

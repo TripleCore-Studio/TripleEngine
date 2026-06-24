@@ -8,7 +8,6 @@
 #include <triple/gfx/IRenderer.h>
 
 #include "triple/game/ecs/Scene.h"
-#include "triple/game/ecs/ComponentService.h"
 #include "triple/game/render/RenderSystem.h"
 #include "triple/game/asset/AssetService.h"
 #include "triple/game/CameraSettings.h"
@@ -23,10 +22,10 @@ namespace triple::game {
 		void onEvent(core::Event &e) override;
 
 		[[nodiscard]] Scene *getActiveScene() const { return m_scene.get(); }
-		[[nodiscard]] Entity getActiveCamera() const { return m_cameraEntity; }
+		[[nodiscard]] entt::entity getActiveCamera() const { return m_cameraEntity; }
 		[[nodiscard]] AssetService *getAssetService() const { return m_assetService.get(); }
 
-		void setActiveCamera(Entity camera) { m_cameraEntity = camera; }
+		void setActiveCamera(entt::entity camera) { m_cameraEntity = camera; }
 		void setFrameContextCallback(std::function<void(gfx::FrameContext &)> cb) {
 			m_onFrameContext = cb;
 		}
@@ -35,20 +34,18 @@ namespace triple::game {
 		CameraSettings cameraSettings;
 
 	private:
-		[[nodiscard]] bool bootstrapComponents() const;
 		void cameraUpdate(float dt);
 		void cameraInit();
 
 	private:
 		std::unique_ptr<AssetService> m_assetService;
 		std::unique_ptr<RenderSystem> m_renderSystem;
-		std::unique_ptr<ComponentService> m_componentService;
 		gfx::IRenderer *m_renderer;
 		core::InputSystem *m_inputSystem;
 
 	private:
 		std::unique_ptr<Scene> m_scene;
-		Entity m_cameraEntity;
+		entt::entity m_cameraEntity;
 		std::function<void(gfx::FrameContext &)> m_onFrameContext;
 	};
 } // namespace triple::game

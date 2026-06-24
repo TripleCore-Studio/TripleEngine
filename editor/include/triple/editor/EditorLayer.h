@@ -32,7 +32,7 @@ namespace triple::editor {
 		void fillFrameContext(gfx::FrameContext &ctx);
 
 	private:
-		std::string uniqueName(game::Scene *scene, const std::string &baseName);
+		std::string uniqueName(entt::registry &registry, const std::string &baseName);
 
 	private:
 		math::Vec3 m_ambientColor;
