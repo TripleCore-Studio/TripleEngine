@@ -4,7 +4,6 @@
 #include <triple/core/base/ExportMacros.h>
 #include "triple/core/base/IWindow.h"
 
-#include "triple/core/event/Event.h"
 #include "triple/core/event/IEventSink.h"
 
 struct GLFWwindow;
@@ -19,27 +18,26 @@ namespace triple::core {
 
 		void pollEvents() override;
 		void swapBuffers() override;
-		bool shouldClose() const override;
-		void *getNativeWindow() const override;
-		bool isFullscreen() const override;
+		[[nodiscard]] bool shouldClose() const override;
+		[[nodiscard]] void *getNativeWindow() const override;
+		[[nodiscard]] bool isFullscreen() const override;
 		void setFullscreen(bool enabled) override;
 		void setSize(uint32_t width, uint32_t height) override;
 		void setPosition(uint32_t x, uint32_t y) override;
-		float getDPIScale() const override;
+		[[nodiscard]] float getDPIScale() const override;
 		void setCursorCapture(bool capture) override;
-		bool isCursorCaptured() const override;
-		double getTime() const override;
+		[[nodiscard]] bool isCursorCaptured() const override;
+		[[nodiscard]] double getTime() const override;
 		void shutdown() override;
 		int getWidth() override;
 		int getHeight() override;
 
-		~GLWindow();
-
-	private:
+		~GLWindow() override;
 		GLWindow(const GLWindow &) = delete;
 		GLWindow &operator=(const GLWindow &) = delete;
+
+	private:
 		void initGLFWCallbacks();
-		void emit(Event &e);
 
 		struct WindowData {
 		public:

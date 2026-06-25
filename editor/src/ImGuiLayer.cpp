@@ -4,6 +4,7 @@
 #include <triple/core/event/MouseMoveEvent.h>
 #include <triple/core/event/MouseButtonEvent.h>
 #include <triple/core/event/WindowResizeEvent.h>
+#include <triple/core/event/TextInputEvent.h>
 
 #include <triple/core/input/KeyCode.h>
 #include <triple/core/input/MouseButton.h>
@@ -15,51 +16,48 @@
 namespace triple::editor {
 	ImGuiKey toImGuiKey(core::KeyCode key) {
 		using namespace triple::core;
+		const int k = static_cast<int>(key);
+
+		if (k >= static_cast<int>(KeyCode::A) && k <= static_cast<int>(KeyCode::Z))
+			return static_cast<ImGuiKey>(ImGuiKey_A + (k - static_cast<int>(KeyCode::A)));
+		if (k >= static_cast<int>(KeyCode::Num0) && k <= static_cast<int>(KeyCode::Num9))
+			return static_cast<ImGuiKey>(ImGuiKey_0 + (k - static_cast<int>(KeyCode::Num0)));
+		if (k >= static_cast<int>(KeyCode::F1) && k <= static_cast<int>(KeyCode::F24))
+			return static_cast<ImGuiKey>(ImGuiKey_F1 + (k - static_cast<int>(KeyCode::F1)));
+		if (k >= static_cast<int>(KeyCode::KP0) && k <= static_cast<int>(KeyCode::KP9))
+			return static_cast<ImGuiKey>(ImGuiKey_Keypad0 + (k - static_cast<int>(KeyCode::KP0)));
 
 		switch (key) {
-		case KeyCode::A:
-			return ImGuiKey_A;
-		case KeyCode::B:
-			return ImGuiKey_B;
-		case KeyCode::C:
-			return ImGuiKey_C;
-		case KeyCode::D:
-			return ImGuiKey_D;
-		case KeyCode::W:
-			return ImGuiKey_W;
-		case KeyCode::S:
-			return ImGuiKey_S;
-
-		case KeyCode::F1:
-			return ImGuiKey_F1;
-		case KeyCode::F2:
-			return ImGuiKey_F2;
-		case KeyCode::F3:
-			return ImGuiKey_F3;
-		case KeyCode::F4:
-			return ImGuiKey_F4;
-		case KeyCode::F5:
-			return ImGuiKey_F5;
-		case KeyCode::F6:
-			return ImGuiKey_F6;
-		case KeyCode::F7:
-			return ImGuiKey_F7;
-		case KeyCode::F8:
-			return ImGuiKey_F8;
-		case KeyCode::F9:
-			return ImGuiKey_F9;
-		case KeyCode::F10:
-			return ImGuiKey_F10;
-		case KeyCode::F11:
-			return ImGuiKey_F11;
-		case KeyCode::F12:
-			return ImGuiKey_F12;
-
 		case KeyCode::Space:
 			return ImGuiKey_Space;
+		case KeyCode::Tab:
+			return ImGuiKey_Tab;
+		case KeyCode::Backspace:
+			return ImGuiKey_Backspace;
+		case KeyCode::Enter:
+			return ImGuiKey_Enter;
 		case KeyCode::Escape:
 			return ImGuiKey_Escape;
-
+		case KeyCode::Left:
+			return ImGuiKey_LeftArrow;
+		case KeyCode::Right:
+			return ImGuiKey_RightArrow;
+		case KeyCode::Up:
+			return ImGuiKey_UpArrow;
+		case KeyCode::Down:
+			return ImGuiKey_DownArrow;
+		case KeyCode::Insert:
+			return ImGuiKey_Insert;
+		case KeyCode::Delete:
+			return ImGuiKey_Delete;
+		case KeyCode::Home:
+			return ImGuiKey_Home;
+		case KeyCode::End:
+			return ImGuiKey_End;
+		case KeyCode::PageUp:
+			return ImGuiKey_PageUp;
+		case KeyCode::PageDown:
+			return ImGuiKey_PageDown;
 		case KeyCode::LeftShift:
 			return ImGuiKey_LeftShift;
 		case KeyCode::RightShift:
@@ -68,16 +66,62 @@ namespace triple::editor {
 			return ImGuiKey_LeftCtrl;
 		case KeyCode::RightCtrl:
 			return ImGuiKey_RightCtrl;
-
-		case KeyCode::Up:
-			return ImGuiKey_UpArrow;
-		case KeyCode::Down:
-			return ImGuiKey_DownArrow;
-		case KeyCode::Left:
-			return ImGuiKey_LeftArrow;
-		case KeyCode::Right:
-			return ImGuiKey_RightArrow;
-
+		case KeyCode::LeftAlt:
+			return ImGuiKey_LeftAlt;
+		case KeyCode::RightAlt:
+			return ImGuiKey_RightAlt;
+		case KeyCode::LeftSuper:
+			return ImGuiKey_LeftSuper;
+		case KeyCode::RightSuper:
+			return ImGuiKey_RightSuper;
+		case KeyCode::CapsLock:
+			return ImGuiKey_CapsLock;
+		case KeyCode::ScrollLock:
+			return ImGuiKey_ScrollLock;
+		case KeyCode::NumLock:
+			return ImGuiKey_NumLock;
+		case KeyCode::PrintScreen:
+			return ImGuiKey_PrintScreen;
+		case KeyCode::Pause:
+			return ImGuiKey_Pause;
+		case KeyCode::Menu:
+			return ImGuiKey_Menu;
+		case KeyCode::Apostrophe:
+			return ImGuiKey_Apostrophe;
+		case KeyCode::Comma:
+			return ImGuiKey_Comma;
+		case KeyCode::Minus:
+			return ImGuiKey_Minus;
+		case KeyCode::Period:
+			return ImGuiKey_Period;
+		case KeyCode::Slash:
+			return ImGuiKey_Slash;
+		case KeyCode::Semicolon:
+			return ImGuiKey_Semicolon;
+		case KeyCode::Equal:
+			return ImGuiKey_Equal;
+		case KeyCode::LeftBracket:
+			return ImGuiKey_LeftBracket;
+		case KeyCode::Backslash:
+			return ImGuiKey_Backslash;
+		case KeyCode::RightBracket:
+			return ImGuiKey_RightBracket;
+		case KeyCode::GraveAccent:
+			return ImGuiKey_GraveAccent;
+		case KeyCode::KPDecimal:
+			return ImGuiKey_KeypadDecimal;
+		case KeyCode::KPDivide:
+			return ImGuiKey_KeypadDivide;
+		case KeyCode::KPMultiply:
+			return ImGuiKey_KeypadMultiply;
+		case KeyCode::KPSubtract:
+			return ImGuiKey_KeypadSubtract;
+		case KeyCode::KPAdd:
+			return ImGuiKey_KeypadAdd;
+		case KeyCode::KPEnter:
+			return ImGuiKey_KeypadEnter;
+		case KeyCode::KPEqual:
+			return ImGuiKey_KeypadEqual;
 		default:
 			return ImGuiKey_None;
 		}
@@ -155,9 +199,10 @@ namespace triple::editor {
 			io.AddMouseButtonEvent(toImGuiButton(btn.getButton()), btn.isPressed());
 			if (btn.isPressed() && ImGui::GetIO().WantCaptureMouse)
 				e.handled = true;
+		} else if (e.getTypeID() == core::TextInputEvent::staticTypeID()) {
+			auto &text = static_cast<core::TextInputEvent &>(e);
+			io.AddInputCharacter(text.getCodepoint());
 		} else if (e.getTypeID() == core::WindowResizeEvent::staticTypeID()) {
-			// TODO: WindowResizeEvent doesn't fire on fullscreen toggle — io.DisplaySize
-			// won't update in that case.
 			auto &size = static_cast<core::WindowResizeEvent &>(e);
 			io.DisplaySize = ImVec2(size.getWidth(), size.getHeight());
 		}

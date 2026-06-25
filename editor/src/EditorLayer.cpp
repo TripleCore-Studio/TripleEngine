@@ -4,8 +4,6 @@
 
 #include <triple/math/MathCommon.h>
 
-#include <triple/core/event/EventService.h>
-
 #include <triple/game/utils/HierarchyUtils.h>
 
 #include <triple/game/ecs/NameComponent.h>
