@@ -16,12 +16,12 @@
 #include "triple/core/event/MouseButtonEvent.h"
 
 #include "triple/core/input/InputSystem.h"
-#include "triple/core/event/EventService.h"
+#include "triple/core/event/EventBus.h"
 
 namespace triple::core {
 	struct Engine::Impl {
 		std::unique_ptr<InputSystem> inputSystem;
-		std::unique_ptr<EventService> eventService;
+		std::unique_ptr<EventBus> bus;
 		std::unique_ptr<ModuleService> moduleService;
 		std::unique_ptr<IWindow> window;
 		gfx::IRenderer *renderer = nullptr;
@@ -38,7 +38,7 @@ namespace triple::core {
 			return true;
 		}
 
-		m_impl->eventService = std::make_unique<EventService>();
+		m_impl->bus = std::make_unique<EventBus>();
 		m_impl->moduleService = std::make_unique<ModuleService>("modules");
 		m_impl->inputSystem = std::make_unique<InputSystem>();
 
@@ -81,7 +81,7 @@ namespace triple::core {
 			return ErrorCode::ModuleLoadError;
 		}
 
-		auto window = std::make_unique<GLWindow>(title, width, height, m_impl->eventService.get());
+		auto window = std::make_unique<GLWindow>(title, width, height, m_impl->bus.get());
 		void *loader = nullptr;
 		if (window->init(&loader) != GLWindow::ErrorCode::None) {
 			triple::log::Logger::ModuleCritical(this->getModuleName(),
@@ -109,7 +109,7 @@ namespace triple::core {
 
 		EngineContext ctx;
 		ctx.renderer = pGLRenderer;
-		ctx.eventService = m_impl->eventService.get();
+		ctx.bus = m_impl->bus.get();
 		ctx.window = m_impl->window.get();
 		ctx.inputSystem = m_impl->inputSystem.get();
 
@@ -147,32 +147,26 @@ namespace triple::core {
 	IWindow *Engine::getWindow() const { return m_impl->window.get(); }
 
 	void Engine::loadSystemCallbacks() {
-		m_impl->eventService->addListener<WindowCloseEvent>([this](WindowCloseEvent &e) {
-			dispatchToLayers(e);
+		m_impl->bus->addListener([this](Event &e) { dispatchToLayers(e); });
+
+		m_impl->bus->addListener<WindowCloseEvent>([this](WindowCloseEvent &e) {
 			triple::log::Logger::Warn("Window ({}) closed", e.getTitle());
 			m_impl->window->shutdown();
 			this->m_isRunning = false;
 		});
 
-		m_impl->eventService->addListener<WindowResizeEvent>([this](WindowResizeEvent &e) {
-			dispatchToLayers(e);
+		m_impl->bus->addListener<WindowResizeEvent>([this](WindowResizeEvent &e) {
 			m_impl->renderer->SetViewport(0, 0, e.getWidth(), e.getHeight());
 		});
 
-		m_impl->eventService->addListener<KeyboardInputEvent>([this](KeyboardInputEvent &e) {
-			dispatchToLayers(e);
-			m_impl->inputSystem->onKeyboard(e);
-		});
+		m_impl->bus->addListener<KeyboardInputEvent>(
+		    [this](KeyboardInputEvent &e) { m_impl->inputSystem->onKeyboard(e); });
 
-		m_impl->eventService->addListener<MouseMoveEvent>([this](MouseMoveEvent &e) {
-			dispatchToLayers(e);
-			m_impl->inputSystem->onMouseMove(e);
-		});
+		m_impl->bus->addListener<MouseMoveEvent>(
+		    [this](MouseMoveEvent &e) { m_impl->inputSystem->onMouseMove(e); });
 
-		m_impl->eventService->addListener<MouseButtonEvent>([this](MouseButtonEvent &e) {
-			dispatchToLayers(e);
-			m_impl->inputSystem->onMouseButton(e);
-		});
+		m_impl->bus->addListener<MouseButtonEvent>(
+		    [this](MouseButtonEvent &e) { m_impl->inputSystem->onMouseButton(e); });
 	}
 
 	void Engine::dispatchToLayers(Event &e) {
