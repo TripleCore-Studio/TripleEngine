@@ -1,5 +1,7 @@
 #include "triple/editor/UI/ImGuiLayer.h"
 
+#include <filesystem>
+
 #include <triple/core/event/KeyboardInputEvent.h>
 #include <triple/core/event/MouseMoveEvent.h>
 #include <triple/core/event/MouseButtonEvent.h>
@@ -9,9 +11,39 @@
 #include <triple/core/input/KeyCode.h>
 #include <triple/core/input/MouseButton.h>
 
+#include <triple/game/utils/HierarchyUtils.h>
+#include <triple/game/ecs/NameComponent.h>
+#include <triple/game/ecs/MeshComponent.h>
+#include <triple/game/ecs/TransformComponent.h>
+
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <ImGuiFileDialog.h>
+
+#include "triple/editor/UI/HierarchyPanel.h"
+#include "triple/editor/UI/DescPanel.h"
+
+using namespace triple::math;
+
+namespace {
+	std::string uniqueName(entt::registry &registry, const std::string &baseName) {
+		std::string name = baseName;
+		int counter = 1;
+		while (true) {
+			bool found = false;
+			auto view = registry.view<triple::game::NameComponent>();
+			for (auto [entity, n] : view.each()) {
+				if (n.name == name) {
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				return name;
+			name = baseName + "(" + std::to_string(counter++) + ")";
+		}
+	}
+} // namespace
 
 namespace triple::editor {
 	ImGuiKey toImGuiKey(core::KeyCode key) {
@@ -146,9 +178,7 @@ namespace triple::editor {
 		}
 	}
 
-	ImGuiLayer::~ImGuiLayer() { shutdown(); }
-
-	void ImGuiLayer::init() {
+	void ImGuiLayer::onAttach(const core::EngineContext &ctx) {
 		ImGui::CreateContext();
 		ImGui::StyleColorsDark();
 		if (!ImGui_ImplOpenGL3_Init("#version 330")) {
@@ -157,12 +187,103 @@ namespace triple::editor {
 		}
 		configureApply();
 		stylesApply();
+		resize(ctx.window->getWidth(), ctx.window->getHeight());
+		load();
 		m_initialized = true;
 	}
 
-	void ImGuiLayer::beginFrame(float dt) {
-		ImGuiIO &io = ImGui::GetIO();
-		io.DeltaTime = dt;
+	void ImGuiLayer::show() {
+		m_uiManager.showAll();
+		opened = true;
+	}
+
+	void ImGuiLayer::hide() {
+		m_uiManager.hideAll();
+		opened = false;
+	}
+
+	void ImGuiLayer::load() {
+		m_uiManager.addPanel<HierarchyPanel>(
+		    m_gameLayer->getActiveScene(),
+		    [this](entt::entity e) { m_inspector->setTarget(e, m_gameLayer->getActiveScene()); },
+		    [this](std::string path) {
+			    entt::registry &registry = m_gameLayer->getActiveScene()->getRegistry();
+
+			    entt::entity entity = registry.create();
+			    std::string baseName = std::filesystem::path(path).stem().string();
+			    std::string name = uniqueName(registry, baseName);
+
+			    registry.emplace<game::NameComponent>(entity, name);
+			    registry.emplace<game::TransformComponent>(entity);
+
+			    if (!m_loadedModels->empty()) {
+				    for (auto &modelStr : *m_loadedModels) {
+					    game::ModelID modelId =
+					        m_gameLayer->getAssetService()->getModelId(modelStr);
+					    if (modelId != game::INVALID_ASSET_ID) {
+						    registry.emplace<game::MeshComponent>(entity, modelId);
+					    }
+				    }
+			    } else {
+				    registry.emplace<game::MeshComponent>(
+				        entity, m_gameLayer->getAssetService()->loadModelFromFile(baseName, path));
+			    }
+		    },
+		    [this](entt::entity e) {
+			    if (e != m_gameLayer->getActiveCamera()) {
+				    game::HierarchyUtils::destroyEntityRecursive(
+				        m_gameLayer->getActiveScene()->getRegistry(), e);
+			    }
+		    },
+		    [this](entt::entity e) {
+			    if (e == m_gameLayer->getActiveCamera())
+				    return;
+
+			    entt::registry &registry = m_gameLayer->getActiveScene()->getRegistry();
+
+			    game::TransformComponent currentTransform =
+			        registry.get<game::TransformComponent>(e);
+			    game::MeshComponent currentMesh = registry.get<game::MeshComponent>(e);
+			    game::NameComponent currentName = registry.get<game::NameComponent>(e);
+
+			    std::string newName = uniqueName(registry, currentName.name);
+
+			    entt::entity newEntity = registry.create();
+			    game::TransformComponent &newTransform =
+			        registry.emplace<game::TransformComponent>(newEntity);
+
+			    newTransform.position = currentTransform.position + Vec3(1, 1, 1);
+			    newTransform.rotationEuler = currentTransform.rotationEuler;
+			    newTransform.scale = currentTransform.scale;
+
+			    registry.emplace<game::MeshComponent>(newEntity, currentMesh.modelIndex);
+			    registry.emplace<game::NameComponent>(newEntity, newName);
+		    });
+
+		m_inspector = m_uiManager.addPanel<InspectorPanel>();
+		m_inspector->setCamera(
+		    &m_gameLayer->cameraSettings.cameraSpeed, m_gameLayer->cameraSettings.cameraSpeedMin,
+		    m_gameLayer->cameraSettings.cameraSpeedMax, &m_gameLayer->cameraSettings.lockY);
+		m_inspector->setLight(m_sunLight, m_cameraLight, m_ambientColor);
+
+		m_uiManager.addPanel<DescPanel>();
+
+		if (!opened) {
+			m_uiManager.hideAll();
+		}
+	}
+
+	ImGuiLayer::~ImGuiLayer() { onDetach(); }
+
+	void ImGuiLayer::onDetach() {
+		if (m_initialized) {
+			ImGui_ImplOpenGL3_Shutdown();
+			ImGui::DestroyContext();
+			m_initialized = false;
+		}
+	}
+
+	void ImGuiLayer::beginFrame() {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui::NewFrame();
 	}
@@ -172,14 +293,12 @@ namespace triple::editor {
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}
 
-	void ImGuiLayer::shutdown() const {
-		if (m_initialized) {
-			ImGui_ImplOpenGL3_Shutdown();
-			ImGui::DestroyContext();
-		}
+	void ImGuiLayer::onUpdate(float dt) {
+		ImGuiIO &io = ImGui::GetIO();
+		io.DeltaTime = dt;
 	}
 
-	void ImGuiLayer::onEvent(core::Event &e) const {
+	void ImGuiLayer::onEvent(core::Event &e) {
 		if (!opened)
 			return;
 
@@ -206,6 +325,12 @@ namespace triple::editor {
 			auto &size = static_cast<core::WindowResizeEvent &>(e);
 			io.DisplaySize = ImVec2(size.getWidth(), size.getHeight());
 		}
+	}
+
+	void ImGuiLayer::onRender(float t) {
+		beginFrame();
+		m_uiManager.render();
+		endFrame();
 	}
 
 	void ImGuiLayer::resize(int width, int height) {
