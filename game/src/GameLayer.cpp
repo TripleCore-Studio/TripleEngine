@@ -19,7 +19,7 @@ namespace triple::game {
 		m_renderSystem = std::make_unique<RenderSystem>(m_assetService.get());
 		m_renderSystem->setRenderer(m_renderer);
 
-		m_scene = std::make_unique<Scene>();
+		m_scene = std::make_unique<Scene>(m_assetService.get());
 
 		m_assetService->setTextureLoadedCallback(
 		    [this](const Texture *tex) { m_renderSystem->uploadTexture(tex); });
