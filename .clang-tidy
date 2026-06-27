@@ -65,9 +65,13 @@ CheckOptions:
 
   # --- Constants ---
   - key: readability-identifier-naming.ConstantCase
-    value: UPPER_CASE
+    value: CamelCase
+  - key: readability-identifier-naming.ConstantPrefix
+    value: k
   - key: readability-identifier-naming.ConstexprVariableCase
-    value: UPPER_CASE
+    value: CamelCase
+  - key: readability-identifier-naming.ConstexprVariablePrefix
+    value: k
 
   # --- Enums ---
   - key: readability-identifier-naming.EnumCase
