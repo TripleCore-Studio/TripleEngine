@@ -115,6 +115,7 @@ namespace triple::core {
 
 		for (auto &layer : m_layerStack) {
 			layer->onAttach(ctx);
+			layer->isAttached = true;
 		}
 
 		m_lastTime = m_impl->window->getTime();
@@ -173,6 +174,8 @@ namespace triple::core {
 		for (auto it = m_layerStack.rbegin(); it != m_layerStack.rend(); ++it) {
 			if (e.handled)
 				break;
+			if (!(*it)->isAttached)
+				continue;
 			(*it)->onEvent(e);
 		}
 	}

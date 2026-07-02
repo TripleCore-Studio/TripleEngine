@@ -14,5 +14,7 @@ namespace triple::core {
 		virtual void onUpdate(float dt) = 0;
 		virtual void onRender(float t) = 0;
 		virtual void onEvent(Event &e) = 0;
+
+		bool isAttached = false;
 	};
 } // namespace triple::core

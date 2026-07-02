@@ -3,13 +3,16 @@
 
 #include <vector>
 #include <limits>
+
 #include <triple/gfx/Vertex.h>
 #include <triple/math/Vec3.h>
+
 #include "Mesh.h"
-#include "Asset.h"
+#include "AssetTypes.h"
+#include "LoadersParams.h"
 
 namespace triple::game {
-	struct Model : public Asset {
+	struct Model {
 	public:
 		Model() = default;
 
@@ -27,6 +30,17 @@ namespace triple::game {
 		Model(Model &&) = default;
 		Model &operator=(Model &&) = default;
 	};
+
+	template <>
+	struct AssetTypeOf<Model> {
+		static constexpr AssetType kValue = AssetType::Model;
+	};
+
+	template <>
+	struct LoadParamsOf<Model> {
+		using Type = ModelLoadParams;
+	};
+
 } // namespace triple::game
 
 #endif // MODEL_H

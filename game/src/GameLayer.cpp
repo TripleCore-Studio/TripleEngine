@@ -9,36 +9,31 @@
 #include "triple/game/ecs/TransformComponent.h"
 #include "triple/game/ecs/CameraComponent.h"
 
+#include "triple/game/render/RenderSystem.h"
+
+#include "triple/game/asset/Model.h"
+#include "triple/game/asset/Texture.h"
+#include "triple/game/asset/Shader.h"
+#include "triple/game/asset/DefaultAssets.h"
+
+#include "triple/game/asset/ModelLoader.h"
+#include "triple/game/asset/TextureLoader.h"
+#include "triple/game/asset/ShaderLoader.h"
+
 namespace triple::game {
 	void GameLayer::onAttach(const core::EngineContext &ctx) {
 		m_renderer = ctx.renderer;
 		m_inputSystem = ctx.inputSystem;
-
-		m_assetService = std::make_unique<AssetService>();
-
-		m_renderSystem = std::make_unique<RenderSystem>(m_assetService.get());
-		m_renderSystem->setRenderer(m_renderer);
-
-		m_scene = std::make_unique<Scene>(m_assetService.get());
-
-		m_assetService->setTextureLoadedCallback(
-		    [this](const Texture *tex) { m_renderSystem->uploadTexture(tex); });
-
-		m_assetService->setModelLoadedCallback(
-		    [this](const Model *model) { m_renderSystem->uploadGeometry(model); });
-
-		m_assetService->setShaderLoadedCallback(
-		    [this](const Shader *shader) { m_renderSystem->uploadShader(shader); });
-
-		m_assetService->loadDefaultAssets();
-
-		cameraInit();
+		m_bus = ctx.bus;
+		load();
 	}
 	void GameLayer::onDetach() {}
+
 	void GameLayer::onUpdate(float dt) {
 		m_scene->onUpdate(dt);
 		cameraUpdate(dt);
 	}
+
 	void GameLayer::onRender(float t) {
 		entt::registry &registry = getActiveScene()->getRegistry();
 
@@ -50,7 +45,7 @@ namespace triple::game {
 		ctx.camera =
 		    gfx::CameraData{cameraComp.viewMatrix, cameraComp.projectionMatrix, transform.position};
 
-		m_renderSystem->buildRenderCommands(registry, ctx.commands);
+		RenderSystem::buildRenderCommands(registry, ctx.commands);
 		ctx.time = t;
 
 		if (m_onFrameContext)
@@ -58,7 +53,9 @@ namespace triple::game {
 
 		m_renderer->RenderFrame(ctx);
 	}
+
 	void GameLayer::onEvent(core::Event &e) {}
+
 	void GameLayer::cameraUpdate(float dt) {
 		entt::registry &registry = getActiveScene()->getRegistry();
 
@@ -116,6 +113,7 @@ namespace triple::game {
 			cameraTransform.position += up * dir.y;
 		}
 	}
+
 	void GameLayer::cameraInit() {
 		entt::registry &registry = getActiveScene()->getRegistry();
 
@@ -130,5 +128,70 @@ namespace triple::game {
 		camera.nearPlane = 0.01f;
 
 		setActiveCamera(m_cameraEntity);
+	}
+
+	void GameLayer::load() {
+		m_assetManager = std::make_unique<AssetManager>(m_bus);
+		m_scene = std::make_unique<Scene>(m_assetManager.get());
+		m_gpuRegistry =
+		    std::make_unique<GpuResourceRegistry>(m_renderer, m_bus, m_assetManager.get());
+
+		m_assetManager->registerLoader<Model>(std::make_unique<ModelLoader>(m_assetManager.get()));
+		m_assetManager->registerLoader<Texture>(std::make_unique<TextureLoader>());
+		m_assetManager->registerLoader<Shader>(std::make_unique<ShaderLoader>());
+
+		registerDefaultAssets();
+
+		RenderSystem::setRegistry(m_gpuRegistry.get());
+		RenderSystem::setRenderer(m_renderer);
+		RenderSystem::setAssetManager(m_assetManager.get());
+
+		cameraInit();
+	}
+
+	TypedAssetID<Texture> genSolidTexture(AssetManager &assetManager, const std::string &name,
+	                                      uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+		Texture tex;
+		tex.width = 1;
+		tex.height = 1;
+		tex.channels = 4;
+		tex.pixels = {r, g, b, a};
+
+		return assetManager.create<Texture>(name, std::move(tex));
+	}
+
+	void GameLayer::registerDefaultAssets() {
+		TypedAssetID<Texture> ad = genSolidTexture(
+		    *m_assetManager, std::string(kDefaultAlbedoTextureName), 255, 255, 255, 255);
+		TypedAssetID<Texture> mtd = genSolidTexture(
+		    *m_assetManager, std::string(kDefaultMetallicTextureName), 0, 0, 0, 255);
+		TypedAssetID<Texture> nd = genSolidTexture(
+		    *m_assetManager, std::string(kDefaultNormalTextureName), 128, 128, 255, 255);
+		TypedAssetID<Texture> rd = genSolidTexture(
+		    *m_assetManager, std::string(kDefaultRoughnessTextureName), 255, 255, 255, 255);
+
+		std::optional<TypedAssetID<Shader>> sd = m_assetManager->load<Shader>(
+		    std::string(kDefaultShaderName),
+		    ShaderLoadParams{"assets\\shaders\\__default_shader.vert",
+		                     "assets\\shaders\\__default_shader.frag"});
+
+		if (!ad.isValid() || !mtd.isValid() || !nd.isValid() || !rd.isValid() || !sd) {
+			triple::log::Logger::ModuleCritical(
+			    "GameLayer", "The default resources were not loaded properly, and the program "
+			                 "cannot continue working normally.");
+			return; // TODO: currently just logs, should actually stop startup later
+		}
+
+		Material material;
+		material.albedoColor = triple::math::Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		material.albedoTexture = ad;
+		material.metallicTexture = mtd;
+		material.normalTexture = nd;
+		material.roughnessTexture = rd;
+		material.shader = *sd;
+		material.metallic = 0.1f;
+		material.roughness = 1.0f;
+
+		m_assetManager->create<Material>(std::string(kDefaultMaterialName), material);
 	}
 } // namespace triple::game

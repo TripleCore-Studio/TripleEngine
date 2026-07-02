@@ -1,56 +1,124 @@
 #ifndef ASSET_STORAGE_H
 #define ASSET_STORAGE_H
 
-#include <memory>
 #include <unordered_map>
+#include <string>
+#include <vector>
 
-#include "Asset.h"
+#include "IAssetStorage.h"
+#include "AssetTypes.h"
 
 namespace triple::game {
 	template <typename T>
-	class AssetStorage {
+	struct Slot {
+		T value;
+		std::string name;
+		uint32_t generation;
+		bool occupied;
+	};
+
+	template <typename T>
+	struct InsertResult {
+		TypedAssetID<T> id;
+		bool wasReload;
+	};
+
+	template <typename T>
+	class AssetStorage : public IAssetStorage {
 	public:
-		AssetID add(const std::string &name, std::unique_ptr<T> &&asset) {
-			auto it = m_nameToId.find(name);
-			if (it != m_nameToId.end())
-				return it->second;
+		InsertResult<T> insert(std::string name, T asset) {
+			InsertResult<T> result;
 
-			AssetID id = static_cast<AssetID>(m_assets.size());
-			asset->id = id;
-			asset->name = name;
-			m_assets.push_back(std::move(asset));
-			m_nameToId[name] = id;
-			return id;
+			if (auto it = m_nameToSlot.find(name); it != m_nameToSlot.end()) {
+				Slot<T> &slot = m_slots[it->second];
+				slot.value = std::move(asset);
+
+				result.wasReload = true;
+				result.id = TypedAssetID<T>{{it->second, slot.generation}};
+
+				return result;
+			}
+
+			if (!m_freeSlots.empty()) {
+				uint32_t freeSlot = m_freeSlots.back();
+				m_freeSlots.pop_back();
+				m_nameToSlot[name] = freeSlot;
+
+				Slot<T> &slot = m_slots[freeSlot];
+				slot.generation++;
+				slot.occupied = true;
+				slot.value = std::move(asset);
+				slot.name = std::move(name);
+
+				result.id = TypedAssetID<T>{{freeSlot, slot.generation}};
+				result.wasReload = false;
+
+				return result;
+			} else {
+				uint32_t newSlot = static_cast<uint32_t>(m_slots.size());
+				m_nameToSlot[name] = newSlot;
+
+				Slot<T> slot{std::move(asset), std::move(name), 0, true};
+				m_slots.push_back(std::move(slot));
+
+				result.id = TypedAssetID<T>{{newSlot, 0}};
+				result.wasReload = false;
+
+				return result;
+			}
 		}
-
-		AssetID getID(const std::string &name) const {
-			auto it = m_nameToId.find(name);
-			if (it == m_nameToId.end())
-				return INVALID_ASSET_ID;
-			return it->second;
-		}
-
-		const T *get(AssetID id) const {
-			if (id == INVALID_ASSET_ID || id >= m_assets.size())
+		[[nodiscard]] const T *get(TypedAssetID<T> id) const {
+			if (id.raw.slot >= m_slots.size())
 				return nullptr;
-			return m_assets[id].get();
-		}
 
-		T *getMutable(AssetID id) {
-			if (id == INVALID_ASSET_ID || id >= m_assets.size())
+			const Slot<T> &slot = m_slots[id.raw.slot];
+			if (!slot.occupied || slot.generation != id.raw.generation)
 				return nullptr;
-			return m_assets[id].get();
+
+			return &slot.value;
+		}
+		T *getMutable(TypedAssetID<T> id) {
+			if (id.raw.slot >= m_slots.size())
+				return nullptr;
+
+			Slot<T> &slot = m_slots[id.raw.slot];
+			if (!slot.occupied || slot.generation != id.raw.generation)
+				return nullptr;
+
+			return &slot.value;
+		}
+		[[nodiscard]] TypedAssetID<T> findByName(const std::string &name) const {
+			auto it = m_nameToSlot.find(name);
+			if (it == m_nameToSlot.end())
+				return TypedAssetID<T>{};
+
+			uint32_t slot = it->second;
+			return TypedAssetID<T>{{slot, m_slots[slot].generation}};
 		}
 
-		bool exists(const std::string &name) const {
-			return m_nameToId.find(name) != m_nameToId.end();
+		[[nodiscard]] bool contains(AssetID id) const override {
+			if (id.slot >= m_slots.size())
+				return false;
+			const Slot<T> &slot = m_slots[id.slot];
+			return slot.occupied && slot.generation == id.generation;
 		}
+		bool remove(AssetID id) override {
+			if (id.slot >= m_slots.size())
+				return false;
+			Slot<T> &slot = m_slots[id.slot];
+			if (!slot.occupied || slot.generation != id.generation)
+				return false;
 
-		size_t size() const { return m_assets.size(); }
+			slot.occupied = false;
+			m_freeSlots.push_back(id.slot);
+			m_nameToSlot.erase(slot.name);
+			return true;
+		}
 
 	private:
-		std::vector<std::unique_ptr<T>> m_assets;
-		std::unordered_map<std::string, AssetID> m_nameToId;
+		std::vector<Slot<T>> m_slots;
+		std::vector<uint32_t> m_freeSlots;
+		std::unordered_map<std::string, uint32_t> m_nameToSlot;
 	};
 } // namespace triple::game
 

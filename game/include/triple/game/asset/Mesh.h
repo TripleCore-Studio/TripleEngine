@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+
 #include "Primitive.h"
 
 namespace triple::game {

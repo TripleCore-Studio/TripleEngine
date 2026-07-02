@@ -2,13 +2,15 @@
 #define PRIMITIVE_H
 
 #include <triple/gfx/Vertex.h>
-#include "Asset.h"
+
+#include "AssetTypes.h"
+#include "Material.h"
 
 namespace triple::game {
 	struct Primitive {
 		uint32_t indexOffset;
 		uint32_t indexCount;
-		AssetID materialId = INVALID_ASSET_ID;
+		TypedAssetID<Material> material;
 	};
 } // namespace triple::game
 
