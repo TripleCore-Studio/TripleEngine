@@ -3,10 +3,10 @@
 #include <entt/entt.hpp>
 
 namespace triple::game {
-	class AssetService;
+	class AssetManager;
 
 	class BoundsSystem {
 	public:
-		static void onUpdate(entt::registry &registry, AssetService *assets);
+		static void onUpdate(entt::registry &registry, AssetManager *assets);
 	};
 } // namespace triple::game

@@ -8,8 +8,8 @@
 #include <triple/gfx/IRenderer.h>
 
 #include "triple/game/ecs/Scene.h"
-#include "triple/game/render/RenderSystem.h"
-#include "triple/game/asset/AssetService.h"
+#include "triple/game/asset/AssetManager.h"
+#include "triple/game/render/GpuResourceRegistry.h"
 #include "triple/game/CameraSettings.h"
 
 namespace triple::game {
@@ -23,7 +23,7 @@ namespace triple::game {
 
 		[[nodiscard]] Scene *getActiveScene() const { return m_scene.get(); }
 		[[nodiscard]] entt::entity getActiveCamera() const { return m_cameraEntity; }
-		[[nodiscard]] AssetService *getAssetService() const { return m_assetService.get(); }
+		[[nodiscard]] AssetManager *getAssetManager() const { return m_assetManager.get(); }
 
 		void setActiveCamera(entt::entity camera) { m_cameraEntity = camera; }
 		void setFrameContextCallback(std::function<void(gfx::FrameContext &)> cb) {
@@ -36,12 +36,16 @@ namespace triple::game {
 	private:
 		void cameraUpdate(float dt);
 		void cameraInit();
+		void load();
+		void registerDefaultAssets();
 
 	private:
-		std::unique_ptr<AssetService> m_assetService;
-		std::unique_ptr<RenderSystem> m_renderSystem;
+		std::unique_ptr<AssetManager> m_assetManager;
+		std::unique_ptr<GpuResourceRegistry> m_gpuRegistry;
+
 		gfx::IRenderer *m_renderer;
 		core::InputSystem *m_inputSystem;
+		core::EventBus *m_bus;
 
 	private:
 		std::unique_ptr<Scene> m_scene;

@@ -2,6 +2,10 @@
 
 #include <filesystem>
 
+#include <imgui.h>
+#include <imgui_impl_opengl3.h>
+#include <ImGuiFileDialog.h>
+
 #include <triple/core/event/KeyboardInputEvent.h>
 #include <triple/core/event/MouseMoveEvent.h>
 #include <triple/core/event/MouseButtonEvent.h>
@@ -16,9 +20,8 @@
 #include <triple/game/ecs/MeshComponent.h>
 #include <triple/game/ecs/TransformComponent.h>
 
-#include <imgui.h>
-#include <imgui_impl_opengl3.h>
-#include <ImGuiFileDialog.h>
+#include <triple/game/asset/Model.h>
+#include <triple/game/asset/AssetTypes.h>
 
 #include "triple/editor/UI/HierarchyPanel.h"
 #include "triple/editor/UI/DescPanel.h"
@@ -60,102 +63,102 @@ namespace triple::editor {
 			return static_cast<ImGuiKey>(ImGuiKey_Keypad0 + (k - static_cast<int>(KeyCode::KP0)));
 
 		switch (key) {
-		case KeyCode::Space:
-			return ImGuiKey_Space;
-		case KeyCode::Tab:
-			return ImGuiKey_Tab;
-		case KeyCode::Backspace:
-			return ImGuiKey_Backspace;
-		case KeyCode::Enter:
-			return ImGuiKey_Enter;
-		case KeyCode::Escape:
-			return ImGuiKey_Escape;
-		case KeyCode::Left:
-			return ImGuiKey_LeftArrow;
-		case KeyCode::Right:
-			return ImGuiKey_RightArrow;
-		case KeyCode::Up:
-			return ImGuiKey_UpArrow;
-		case KeyCode::Down:
-			return ImGuiKey_DownArrow;
-		case KeyCode::Insert:
-			return ImGuiKey_Insert;
-		case KeyCode::Delete:
-			return ImGuiKey_Delete;
-		case KeyCode::Home:
-			return ImGuiKey_Home;
-		case KeyCode::End:
-			return ImGuiKey_End;
-		case KeyCode::PageUp:
-			return ImGuiKey_PageUp;
-		case KeyCode::PageDown:
-			return ImGuiKey_PageDown;
-		case KeyCode::LeftShift:
-			return ImGuiKey_LeftShift;
-		case KeyCode::RightShift:
-			return ImGuiKey_RightShift;
-		case KeyCode::LeftCtrl:
-			return ImGuiKey_LeftCtrl;
-		case KeyCode::RightCtrl:
-			return ImGuiKey_RightCtrl;
-		case KeyCode::LeftAlt:
-			return ImGuiKey_LeftAlt;
-		case KeyCode::RightAlt:
-			return ImGuiKey_RightAlt;
-		case KeyCode::LeftSuper:
-			return ImGuiKey_LeftSuper;
-		case KeyCode::RightSuper:
-			return ImGuiKey_RightSuper;
-		case KeyCode::CapsLock:
-			return ImGuiKey_CapsLock;
-		case KeyCode::ScrollLock:
-			return ImGuiKey_ScrollLock;
-		case KeyCode::NumLock:
-			return ImGuiKey_NumLock;
-		case KeyCode::PrintScreen:
-			return ImGuiKey_PrintScreen;
-		case KeyCode::Pause:
-			return ImGuiKey_Pause;
-		case KeyCode::Menu:
-			return ImGuiKey_Menu;
-		case KeyCode::Apostrophe:
-			return ImGuiKey_Apostrophe;
-		case KeyCode::Comma:
-			return ImGuiKey_Comma;
-		case KeyCode::Minus:
-			return ImGuiKey_Minus;
-		case KeyCode::Period:
-			return ImGuiKey_Period;
-		case KeyCode::Slash:
-			return ImGuiKey_Slash;
-		case KeyCode::Semicolon:
-			return ImGuiKey_Semicolon;
-		case KeyCode::Equal:
-			return ImGuiKey_Equal;
-		case KeyCode::LeftBracket:
-			return ImGuiKey_LeftBracket;
-		case KeyCode::Backslash:
-			return ImGuiKey_Backslash;
-		case KeyCode::RightBracket:
-			return ImGuiKey_RightBracket;
-		case KeyCode::GraveAccent:
-			return ImGuiKey_GraveAccent;
-		case KeyCode::KPDecimal:
-			return ImGuiKey_KeypadDecimal;
-		case KeyCode::KPDivide:
-			return ImGuiKey_KeypadDivide;
-		case KeyCode::KPMultiply:
-			return ImGuiKey_KeypadMultiply;
-		case KeyCode::KPSubtract:
-			return ImGuiKey_KeypadSubtract;
-		case KeyCode::KPAdd:
-			return ImGuiKey_KeypadAdd;
-		case KeyCode::KPEnter:
-			return ImGuiKey_KeypadEnter;
-		case KeyCode::KPEqual:
-			return ImGuiKey_KeypadEqual;
-		default:
-			return ImGuiKey_None;
+			case KeyCode::Space:
+				return ImGuiKey_Space;
+			case KeyCode::Tab:
+				return ImGuiKey_Tab;
+			case KeyCode::Backspace:
+				return ImGuiKey_Backspace;
+			case KeyCode::Enter:
+				return ImGuiKey_Enter;
+			case KeyCode::Escape:
+				return ImGuiKey_Escape;
+			case KeyCode::Left:
+				return ImGuiKey_LeftArrow;
+			case KeyCode::Right:
+				return ImGuiKey_RightArrow;
+			case KeyCode::Up:
+				return ImGuiKey_UpArrow;
+			case KeyCode::Down:
+				return ImGuiKey_DownArrow;
+			case KeyCode::Insert:
+				return ImGuiKey_Insert;
+			case KeyCode::Delete:
+				return ImGuiKey_Delete;
+			case KeyCode::Home:
+				return ImGuiKey_Home;
+			case KeyCode::End:
+				return ImGuiKey_End;
+			case KeyCode::PageUp:
+				return ImGuiKey_PageUp;
+			case KeyCode::PageDown:
+				return ImGuiKey_PageDown;
+			case KeyCode::LeftShift:
+				return ImGuiKey_LeftShift;
+			case KeyCode::RightShift:
+				return ImGuiKey_RightShift;
+			case KeyCode::LeftCtrl:
+				return ImGuiKey_LeftCtrl;
+			case KeyCode::RightCtrl:
+				return ImGuiKey_RightCtrl;
+			case KeyCode::LeftAlt:
+				return ImGuiKey_LeftAlt;
+			case KeyCode::RightAlt:
+				return ImGuiKey_RightAlt;
+			case KeyCode::LeftSuper:
+				return ImGuiKey_LeftSuper;
+			case KeyCode::RightSuper:
+				return ImGuiKey_RightSuper;
+			case KeyCode::CapsLock:
+				return ImGuiKey_CapsLock;
+			case KeyCode::ScrollLock:
+				return ImGuiKey_ScrollLock;
+			case KeyCode::NumLock:
+				return ImGuiKey_NumLock;
+			case KeyCode::PrintScreen:
+				return ImGuiKey_PrintScreen;
+			case KeyCode::Pause:
+				return ImGuiKey_Pause;
+			case KeyCode::Menu:
+				return ImGuiKey_Menu;
+			case KeyCode::Apostrophe:
+				return ImGuiKey_Apostrophe;
+			case KeyCode::Comma:
+				return ImGuiKey_Comma;
+			case KeyCode::Minus:
+				return ImGuiKey_Minus;
+			case KeyCode::Period:
+				return ImGuiKey_Period;
+			case KeyCode::Slash:
+				return ImGuiKey_Slash;
+			case KeyCode::Semicolon:
+				return ImGuiKey_Semicolon;
+			case KeyCode::Equal:
+				return ImGuiKey_Equal;
+			case KeyCode::LeftBracket:
+				return ImGuiKey_LeftBracket;
+			case KeyCode::Backslash:
+				return ImGuiKey_Backslash;
+			case KeyCode::RightBracket:
+				return ImGuiKey_RightBracket;
+			case KeyCode::GraveAccent:
+				return ImGuiKey_GraveAccent;
+			case KeyCode::KPDecimal:
+				return ImGuiKey_KeypadDecimal;
+			case KeyCode::KPDivide:
+				return ImGuiKey_KeypadDivide;
+			case KeyCode::KPMultiply:
+				return ImGuiKey_KeypadMultiply;
+			case KeyCode::KPSubtract:
+				return ImGuiKey_KeypadSubtract;
+			case KeyCode::KPAdd:
+				return ImGuiKey_KeypadAdd;
+			case KeyCode::KPEnter:
+				return ImGuiKey_KeypadEnter;
+			case KeyCode::KPEqual:
+				return ImGuiKey_KeypadEqual;
+			default:
+				return ImGuiKey_None;
 		}
 	}
 
@@ -163,18 +166,18 @@ namespace triple::editor {
 		using namespace triple::core;
 
 		switch (button) {
-		case MouseButton::Left:
-			return 0;
-		case MouseButton::Right:
-			return 1;
-		case MouseButton::Middle:
-			return 2;
-		case MouseButton::Button4:
-			return 3;
-		case MouseButton::Button5:
-			return 4;
-		default:
-			return -1;
+			case MouseButton::Left:
+				return 0;
+			case MouseButton::Right:
+				return 1;
+			case MouseButton::Middle:
+				return 2;
+			case MouseButton::Button4:
+				return 3;
+			case MouseButton::Button5:
+				return 4;
+			default:
+				return -1;
 		}
 	}
 
@@ -218,15 +221,21 @@ namespace triple::editor {
 
 			    if (!m_loadedModels->empty()) {
 				    for (auto &modelStr : *m_loadedModels) {
-					    game::ModelID modelId =
-					        m_gameLayer->getAssetService()->getModelId(modelStr);
-					    if (modelId != game::INVALID_ASSET_ID) {
+					    game::TypedAssetID<game::Model> modelId =
+					        m_gameLayer->getAssetManager()->storageFor<game::Model>().findByName(
+					            modelStr);
+					    if (modelId.isValid()) {
 						    registry.emplace<game::MeshComponent>(entity, modelId);
+						    break; // only the first valid model is attached
 					    }
 				    }
 			    } else {
-				    registry.emplace<game::MeshComponent>(
-				        entity, m_gameLayer->getAssetService()->loadModelFromFile(baseName, path));
+				    std::optional<game::TypedAssetID<game::Model>> modelId =
+				        m_gameLayer->getAssetManager()->load<game::Model>(
+				            baseName, game::ModelLoadParams{path});
+				    if (modelId) {
+					    registry.emplace<game::MeshComponent>(entity, *modelId);
+				    }
 			    }
 		    },
 		    [this](entt::entity e) {
@@ -256,7 +265,7 @@ namespace triple::editor {
 			    newTransform.rotationEuler = currentTransform.rotationEuler;
 			    newTransform.scale = currentTransform.scale;
 
-			    registry.emplace<game::MeshComponent>(newEntity, currentMesh.modelIndex);
+			    registry.emplace<game::MeshComponent>(newEntity, currentMesh.model);
 			    registry.emplace<game::NameComponent>(newEntity, newName);
 		    });
 

@@ -1,6 +1,6 @@
 #include "triple/game/ecs/BoundsSystem.h"
 
-#include "triple/game/asset/AssetService.h"
+#include "triple/game/asset/AssetManager.h"
 
 #include "triple/game/utils/BoundsUtils.h"
 
@@ -9,13 +9,13 @@
 #include "triple/game/ecs/BoundsComponent.h"
 
 namespace triple::game {
-	void BoundsSystem::onUpdate(entt::registry &registry, AssetService *assets) {
+	void BoundsSystem::onUpdate(entt::registry &registry, AssetManager *assets) {
 		auto view = registry.view<TransformComponent, MeshComponent, BoundsComponent>();
 		for (auto [entity, transform, mesh, bounds] : view.each()) {
-			if (mesh.modelIndex == core::INVALID_INDEX || assets == nullptr)
+			if (!mesh.model.isValid() || assets == nullptr)
 				continue;
 
-			const Model *model = assets->getModel(mesh.modelIndex);
+			const Model *model = assets->storageFor<Model>().get(mesh.model);
 			if (!model)
 				continue;
 

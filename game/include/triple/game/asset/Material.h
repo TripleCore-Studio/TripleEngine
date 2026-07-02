@@ -2,26 +2,35 @@
 #define MATERIAL_H
 
 #include <triple/math/Vec4.h>
-#include "Asset.h"
+
+#include "AssetTypes.h"
+
+#include "Texture.h"
+#include "Shader.h"
 
 namespace triple::game {
-	struct Material : public Asset {
+	struct Material {
 	public:
-		Material() {}
+		Material() = default;
 
 		triple::math::Vec4 albedoColor = {1, 1, 1, 1};
 		float metallic = 0.0f;
 		float roughness = 1.0f;
 
-		AssetID albedoTextureId = UINT32_MAX;
-		AssetID normalTextureId = UINT32_MAX;
-		AssetID metallicTextureId = UINT32_MAX;
-		AssetID roughnessTextureId = UINT32_MAX;
+		TypedAssetID<Texture> albedoTexture;
+		TypedAssetID<Texture> normalTexture;
+		TypedAssetID<Texture> metallicTexture;
+		TypedAssetID<Texture> roughnessTexture;
 
-		AssetID shaderId = UINT32_MAX;
+		TypedAssetID<Shader> shader;
 
 		Material(const Material &other) = default;
 		Material &operator=(const Material &other) = default;
+	};
+
+	template <>
+	struct AssetTypeOf<Material> {
+		static constexpr AssetType kValue = AssetType::Material;
 	};
 } // namespace triple::game
 

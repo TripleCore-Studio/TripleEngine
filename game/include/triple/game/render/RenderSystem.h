@@ -2,47 +2,36 @@
 #define RENDER_SYSTEM_H
 
 #include <vector>
-#include <unordered_map>
 
 #include <entt/entt.hpp>
 
 #include <triple/gfx/IRenderer.h>
 #include <triple/gfx/RenderCommand.h>
 
-#include <triple/game/asset/AssetService.h>
-#include <triple/game/asset/Asset.h>
-
 namespace triple::game {
+	class Model;
+	class GpuResourceRegistry;
+	class AssetManager;
+
 	class RenderSystem {
 	public:
-		RenderSystem(AssetService *assetsSrv) : m_assets(assetsSrv) {}
 		RenderSystem() = default;
 		~RenderSystem() = default;
 
-		void update(float dt) {};
-		void init() {}
-		void shutdown() {}
+		static void buildRenderCommands(entt::registry &reg, std::vector<gfx::RenderCommand> &cmd);
 
-		void uploadTexture(const Texture *texture);
-		void uploadGeometry(const Model *model);
-		void uploadShader(const Shader *shader);
-
-		void buildRenderCommands(entt::registry &reg, std::vector<gfx::RenderCommand> &cmd);
-		void setRenderer(gfx::IRenderer *renderer) { this->m_renderer = renderer; }
-		gfx::IRenderer *getRenderer() { return this->m_renderer; }
+		static void setRenderer(gfx::IRenderer *r) { s_renderer = r; }
+		static void setRegistry(GpuResourceRegistry *r) { s_registry = r; }
+		static void setAssetManager(AssetManager *m) { s_assetManager = m; }
 
 	private:
-		enum class ResourceType { Texture, Model, Shader };
-		bool getGPU(ResourceType type, AssetID id, gfx::GPUHandle &out);
+		static void buildRenderCmd(gfx::RenderCommand &cmd, const Model *model,
+		                           gfx::GPUHandle geometryHandle);
 
-		void buildRenderCmd(gfx::RenderCommand &cmd, const Model *obj);
-
-		AssetService *m_assets = nullptr;
-		gfx::IRenderer *m_renderer = nullptr;
-
-		std::unordered_map<AssetID, gfx::GPUHandle> m_uploadedTextures;
-		std::unordered_map<AssetID, gfx::GPUHandle> m_uploadedModels;
-		std::unordered_map<AssetID, gfx::GPUHandle> m_uploadedShaders;
+	private:
+		inline static gfx::IRenderer *s_renderer = nullptr;
+		inline static GpuResourceRegistry *s_registry = nullptr;
+		inline static AssetManager *s_assetManager = nullptr;
 	};
 } // namespace triple::game
 

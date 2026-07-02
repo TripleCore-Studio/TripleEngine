@@ -78,7 +78,7 @@ namespace triple::gl {
 			triple::log::Logger::ModuleCritical("OpenGL -> RenderResourceManager",
 			                                    "Failed to compile shader program: " +
 			                                        shader.getErrorLog());
-			return gfx::INVALID_GPU_HANDLE;
+			return gfx::kInvalidGpuHandle;
 		}
 
 		m_shaderCache.emplace(handle, std::move(shader));

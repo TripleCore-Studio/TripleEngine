@@ -1,11 +1,12 @@
 #ifndef MESH_COMPONENT_H
 #define MESH_COMPONENT_H
 
-#include <cstdint>
+#include "triple/game/asset/AssetTypes.h"
+#include "triple/game/asset/Model.h"
 
 namespace triple::game {
 	struct MeshComponent {
-		uint32_t modelIndex = UINT32_MAX;
+		TypedAssetID<Model> model;
 	};
 } // namespace triple::game
 

@@ -6,7 +6,7 @@
 
 namespace triple::gfx {
 	using GPUHandle = uint32_t;
-	inline constexpr GPUHandle INVALID_GPU_HANDLE = (std::numeric_limits<uint32_t>::max)();
+	inline constexpr GPUHandle kInvalidGpuHandle = (std::numeric_limits<uint32_t>::max)();
 } // namespace triple::gfx
 
 #endif
