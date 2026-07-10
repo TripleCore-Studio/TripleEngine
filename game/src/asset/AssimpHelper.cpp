@@ -5,11 +5,12 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <assimp/GltfMaterial.h>
 
 #include <stb_image.h>
 
 namespace triple::game {
-	AssimpHelper::LoadedModel AssimpHelper::LoadModel(const std::string &path) {
+	AssimpHelper::LoadedModel AssimpHelper::loadModel(const std::string &path) {
 		Assimp::Importer importer;
 
 		unsigned int flags = aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs |
@@ -23,12 +24,12 @@ namespace triple::game {
 		}
 
 		LoadedModel loadedModel;
-		LoadGeometry(scene, loadedModel);
-		LoadMaterials(scene, loadedModel);
+		loadGeometry(scene, loadedModel);
+		loadMaterials(scene, loadedModel);
 
 		return loadedModel;
 	}
-	AssimpHelper::LoadedTexture AssimpHelper::LoadEmbeddedTexture(const aiTexture *texture) {
+	AssimpHelper::LoadedTexture AssimpHelper::loadEmbeddedTexture(const aiTexture *texture) {
 		LoadedTexture tex;
 
 		tex.name = texture->mFilename.C_Str();
@@ -57,7 +58,7 @@ namespace triple::game {
 
 		return tex;
 	}
-	AssimpHelper::LoadedTexture AssimpHelper::LoadFileTexture(const std::string &path) {
+	AssimpHelper::LoadedTexture AssimpHelper::loadFileTexture(const std::string &path) {
 		LoadedTexture tex;
 		tex.name = path;
 		int width, height, channels;
@@ -71,7 +72,7 @@ namespace triple::game {
 		}
 		return tex;
 	}
-	AssimpHelper::LoadedTexture AssimpHelper::LoadTexture(const aiMaterial *material, uint16_t type,
+	AssimpHelper::LoadedTexture AssimpHelper::loadTexture(const aiMaterial *material, uint16_t type,
 	                                                      const aiScene *scene) {
 		aiString texPath;
 		if (material->GetTexture((aiTextureType)type, 0, &texPath) != AI_SUCCESS)
@@ -82,10 +83,10 @@ namespace triple::game {
 		if (!pathStr.empty() && pathStr[0] == '*') {
 			int index = std::stoi(pathStr.substr(1));
 			if (index >= 0 && index < scene->mNumTextures) {
-				return LoadEmbeddedTexture(scene->mTextures[index]);
+				return loadEmbeddedTexture(scene->mTextures[index]);
 			}
 		} else {
-			return LoadFileTexture(pathStr);
+			return loadFileTexture(pathStr);
 		}
 
 		return LoadedTexture();
@@ -100,10 +101,10 @@ namespace triple::game {
 		return 1.0f;
 	}
 
-	void AssimpHelper::LoadGeometry(const ::aiScene *scene, LoadedModel &outModel) {
+	void AssimpHelper::loadGeometry(const ::aiScene *scene, LoadedModel &outModel) {
 		outModel.meshes.reserve(scene->mNumMeshes);
 
-		const float SCALE = getUnitScaleToMeters(scene);
+		const float kScale = getUnitScaleToMeters(scene);
 
 		for (unsigned m = 0; m < scene->mNumMeshes; ++m) {
 			aiMesh *mesh = scene->mMeshes[m];
@@ -116,8 +117,8 @@ namespace triple::game {
 
 			for (unsigned i = 0; i < mesh->mNumVertices; ++i) {
 				gfx::Vertex v;
-				v.position = {mesh->mVertices[i].x * SCALE, mesh->mVertices[i].y * SCALE,
-				              mesh->mVertices[i].z * SCALE};
+				v.position = {mesh->mVertices[i].x * kScale, mesh->mVertices[i].y * kScale,
+				              mesh->mVertices[i].z * kScale};
 
 				if (mesh->HasNormals())
 					v.normal = {mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z};
@@ -143,7 +144,7 @@ namespace triple::game {
 			outModel.meshes.push_back(std::move(loadedMesh));
 		}
 	}
-	void AssimpHelper::LoadMaterials(const ::aiScene *scene, LoadedModel &outModel) {
+	void AssimpHelper::loadMaterials(const ::aiScene *scene, LoadedModel &outModel) {
 		outModel.materials.reserve(scene->mNumMaterials);
 
 		for (unsigned i = 0; i < scene->mNumMaterials; ++i) {
@@ -155,13 +156,32 @@ namespace triple::game {
 			if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS)
 				loadedMat.name = name.C_Str();
 
-			LoadedTexture diffuse = LoadTexture(mat, aiTextureType_DIFFUSE, scene);
+			float opacity = 1.0f;
+			mat->Get(AI_MATKEY_OPACITY, opacity);
+			loadedMat.opacity = opacity;
+
+			aiString alphaModeStr;
+			if (mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaModeStr) == AI_SUCCESS) {
+				std::string mode = alphaModeStr.C_Str();
+				if (mode == "BLEND") {
+					loadedMat.blendMode = MaterialBlendMode::Transparent;
+				} else if (mode == "MASK") {
+					loadedMat.blendMode = MaterialBlendMode::AlphaCutoff;
+				} else {
+					loadedMat.blendMode = MaterialBlendMode::Opaque;
+				}
+			} else {
+				loadedMat.blendMode =
+				    (opacity < 1.0f) ? MaterialBlendMode::Transparent : MaterialBlendMode::Opaque;
+			}
+
+			LoadedTexture diffuse = loadTexture(mat, aiTextureType_DIFFUSE, scene);
 			if (!diffuse.pixels.empty())
 				loadedMat.diffuseTextures.push_back(std::move(diffuse));
 
-			LoadedTexture normal = LoadTexture(mat, aiTextureType_NORMALS, scene);
+			LoadedTexture normal = loadTexture(mat, aiTextureType_NORMALS, scene);
 			if (normal.pixels.empty()) {
-				normal = LoadTexture(mat, aiTextureType_HEIGHT, scene);
+				normal = loadTexture(mat, aiTextureType_HEIGHT, scene);
 			}
 			if (!normal.pixels.empty())
 				loadedMat.normalTextures.push_back(std::move(normal));

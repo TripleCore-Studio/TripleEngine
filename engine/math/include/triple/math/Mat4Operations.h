@@ -18,6 +18,7 @@ namespace triple::math {
 
 		static Mat4 multiply(const Mat4 &a, const Mat4 &b);
 		static Mat4 inverse(const Mat4 &m);
+		static Vec3 getTranslation(const Mat4 &m);
 	};
 } // namespace triple::math
 

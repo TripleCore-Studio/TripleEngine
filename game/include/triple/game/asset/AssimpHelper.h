@@ -5,6 +5,8 @@
 #include <string>
 #include <triple/gfx/Vertex.h>
 
+#include "triple/game/asset/Material.h"
+
 struct aiScene;
 struct aiMaterial;
 struct aiTexture;
@@ -22,6 +24,8 @@ namespace triple::game {
 			std::string name;
 			std::vector<LoadedTexture> diffuseTextures;
 			std::vector<LoadedTexture> normalTextures;
+			float opacity = 1.0f;
+			MaterialBlendMode blendMode = MaterialBlendMode::Opaque;
 		};
 
 		struct LoadedMesh {
@@ -36,16 +40,16 @@ namespace triple::game {
 			std::vector<LoadedMaterial> materials;
 		};
 
-		static LoadedModel LoadModel(const std::string &path);
+		static LoadedModel loadModel(const std::string &path);
 		~AssimpHelper() = default;
 
 	private:
-		static LoadedTexture LoadEmbeddedTexture(const ::aiTexture *texture);
-		static LoadedTexture LoadFileTexture(const std::string &path);
-		static LoadedTexture LoadTexture(const ::aiMaterial *material, uint16_t type,
+		static LoadedTexture loadEmbeddedTexture(const ::aiTexture *texture);
+		static LoadedTexture loadFileTexture(const std::string &path);
+		static LoadedTexture loadTexture(const ::aiMaterial *material, uint16_t type,
 		                                 const ::aiScene *scene);
-		static void LoadGeometry(const ::aiScene *scene, LoadedModel &outModel);
-		static void LoadMaterials(const ::aiScene *scene, LoadedModel &outModel);
+		static void loadGeometry(const ::aiScene *scene, LoadedModel &outModel);
+		static void loadMaterials(const ::aiScene *scene, LoadedModel &outModel);
 	};
 } // namespace triple::game
 

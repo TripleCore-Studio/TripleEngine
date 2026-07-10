@@ -1,7 +1,7 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include <string>
+#include <triple/gfx/GfxDescs.h>
 
 #include "AssetTypes.h"
 #include "LoadersParams.h"
@@ -9,8 +9,7 @@
 namespace triple::game {
 
 	struct Shader {
-		std::string vertexSource;
-		std::string fragmentSource;
+		gfx::ShaderDesc desc;
 	};
 
 	template <>

@@ -1,6 +1,8 @@
 #include "triple/core/base/Engine.h"
 
 #include <triple/gfx/IOpenGLRenderer.h>
+#include <triple/gfx/FrameArena.h>
+
 #include <triple/log/Logger.h>
 
 #include "triple/core/platform/OpenGLModule.h"
@@ -24,6 +26,7 @@ namespace triple::core {
 		std::unique_ptr<EventBus> bus;
 		std::unique_ptr<ModuleService> moduleService;
 		std::unique_ptr<IWindow> window;
+		std::unique_ptr<gfx::FrameArena> frameArena;
 		gfx::IRenderer *renderer = nullptr;
 	};
 
@@ -105,13 +108,14 @@ namespace triple::core {
 			return ErrorCode::FailedInitRenderer;
 		}
 
-		pGLRenderer->Initialize();
+		// pGLRenderer->Initialize();
 
 		EngineContext ctx;
 		ctx.renderer = pGLRenderer;
 		ctx.bus = m_impl->bus.get();
 		ctx.window = m_impl->window.get();
 		ctx.inputSystem = m_impl->inputSystem.get();
+		ctx.frameArena = m_impl->frameArena.get();
 
 		for (auto &layer : m_layerStack) {
 			layer->onAttach(ctx);
@@ -132,12 +136,13 @@ namespace triple::core {
 
 			m_impl->inputSystem->update(dt);
 
-			m_impl->renderer->BeginFrame(m_lastTime);
+			m_impl->frameArena->reset();
+			// m_impl->renderer->BeginFrame(m_lastTime);
 
 			for (auto &layer : m_layerStack)
 				layer->onRender(m_lastTime);
 
-			m_impl->renderer->EndFrame();
+			// m_impl->renderer->EndFrame();
 
 			m_impl->window->swapBuffers();
 		}

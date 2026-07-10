@@ -39,7 +39,7 @@ namespace triple::game {
 	class GpuResourceRegistry {
 	public:
 		GpuResourceRegistry(gfx::IRenderer *renderer, core::EventBus *bus, AssetManager *manager);
-		[[nodiscard]] gfx::GPUHandle resolve(GpuResourceKey key);
+		[[nodiscard]] gfx::GpuHandle resolve(GpuResourceKey key);
 
 	private:
 		void onAssetEvent(AssetEvent &event);
@@ -50,6 +50,6 @@ namespace triple::game {
 		AssetManager *m_assetManager;
 
 	private:
-		std::unordered_map<GpuResourceKey, gfx::GPUHandle, GpuResourceKeyHash> m_handles;
+		std::unordered_map<GpuResourceKey, gfx::GpuHandle, GpuResourceKeyHash> m_handles;
 	};
 } // namespace triple::game

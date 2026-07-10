@@ -58,4 +58,10 @@ namespace triple::math {
 		return fromGlm(glm::inverse(gm));
 	}
 
+	Vec3 Mat4Operations::getTranslation(const Mat4 &m) {
+		glm::mat4 glmMat = toGlm(m);
+		glm::vec3 translation = glm::vec3(glmMat[3]);
+		return Vec3(translation.x, translation.y, translation.z);
+	}
+
 } // namespace triple::math

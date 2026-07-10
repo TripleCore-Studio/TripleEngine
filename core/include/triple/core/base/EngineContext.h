@@ -1,6 +1,7 @@
 #pragma once
 
 #include <triple/gfx/IRenderer.h>
+#include <triple/gfx/FrameArena.h>
 
 #include "triple/core/base/IWindow.h"
 #include "triple/core/event/EventBus.h"
@@ -12,5 +13,6 @@ namespace triple::core {
 		IWindow *window = nullptr;
 		EventBus *bus = nullptr;
 		InputSystem *inputSystem = nullptr;
+		gfx::FrameArena *frameArena = nullptr;
 	};
 } // namespace triple::core

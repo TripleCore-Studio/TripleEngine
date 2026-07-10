@@ -1,8 +1,6 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include <triple/gfx/FrameContext.h>
-
 #include "triple/core/base/ExportMacros.h"
 #include "triple/core/base/IWindow.h"
 #include "triple/core/base/LayerStack.h"

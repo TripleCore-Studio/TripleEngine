@@ -79,15 +79,15 @@ namespace triple::gl {
 		glViewport(x, y, width, height);
 	}
 
-	gfx::GPUHandle OpenGLRenderer::UploadTexture(const gfx::TextureDesc &texture) {
+	gfx::GPUHandle OpenGLRenderer::uploadTexture(const gfx::TextureDesc &texture) {
 		return m_resourceManager->createGLTexture(texture);
 	}
 
-	gfx::GPUHandle OpenGLRenderer::UploadShader(const gfx::ShaderDesc &shader) {
+	gfx::GPUHandle OpenGLRenderer::uploadShader(const gfx::ShaderDesc &shader) {
 		return m_resourceManager->createGLShader(shader);
 	}
 
-	gfx::GPUHandle OpenGLRenderer::UploadGeometry(const gfx::GeometryDesc &geometry) {
+	gfx::GPUHandle OpenGLRenderer::uploadGeometry(const gfx::GeometryDesc &geometry) {
 		return m_resourceManager->createGLGeometry(geometry);
 	}
 

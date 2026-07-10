@@ -1,8 +1,6 @@
 #ifndef PRIMITIVE_H
 #define PRIMITIVE_H
 
-#include <triple/gfx/Vertex.h>
-
 #include "AssetTypes.h"
 #include "Material.h"
 

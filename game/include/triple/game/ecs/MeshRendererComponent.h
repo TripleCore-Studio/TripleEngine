@@ -5,7 +5,7 @@
 #include "triple/game/asset/Model.h"
 
 namespace triple::game {
-	struct MeshComponent {
+	struct MeshRendererComponent {
 		TypedAssetID<Model> model;
 	};
 } // namespace triple::game

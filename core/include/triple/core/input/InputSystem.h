@@ -3,7 +3,6 @@
 
 #include <triple/math/Vec2.h>
 
-#include "triple/core/base/ISystem.h"
 #include "triple/core/base/ExportMacros.h"
 
 #include "KeyCode.h"
@@ -14,13 +13,13 @@
 #include "triple/core/event/MouseMoveEvent.h"
 
 namespace triple::core {
-	class CORE_API InputSystem : public ISystem {
-	  public:
+	class CORE_API InputSystem {
+	public:
 		InputSystem();
 		~InputSystem();
 
-		void init() override;
-		void update(float dt) override;
+		void init();
+		void update(float dt);
 
 		void onKeyboard(KeyboardInputEvent &ke);
 		void onMouseMove(MouseMoveEvent &me);
@@ -36,7 +35,7 @@ namespace triple::core {
 
 		triple::math::Vec2 getMouseDelta() const;
 
-	  private:
+	private:
 		struct Impl;
 		Impl *m_impl;
 
