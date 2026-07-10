@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(TripleEngine VERSION 1.0)
 
 include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/fetch.cmake)
 
 if(MSVC)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)

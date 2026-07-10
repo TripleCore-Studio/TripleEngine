@@ -39,6 +39,7 @@ target_link_libraries(${GAME_LAYER}
         EnTT
     PRIVATE
         assimp
+        nlohmann_json::nlohmann_json
 )
 
 set_target_properties(${GAME_LAYER} PROPERTIES
