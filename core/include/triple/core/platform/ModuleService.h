@@ -19,11 +19,10 @@ namespace std {
 #include <memory>
 #include <unordered_map>
 #include "triple/core/base/IModule.h"
-#include "triple/core/base/IService.h"
 
 namespace triple::core {
-	class ModuleService : public IService {
-	  public:
+	class ModuleService {
+	public:
 		enum class ErrorCode { None, FailedToLoadOpenGL, ModuleAlreadyLoaded, UnknownModuleType };
 
 		ModuleService(std::string modulesPath);
@@ -34,12 +33,12 @@ namespace triple::core {
 
 		~ModuleService();
 
-	  private:
 		ModuleService(const ModuleService &) = delete;
 		ModuleService &operator=(const ModuleService &) = delete;
 		ModuleService(ModuleService &&) = delete;
 		ModuleService &operator=(ModuleService &&) = delete;
 
+	private:
 		std::unordered_map<ModuleType, std::unique_ptr<IModule>> m_modules;
 		std::string m_modulesPath;
 	};

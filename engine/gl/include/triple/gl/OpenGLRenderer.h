@@ -19,7 +19,7 @@
 
 namespace triple::gl {
 	class OpenGLRenderer : public gfx::IOpenGLRenderer {
-	  public:
+	public:
 		OpenGLRenderer() = default;
 		virtual void Initialize() override;
 		virtual void BeginFrame(float time) override;
@@ -29,15 +29,15 @@ namespace triple::gl {
 		virtual bool initGlad(void *loader) override;
 		virtual void SetViewport(int x, int y, int width, int height) override;
 
-		virtual gfx::GPUHandle UploadTexture(const gfx::TextureDesc &texture) override;
-		virtual gfx::GPUHandle UploadShader(const gfx::ShaderDesc &shader) override;
-		virtual gfx::GPUHandle UploadGeometry(const gfx::GeometryDesc &geometry) override;
+		virtual gfx::GPUHandle uploadTexture(const gfx::TextureDesc &texture) override;
+		virtual gfx::GPUHandle uploadShader(const gfx::ShaderDesc &shader) override;
+		virtual gfx::GPUHandle uploadGeometry(const gfx::GeometryDesc &geometry) override;
 
 		virtual bool UnloadTexture(gfx::GPUHandle handle) override;
 		virtual bool UnloadShader(gfx::GPUHandle handle) override;
 		virtual bool UnloadGeometry(gfx::GPUHandle handle) override;
 
-	  private:
+	private:
 		bool m_initGlad = false;
 		std::unique_ptr<RenderResourceManager> m_resourceManager;
 	};

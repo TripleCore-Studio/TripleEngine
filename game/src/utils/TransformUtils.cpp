@@ -7,9 +7,9 @@ using namespace triple::math;
 
 namespace triple::game {
 	triple::math::Mat4 TransformUtils::getModelMatrix(const TransformComponent &t) {
-		float rx = t.rotationEuler.x * DEG2RAD;
-		float ry = t.rotationEuler.y * DEG2RAD;
-		float rz = t.rotationEuler.z * DEG2RAD;
+		float rx = t.rotationEuler.x * kDeg2Rad;
+		float ry = t.rotationEuler.y * kDeg2Rad;
+		float rz = t.rotationEuler.z * kDeg2Rad;
 
 		Mat4 rotX = Mat4Operations::rotate(rx, {1, 0, 0});
 		Mat4 rotY = Mat4Operations::rotate(ry, {0, 1, 0});
@@ -21,9 +21,9 @@ namespace triple::game {
 		return tr * rotZ * rotY * rotX * s;
 	}
 	triple::math::Mat4 TransformUtils::getRotationMatrix(const TransformComponent &t) {
-		float rx = t.rotationEuler.x * DEG2RAD;
-		float ry = t.rotationEuler.y * DEG2RAD;
-		float rz = t.rotationEuler.z * DEG2RAD;
+		float rx = t.rotationEuler.x * kDeg2Rad;
+		float ry = t.rotationEuler.y * kDeg2Rad;
+		float rz = t.rotationEuler.z * kDeg2Rad;
 
 		Mat4 Rx = Mat4Operations::rotate(rx, {1, 0, 0});
 		Mat4 Ry = Mat4Operations::rotate(ry, {0, 1, 0});

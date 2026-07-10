@@ -1,101 +1,99 @@
 #include "triple/game/render/RenderSystem.h"
 
-#include <triple/gfx/RenderItem.h>
 #include <triple/game/asset/Model.h>
 #include <triple/game/asset/Material.h>
 
 #include <triple/math/Vec4.h>
+#include <triple/math/MathCommon.h>
+#include <triple/math/Mat4Operations.h>
+
 #include <triple/log/Logger.h>
 
 #include "triple/game/ecs/TransformComponent.h"
-#include "triple/game/ecs/MeshComponent.h"
+#include "triple/game/ecs/MeshRendererComponent.h"
 
 #include "triple/game/render/GpuResourceRegistry.h"
 
-#include "triple/game/asset/DefaultAssets.h"
 #include "triple/game/asset/AssetManager.h"
 
+#include "triple/game/utils/MaterialUtils.h"
+
 namespace triple::game {
-	void RenderSystem::buildRenderCmd(gfx::RenderCommand &cmd, const Model *model,
-	                                  gfx::GPUHandle geometryHandle) {
-		if (!model)
-			return;
+	[[nodiscard]] static gfx::RenderPass passFromBlendMode(MaterialBlendMode mode) {
+		switch (mode) {
+			case MaterialBlendMode::Opaque:
+			case MaterialBlendMode::AlphaCutoff: // same GPU state as Opaque for now; shader may
+			                                     // discard()
+				return gfx::RenderPass::Opaque;
+			case MaterialBlendMode::Transparent:
+				return gfx::RenderPass::Transparent;
+		}
+		assert(false && "Unknown MaterialBlendMode");
+		return gfx::RenderPass::Opaque;
+	}
 
-		for (auto &mesh : model->meshes) {
-			for (auto &p : mesh.primitives) {
-				gfx::RenderItem item;
+	[[nodiscard]] static uint32_t floatToSortableUint(float f) {
+		uint32_t bits;
+		std::memcpy(&bits, &f, sizeof(f));
+		uint32_t mask = -int32_t(bits >> 31) | 0x80000000;
+		return bits ^ mask;
+	}
 
-				const Material *mat = s_assetManager->storageFor<Material>().get(p.material);
-				if (!mat) {
-					TypedAssetID<Material> defaultId =
-					    s_assetManager->storageFor<Material>().findByName(
-					        std::string(kDefaultMaterialName));
-					mat = s_assetManager->storageFor<Material>().get(defaultId);
+	[[nodiscard]] static uint64_t makeSortKey(gfx::RenderPass pass, gfx::ShaderHandle shader,
+	                                          gfx::GeometryHandle geometry,
+	                                          const math::Vec3 &worldPosition,
+	                                          const math::Vec3 &cameraPosition) {
+		if (pass == gfx::RenderPass::Transparent) {
+			float distance = math::lengthSquared(worldPosition - cameraPosition);
+			uint32_t depthBits = floatToSortableUint(distance);
+			uint32_t invertedDepth = 0xFFFFFFFF - depthBits; // far objects first (back-to-front)
+			return (uint64_t(pass) << 56) | (uint64_t(invertedDepth) << 24);
+		}
+
+		return (uint64_t(pass) << 56) | (uint64_t(shader.raw.slot) << 32) |
+		       uint64_t(geometry.raw.slot);
+	}
+
+	void RenderSystem::submitScene(entt::registry &registry, gfx::ViewHandle view,
+	                               gfx::FrameArena &arena, const math::Vec3 &cameraPosition) {
+		auto sceneView = registry.view<TransformComponent, MeshRendererComponent>();
+
+		for (auto [entity, transform, meshRenderer] : sceneView.each()) {
+			const Model *model = s_assetManager->storageFor<Model>().get(meshRenderer.model);
+
+			gfx::GeometryHandle geometry = gfx::GeometryHandle{
+			    s_registry->resolve({AssetType::Model, meshRenderer.model.raw})};
+
+			for (const Mesh &mesh : model->meshes) {
+				for (const Primitive &prim : mesh.primitives) {
+					submitPrimitive(prim, geometry, transform.worldMatrix, view, arena,
+					                cameraPosition);
 				}
-				if (!mat) {
-					triple::log::Logger::ModuleWarn("RenderSystem", "Primitive in mesh({}) skipped",
-					                                mesh.name);
-					continue;
-				}
-
-				gfx::RenderMaterial rMat;
-				rMat.albedoColor = mat->albedoColor;
-				rMat.metallic = mat->metallic;
-				rMat.roughness = mat->roughness;
-
-				rMat.albedoTexHandle =
-				    s_registry->resolve(GpuResourceKey{AssetType::Texture, mat->albedoTexture.raw});
-				rMat.metallicTexHandle = s_registry->resolve(
-				    GpuResourceKey{AssetType::Texture, mat->metallicTexture.raw});
-				rMat.normalTexHandle =
-				    s_registry->resolve(GpuResourceKey{AssetType::Texture, mat->normalTexture.raw});
-				rMat.roughnessTexHandle = s_registry->resolve(
-				    GpuResourceKey{AssetType::Texture, mat->roughnessTexture.raw});
-				rMat.shaderHandle =
-				    s_registry->resolve(GpuResourceKey{AssetType::Shader, mat->shader.raw});
-
-				if (rMat.albedoTexHandle == gfx::kInvalidGpuHandle ||
-				    rMat.metallicTexHandle == gfx::kInvalidGpuHandle ||
-				    rMat.normalTexHandle == gfx::kInvalidGpuHandle ||
-				    rMat.roughnessTexHandle == gfx::kInvalidGpuHandle ||
-				    rMat.shaderHandle == gfx::kInvalidGpuHandle) {
-					continue;
-				}
-
-				item.material = rMat;
-				item.geometry = geometryHandle;
-				item.indexCount = p.indexCount;
-				item.indexOffset = p.indexOffset;
-
-				cmd.items.push_back(item);
 			}
 		}
 	}
 
-	void RenderSystem::buildRenderCommands(entt::registry &reg,
-	                                       std::vector<gfx::RenderCommand> &commands) {
-		commands.clear();
+	void RenderSystem::submitPrimitive(const Primitive &prim, gfx::GeometryHandle geometry,
+	                                   const math::Mat4 &worldMatrix, gfx::ViewHandle view,
+	                                   gfx::FrameArena &arena, const math::Vec3 &cameraPosition) {
+		const Material *material = s_assetManager->storageFor<Material>().get(prim.material);
+		const Shader *shader = s_assetManager->storageFor<Shader>().get(material->shader);
 
-		auto view = reg.view<TransformComponent, MeshComponent>();
-		commands.reserve(view.size_hint());
-		for (auto [entity, t, m] : view.each()) {
-			if (!m.model.isValid() || s_assetManager == nullptr)
-				continue;
+		gfx::DrawCommand cmd;
+		cmd.geometry = geometry;
+		cmd.indexOffset = prim.indexOffset;
+		cmd.indexCount = prim.indexCount;
+		cmd.shader =
+		    gfx::ShaderHandle{s_registry->resolve({AssetType::Shader, material->shader.raw})};
+		cmd.transform = worldMatrix;
+		cmd.pass = passFromBlendMode(material->blendMode);
 
-			gfx::GPUHandle geometryHandle =
-			    s_registry->resolve(GpuResourceKey{AssetType::Model, m.model.raw});
-			if (geometryHandle == gfx::kInvalidGpuHandle)
-				continue;
+		MaterialUtils::packMaterial(*material, shader->desc, arena, *s_registry, cmd);
 
-			const Model *model = s_assetManager->storageFor<Model>().get(m.model);
+		cmd.sortKey =
+		    makeSortKey(cmd.pass, cmd.shader, cmd.geometry,
+		                math::Mat4Operations::getTranslation(worldMatrix), cameraPosition);
 
-			gfx::RenderCommand cmd;
-			cmd.worldMat = t.worldMatrix;
-
-			buildRenderCmd(cmd, model, geometryHandle);
-
-			if (!cmd.items.empty())
-				commands.push_back(std::move(cmd));
-		}
+		s_renderer->submit(view, cmd);
 	}
 } // namespace triple::game

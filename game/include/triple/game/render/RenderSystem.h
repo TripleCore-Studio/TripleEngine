@@ -1,12 +1,13 @@
 #ifndef RENDER_SYSTEM_H
 #define RENDER_SYSTEM_H
 
-#include <vector>
-
 #include <entt/entt.hpp>
 
 #include <triple/gfx/IRenderer.h>
-#include <triple/gfx/RenderCommand.h>
+#include <triple/gfx/DrawCommand.h>
+#include <triple/gfx/FrameArena.h>
+
+#include "triple/game/asset/Primitive.h"
 
 namespace triple::game {
 	class Model;
@@ -18,17 +19,17 @@ namespace triple::game {
 		RenderSystem() = default;
 		~RenderSystem() = default;
 
-		static void buildRenderCommands(entt::registry &reg, std::vector<gfx::RenderCommand> &cmd);
-
 		static void setRenderer(gfx::IRenderer *r) { s_renderer = r; }
 		static void setRegistry(GpuResourceRegistry *r) { s_registry = r; }
 		static void setAssetManager(AssetManager *m) { s_assetManager = m; }
+		static void submitScene(entt::registry &registry, gfx::ViewHandle view,
+		                        gfx::FrameArena &arena, const math::Vec3 &cameraPosition);
 
 	private:
-		static void buildRenderCmd(gfx::RenderCommand &cmd, const Model *model,
-		                           gfx::GPUHandle geometryHandle);
+		static void submitPrimitive(const Primitive &prim, gfx::GeometryHandle geometry,
+		                            const math::Mat4 &worldMatrix, gfx::ViewHandle view,
+		                            gfx::FrameArena &arena, const math::Vec3 &cameraPosition);
 
-	private:
 		inline static gfx::IRenderer *s_renderer = nullptr;
 		inline static GpuResourceRegistry *s_registry = nullptr;
 		inline static AssetManager *s_assetManager = nullptr;

@@ -10,8 +10,7 @@ namespace triple::game {
 		std::string path;
 	};
 	struct ShaderLoadParams {
-		std::string vertexPath;
-		std::string fragmentPath;
+		std::string basePath;
 	};
 	struct TextureLoadParams {
 		std::string path;

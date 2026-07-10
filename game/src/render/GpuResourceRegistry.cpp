@@ -10,6 +10,20 @@
 #include <triple/game/asset/Model.h>
 
 namespace triple::game {
+	gfx::TextureFormat formatFromChannels(uint8_t channels) {
+		switch (channels) {
+			case 1:
+				return gfx::TextureFormat::R8;
+			case 3:
+				return gfx::TextureFormat::Rgb8;
+			case 4:
+				return gfx::TextureFormat::Rgba8;
+			default:
+				assert(false && "Unsupported channel count");
+				return gfx::TextureFormat::Rgba8;
+		}
+	}
+
 	GpuResourceRegistry::GpuResourceRegistry(gfx::IRenderer *renderer, core::EventBus *bus,
 	                                         AssetManager *manager)
 	    : m_renderer(renderer), m_bus(bus), m_assetManager(manager) {
@@ -27,11 +41,15 @@ namespace triple::game {
 					assert(texture != nullptr &&
 					       "AssetLoaded fired but texture not found in storage");
 
-					gfx::TextureDesc desc{texture->width, texture->height, texture->channels,
-					                      texture->pixels.data()};
-					gfx::GPUHandle h = m_renderer->UploadTexture(desc);
+					gfx::TextureDesc desc{
+					    texture->width,
+					    texture->height,
+					    formatFromChannels(texture->channels),
+					    texture->pixels.data(),
+					};
+					gfx::TextureHandle h = m_renderer->uploadTexture(desc);
 
-					m_handles[GpuResourceKey{AssetType::Texture, event.id()}] = h;
+					m_handles[GpuResourceKey{AssetType::Texture, event.id()}] = h.raw;
 				} else if (kind == AssetEventKind::Reloaded) {
 					// TODO: to realize
 				} else if (kind == AssetEventKind::Unloaded) {
@@ -47,11 +65,9 @@ namespace triple::game {
 					assert(shader != nullptr &&
 					       "AssetLoaded fired but shader not found in storage");
 
-					gfx::ShaderDesc desc{shader->vertexSource.c_str(),
-					                     shader->fragmentSource.c_str()};
-					gfx::GPUHandle h = m_renderer->UploadShader(desc);
+					gfx::ShaderHandle h = m_renderer->uploadShader(shader->desc);
 
-					m_handles[GpuResourceKey{AssetType::Shader, event.id()}] = h;
+					m_handles[GpuResourceKey{AssetType::Shader, event.id()}] = h.raw;
 				} else if (kind == AssetEventKind::Reloaded) {
 					// TODO: to realize
 				} else if (kind == AssetEventKind::Unloaded) {
@@ -66,12 +82,17 @@ namespace triple::game {
 
 					assert(model != nullptr && "AssetLoaded fired but model not found in storage");
 
-					gfx::GeometryDesc desc{
-					    model->vertices.data(), static_cast<uint32_t>(model->vertices.size()),
-					    model->indices.data(), static_cast<uint32_t>(model->indices.size())};
-					gfx::GPUHandle h = m_renderer->UploadGeometry(desc);
+					gfx::GeometryDesc desc;
+					desc.vertexData = model->vertices.data();
+					desc.vertexCount =
+					    static_cast<uint32_t>(model->vertices.size() / model->vertexLayout.stride);
+					desc.vertexStride = model->vertexLayout.stride;
+					desc.indices = model->indices.data();
+					desc.indexCount = static_cast<uint32_t>(model->indices.size());
 
-					m_handles[GpuResourceKey{AssetType::Model, event.id()}] = h;
+					gfx::GeometryHandle h = m_renderer->uploadGeometry(desc);
+
+					m_handles[GpuResourceKey{AssetType::Model, event.id()}] = h.raw;
 				} else if (kind == AssetEventKind::Reloaded) {
 					// TODO: to realize
 				} else if (kind == AssetEventKind::Unloaded) {
@@ -85,7 +106,7 @@ namespace triple::game {
 		}
 	}
 
-	gfx::GPUHandle GpuResourceRegistry::resolve(GpuResourceKey key) {
+	gfx::GpuHandle GpuResourceRegistry::resolve(GpuResourceKey key) {
 		auto it = m_handles.find(key);
 		if (it != m_handles.end())
 			return it->second;

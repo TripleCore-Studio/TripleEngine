@@ -1,6 +1,9 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
+#include <array>
+#include <unordered_map>
+
 #include <triple/math/Vec4.h>
 
 #include "AssetTypes.h"
@@ -9,23 +12,22 @@
 #include "Shader.h"
 
 namespace triple::game {
+	struct MaterialParamValue {
+		std::array<float, 16> data{};
+	};
+
+	enum class MaterialBlendMode : uint8_t {
+		Opaque,
+		AlphaCutoff,
+		Transparent,
+	};
+
 	struct Material {
 	public:
-		Material() = default;
-
-		triple::math::Vec4 albedoColor = {1, 1, 1, 1};
-		float metallic = 0.0f;
-		float roughness = 1.0f;
-
-		TypedAssetID<Texture> albedoTexture;
-		TypedAssetID<Texture> normalTexture;
-		TypedAssetID<Texture> metallicTexture;
-		TypedAssetID<Texture> roughnessTexture;
-
 		TypedAssetID<Shader> shader;
-
-		Material(const Material &other) = default;
-		Material &operator=(const Material &other) = default;
+		MaterialBlendMode blendMode;
+		std::unordered_map<std::string, MaterialParamValue> params;
+		std::unordered_map<std::string, TypedAssetID<Texture>> textures;
 	};
 
 	template <>
