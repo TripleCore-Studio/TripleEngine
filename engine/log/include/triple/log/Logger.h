@@ -1,66 +1,65 @@
 #pragma once
 
-#include <string>
 #include <fmt/format.h>
 
 namespace triple::log {
 	enum class LogLevel { Debug, Info, Warn, Error, Critical };
 
 	class Logger {
-	  public:
+	public:
 		template <typename... Args>
-		static void Info(std::string_view fmt_str, Args &&...args) {
-			LogMessage(LogLevel::Info, fmt::vformat(fmt_str, fmt::make_format_args(args...)));
+		static void info(std::string_view fmtStr, Args &&...args) {
+			logMessage(LogLevel::Info, fmt::vformat(fmtStr, fmt::make_format_args(args...)));
 		}
 
 		template <typename... Args>
-		static void Warn(std::string_view fmt_str, Args &&...args) {
-			LogMessage(LogLevel::Warn, fmt::vformat(fmt_str, fmt::make_format_args(args...)));
+		static void warn(std::string_view fmtStr, Args &&...args) {
+			logMessage(LogLevel::Warn, fmt::vformat(fmtStr, fmt::make_format_args(args...)));
 		}
 
 		template <typename... Args>
-		static void Error(std::string_view fmt_str, Args &&...args) {
-			LogMessage(LogLevel::Error, fmt::vformat(fmt_str, fmt::make_format_args(args...)));
+		static void error(std::string_view fmtStr, Args &&...args) {
+			logMessage(LogLevel::Error, fmt::vformat(fmtStr, fmt::make_format_args(args...)));
 		}
 
 		template <typename... Args>
-		static void Critical(std::string_view fmt_str, Args &&...args) {
-			LogMessage(LogLevel::Critical, fmt::vformat(fmt_str, fmt::make_format_args(args...)));
+		static void critical(std::string_view fmtStr, Args &&...args) {
+			logMessage(LogLevel::Critical, fmt::vformat(fmtStr, fmt::make_format_args(args...)));
 		}
 
 		template <typename... Args>
-		static void ModuleInfo(std::string_view moduleName, std::string_view fmt_str,
+		static void moduleInfo(std::string_view moduleName, std::string_view fmtStr,
 		                       Args &&...args) {
-			LogMessage(LogLevel::Info,
+			logMessage(LogLevel::Info,
 			           fmt::format("[{}] -> {}", moduleName,
-			                       fmt::vformat(fmt_str, fmt::make_format_args(args...))));
+			                       fmt::vformat(fmtStr, fmt::make_format_args(args...))));
 		}
 
 		template <typename... Args>
-		static void ModuleWarn(std::string_view moduleName, std::string_view fmt_str,
+		static void moduleWarn(std::string_view moduleName, std::string_view fmtStr,
 		                       Args &&...args) {
-			LogMessage(LogLevel::Warn,
+			logMessage(LogLevel::Warn,
 			           fmt::format("[{}] -> {}", moduleName,
-			                       fmt::vformat(fmt_str, fmt::make_format_args(args...))));
+			                       fmt::vformat(fmtStr, fmt::make_format_args(args...))));
 		}
 
 		template <typename... Args>
-		static void ModuleError(std::string_view moduleName, std::string_view fmt_str,
+		static void moduleError(std::string_view moduleName, std::string_view fmtStr,
 		                        Args &&...args) {
-			LogMessage(LogLevel::Error,
+			logMessage(LogLevel::Error,
 			           fmt::format("[{}] -> {}", moduleName,
-			                       fmt::vformat(fmt_str, fmt::make_format_args(args...))));
+			                       fmt::vformat(fmtStr, fmt::make_format_args(args...))));
 		}
 
 		template <typename... Args>
-		static void ModuleCritical(std::string_view moduleName, std::string_view fmt_str,
+		static void moduleCritical(std::string_view moduleName, std::string_view fmtStr,
 		                           Args &&...args) {
-			LogMessage(LogLevel::Critical,
+			logMessage(LogLevel::Critical,
 			           fmt::format("[{}] -> {}", moduleName,
-			                       fmt::vformat(fmt_str, fmt::make_format_args(args...))));
+			                       fmt::vformat(fmtStr, fmt::make_format_args(args...))));
 		}
 
-	  private:
-		static void LogMessage(LogLevel level, std::string_view message);
+	private:
+		static void logMessage(LogLevel level, std::string_view message);
 	};
 } // namespace triple::log
