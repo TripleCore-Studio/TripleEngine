@@ -18,7 +18,7 @@ namespace triple::core {
 	void ActionMap::bind(const std::string &name, std::vector<InputTrigger> triggers,
 	                     std::function<void()> callback) {
 		if (m_impl->actions.find(name) != m_impl->actions.end()) {
-			triple::log::Logger::ModuleWarn("ActionMap",
+			triple::log::Logger::moduleWarn("ActionMap",
 			                                "InputAction '{}' already exists, overwriting", name);
 		}
 
@@ -45,27 +45,27 @@ namespace triple::core {
 	}
 	bool ActionMap::checkTrigger(const InputTrigger &t) {
 		switch (t.type) {
-		case InputTriggerType::Key:
-			switch (t.state) {
-			case TriggerState::Pressed:
-				return m_inputSystem->isKeyPressed(t.key);
-			case TriggerState::Held:
-				return m_inputSystem->isKeyDown(t.key);
-			case TriggerState::Released:
-				return m_inputSystem->isKeyReleased(t.key);
-			}
-			break;
+			case InputTriggerType::Key:
+				switch (t.state) {
+					case TriggerState::Pressed:
+						return m_inputSystem->isKeyPressed(t.key);
+					case TriggerState::Held:
+						return m_inputSystem->isKeyDown(t.key);
+					case TriggerState::Released:
+						return m_inputSystem->isKeyReleased(t.key);
+				}
+				break;
 
-		case InputTriggerType::MouseButton:
-			switch (t.state) {
-			case TriggerState::Pressed:
-				return m_inputSystem->isMouseButtonPressed(t.mouse);
-			case TriggerState::Held:
-				return m_inputSystem->isMouseButtonDown(t.mouse);
-			case TriggerState::Released:
-				return m_inputSystem->isMouseButtonReleased(t.mouse);
-			}
-			break;
+			case InputTriggerType::MouseButton:
+				switch (t.state) {
+					case TriggerState::Pressed:
+						return m_inputSystem->isMouseButtonPressed(t.mouse);
+					case TriggerState::Held:
+						return m_inputSystem->isMouseButtonDown(t.mouse);
+					case TriggerState::Released:
+						return m_inputSystem->isMouseButtonReleased(t.mouse);
+				}
+				break;
 		}
 
 		return false;

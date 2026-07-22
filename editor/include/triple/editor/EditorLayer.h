@@ -5,8 +5,6 @@
 #include <string>
 #include <memory>
 
-#include <triple/gfx/LightSources.h>
-
 #include <triple/core/base/Layer.h>
 #include <triple/core/input/ActionMap.h>
 
@@ -28,12 +26,10 @@ namespace triple::editor {
 
 		void setImGuiLayer(ImGuiLayer *layer) { m_imguiLayer = layer; }
 		void loadCallbacks();
-		void fillFrameContext(gfx::FrameContext &ctx) const;
 
 		std::vector<std::string> loadedModels;
 		math::Vec3 ambientColor;
 		editor::SunLight sunLight;
-		gfx::CameraLight cameraLight;
 
 	private:
 		game::GameLayer *m_gameLayer = nullptr;

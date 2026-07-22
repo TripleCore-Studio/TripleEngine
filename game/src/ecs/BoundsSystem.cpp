@@ -5,12 +5,12 @@
 #include "triple/game/utils/BoundsUtils.h"
 
 #include "triple/game/ecs/TransformComponent.h"
-#include "triple/game/ecs/MeshComponent.h"
+#include "triple/game/ecs/MeshRendererComponent.h"
 #include "triple/game/ecs/BoundsComponent.h"
 
 namespace triple::game {
 	void BoundsSystem::onUpdate(entt::registry &registry, AssetManager *assets) {
-		auto view = registry.view<TransformComponent, MeshComponent, BoundsComponent>();
+		auto view = registry.view<TransformComponent, MeshRendererComponent, BoundsComponent>();
 		for (auto [entity, transform, mesh, bounds] : view.each()) {
 			if (!mesh.model.isValid() || assets == nullptr)
 				continue;

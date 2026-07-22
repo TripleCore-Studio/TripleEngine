@@ -25,7 +25,7 @@ namespace triple::game {
 		if (s == "Int")
 			return gfx::UniformType::Int;
 
-		triple::log::Logger::ModuleError("ShaderLoader", "Unknown uniform type '{}'", s);
+		triple::log::Logger::moduleError("ShaderLoader", "Unknown uniform type '{}'", s);
 		return gfx::UniformType::Float;
 	}
 
@@ -39,8 +39,22 @@ namespace triple::game {
 		if (s == "Vec4")
 			return gfx::VertexAttribType::Vec4;
 
-		triple::log::Logger::ModuleError("ShaderLoader", "Unknown vertex attribute type '{}'", s);
+		triple::log::Logger::moduleError("ShaderLoader", "Unknown vertex attribute type '{}'", s);
 		return gfx::VertexAttribType::Float;
+	}
+
+	uint32_t vertexAttribTypeSize(gfx::VertexAttribType type) {
+		switch (type) {
+			case gfx::VertexAttribType::Float:
+				return sizeof(float);
+			case gfx::VertexAttribType::Vec2:
+				return sizeof(float) * 2;
+			case gfx::VertexAttribType::Vec3:
+				return sizeof(float) * 3;
+			case gfx::VertexAttribType::Vec4:
+				return sizeof(float) * 4;
+		}
+		return sizeof(float);
 	}
 
 	bool parseAttributes(const nlohmann::json &json, Shader &shader) {
@@ -48,10 +62,13 @@ namespace triple::game {
 			return true;
 		}
 
+		gfx::VertexLayout &layout = shader.desc.vertexLayout;
+
 		uint32_t location = 0;
+		uint32_t offset = 0;
 		for (const auto &attr : json.at("attributes")) {
 			if (!attr.contains("semantic") || !attr.contains("type")) {
-				triple::log::Logger::ModuleError("ShaderLoader",
+				triple::log::Logger::moduleError("ShaderLoader",
 				                                 "Attribute entry missing 'semantic' or 'type'");
 				return false;
 			}
@@ -60,9 +77,14 @@ namespace triple::game {
 			desc.semantic = attr.at("semantic").get<std::string>();
 			desc.type = parseVertexAttribType(attr.at("type").get<std::string>());
 			desc.location = location++;
+			desc.offset = offset;
 
-			shader.desc.vertexLayout.push_back(std::move(desc));
+			offset += vertexAttribTypeSize(desc.type);
+
+			layout.attributes.push_back(std::move(desc));
 		}
+
+		layout.stride = offset;
 
 		return true;
 	}
@@ -75,7 +97,7 @@ namespace triple::game {
 		uint32_t offset = 0;
 		for (const auto &u : json.at("uniforms")) {
 			if (!u.contains("name") || !u.contains("type")) {
-				triple::log::Logger::ModuleError("ShaderLoader",
+				triple::log::Logger::moduleError("ShaderLoader",
 				                                 "Uniform entry missing 'name' or 'type'");
 				return false;
 			}
@@ -105,7 +127,7 @@ namespace triple::game {
 
 		for (const auto &t : json.at("textureSlots")) {
 			if (!t.contains("name") || !t.contains("slot")) {
-				triple::log::Logger::ModuleError("ShaderLoader",
+				triple::log::Logger::moduleError("ShaderLoader",
 				                                 "Texture slot entry missing 'name' or 'slot'");
 				return false;
 			}
@@ -115,7 +137,7 @@ namespace triple::game {
 			desc.slot = t.at("slot").get<uint32_t>();
 
 			if (desc.slot >= gfx::kMaxTextureSlots) {
-				triple::log::Logger::ModuleError(
+				triple::log::Logger::moduleError(
 				    "ShaderLoader", "Texture slot '{}' exceeds kMaxTextureSlots", desc.name);
 				return false;
 			}
@@ -136,17 +158,17 @@ namespace triple::game {
 		std::ifstream jsonFile(kJsonPath);
 
 		if (!vsFile.is_open()) {
-			triple::log::Logger::ModuleError("ShaderLoader", "Failed to open vertex shader '{}'",
+			triple::log::Logger::moduleError("ShaderLoader", "Failed to open vertex shader '{}'",
 			                                 kVertexPath);
 			return std::nullopt;
 		}
 		if (!fsFile.is_open()) {
-			triple::log::Logger::ModuleError("ShaderLoader", "Failed to open fragment shader '{}'",
+			triple::log::Logger::moduleError("ShaderLoader", "Failed to open fragment shader '{}'",
 			                                 kFragmentPath);
 			return std::nullopt;
 		}
 		if (!jsonFile.is_open()) {
-			triple::log::Logger::ModuleError("ShaderLoader",
+			triple::log::Logger::moduleError("ShaderLoader",
 			                                 "Failed to open shader descriptor '{}'", kJsonPath);
 			return std::nullopt;
 		}
@@ -159,7 +181,7 @@ namespace triple::game {
 		try {
 			jsonFile >> json;
 		} catch (const nlohmann::json::parse_error &e) {
-			triple::log::Logger::ModuleError("ShaderLoader", "Failed to parse '{}': {}", kJsonPath,
+			triple::log::Logger::moduleError("ShaderLoader", "Failed to parse '{}': {}", kJsonPath,
 			                                 e.what());
 			return std::nullopt;
 		}
@@ -170,7 +192,7 @@ namespace triple::game {
 
 		if (!parseAttributes(json, shader) || !parseUniforms(json, shader) ||
 		    !parseTextureSlots(json, shader)) {
-			triple::log::Logger::ModuleError("ShaderLoader",
+			triple::log::Logger::moduleError("ShaderLoader",
 			                                 "Failed to parse shader descriptor '{}'", kJsonPath);
 			return std::nullopt;
 		}

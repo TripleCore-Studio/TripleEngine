@@ -22,9 +22,7 @@
 
 namespace triple::game {
 	void GameLayer::onAttach(const core::EngineContext &ctx) {
-		m_renderer = ctx.renderer;
-		m_inputSystem = ctx.inputSystem;
-		m_bus = ctx.bus;
+		m_context = ctx;
 		load();
 	}
 	void GameLayer::onDetach() {}
@@ -40,18 +38,19 @@ namespace triple::game {
 		auto &transform = registry.get<TransformComponent>(m_cameraEntity);
 		auto &cameraComp = registry.get<CameraComponent>(m_cameraEntity);
 
-		gfx::FrameContext ctx;
+		gfx::CameraData camera{cameraComp.viewMatrix, cameraComp.projectionMatrix,
+		                       transform.position};
 
-		ctx.camera =
-		    gfx::CameraData{cameraComp.viewMatrix, cameraComp.projectionMatrix, transform.position};
+		gfx::ViewDesc viewDesc;
+		viewDesc.camera = camera;
+		viewDesc.target = m_context.renderer->getBackBufferTarget();
+		viewDesc.viewport = {0, 0, static_cast<uint32_t>(m_context.window->getWidth()),
+		                     static_cast<uint32_t>(m_context.window->getHeight())};
+		viewDesc.clearColor = {0.1f, 0.1f, 0.1f, 1.0f};
+		viewDesc.clearDepth = true;
+		m_context.renderer->updateView(m_mainView, viewDesc);
 
-		RenderSystem::buildRenderCommands(registry, ctx.commands);
-		ctx.time = t;
-
-		if (m_onFrameContext)
-			m_onFrameContext(ctx);
-
-		m_renderer->RenderFrame(ctx);
+		RenderSystem::submitScene(registry, m_mainView, *m_context.frameArena, transform.position);
 	}
 
 	void GameLayer::onEvent(core::Event &e) {}
@@ -61,35 +60,35 @@ namespace triple::game {
 
 		TransformComponent &cameraTransform = registry.get<TransformComponent>(m_cameraEntity);
 
-		math::Vec2 delta = m_inputSystem->getMouseDelta();
+		math::Vec2 delta = m_context.inputSystem->getMouseDelta();
 		cameraTransform.rotationEuler.y += -delta.x * cameraSettings.sensitivity; // yaw
 		cameraTransform.rotationEuler.x += delta.y * cameraSettings.sensitivity;  // pitch
 		cameraTransform.rotationEuler.x =
 		    math::clamp(cameraTransform.rotationEuler.x, -89.0f, 89.0f);
 
 		math::Vec3 dir(0, 0, 0);
-		if (m_inputSystem->isKeyDown(core::KeyCode::W)) {
+		if (m_context.inputSystem->isKeyDown(core::KeyCode::W)) {
 			dir.z += 1;
 		}
-		if (m_inputSystem->isKeyDown(core::KeyCode::S)) {
+		if (m_context.inputSystem->isKeyDown(core::KeyCode::S)) {
 			dir.z -= 1;
 		}
-		if (m_inputSystem->isKeyDown(core::KeyCode::A)) {
+		if (m_context.inputSystem->isKeyDown(core::KeyCode::A)) {
 			dir.x -= 1;
 		}
-		if (m_inputSystem->isKeyDown(core::KeyCode::D)) {
+		if (m_context.inputSystem->isKeyDown(core::KeyCode::D)) {
 			dir.x += 1;
 		}
-		if (m_inputSystem->isKeyDown(core::KeyCode::Space)) {
+		if (m_context.inputSystem->isKeyDown(core::KeyCode::Space)) {
 			dir.y += 1;
 		}
-		if (m_inputSystem->isKeyDown(core::KeyCode::LeftShift)) {
+		if (m_context.inputSystem->isKeyDown(core::KeyCode::LeftShift)) {
 			dir.y -= 1;
 		}
 
-		if (m_inputSystem->isMouseButtonDown(core::MouseButton::Button5)) {
+		if (m_context.inputSystem->isMouseButtonDown(core::MouseButton::Button5)) {
 			cameraSettings.cameraSpeed += cameraSettings.cameraSpeedChange * dt;
-		} else if (m_inputSystem->isMouseButtonDown(core::MouseButton::Button4)) {
+		} else if (m_context.inputSystem->isMouseButtonDown(core::MouseButton::Button4)) {
 			cameraSettings.cameraSpeed -= cameraSettings.cameraSpeedChange * dt;
 		}
 
@@ -131,10 +130,10 @@ namespace triple::game {
 	}
 
 	void GameLayer::load() {
-		m_assetManager = std::make_unique<AssetManager>(m_bus);
+		m_assetManager = std::make_unique<AssetManager>(m_context.bus);
 		m_scene = std::make_unique<Scene>(m_assetManager.get());
-		m_gpuRegistry =
-		    std::make_unique<GpuResourceRegistry>(m_renderer, m_bus, m_assetManager.get());
+		m_gpuRegistry = std::make_unique<GpuResourceRegistry>(m_context.renderer, m_context.bus,
+		                                                      m_assetManager.get());
 
 		m_assetManager->registerLoader<Model>(std::make_unique<ModelLoader>(m_assetManager.get()));
 		m_assetManager->registerLoader<Texture>(std::make_unique<TextureLoader>());
@@ -143,8 +142,10 @@ namespace triple::game {
 		registerDefaultAssets();
 
 		RenderSystem::setRegistry(m_gpuRegistry.get());
-		RenderSystem::setRenderer(m_renderer);
+		RenderSystem::setRenderer(m_context.renderer);
 		RenderSystem::setAssetManager(m_assetManager.get());
+
+		configureRenderPipeline();
 
 		cameraInit();
 	}
@@ -171,27 +172,41 @@ namespace triple::game {
 		    *m_assetManager, std::string(kDefaultRoughnessTextureName), 255, 255, 255, 255);
 
 		std::optional<TypedAssetID<Shader>> sd = m_assetManager->load<Shader>(
-		    std::string(kDefaultShaderName),
-		    ShaderLoadParams{"assets\\shaders\\__default_shader.vert",
-		                     "assets\\shaders\\__default_shader.frag"});
+		    std::string(kDefaultShaderName), ShaderLoadParams{"assets\\shaders\\default"});
 
 		if (!ad.isValid() || !mtd.isValid() || !nd.isValid() || !rd.isValid() || !sd) {
-			triple::log::Logger::ModuleCritical(
+			triple::log::Logger::moduleCritical(
 			    "GameLayer", "The default resources were not loaded properly, and the program "
 			                 "cannot continue working normally.");
 			return; // TODO: currently just logs, should actually stop startup later
 		}
 
 		Material material;
-		material.albedoColor = triple::math::Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		material.albedoTexture = ad;
-		material.metallicTexture = mtd;
-		material.normalTexture = nd;
-		material.roughnessTexture = rd;
+		material.blendMode = MaterialBlendMode::Opaque;
 		material.shader = *sd;
-		material.metallic = 0.1f;
-		material.roughness = 1.0f;
+		material.params[kMetallicParam.data()] = {{0.1f}};
+		material.params[kRoughnessParam.data()] = {{1.0f}};
+		material.params[kAlbedoColorParam.data()] = {{1.0f, 1.0f, 1.0f, 1.0f}};
+
+		material.textures[kAlbedoMapSlot.data()] = ad;
+		material.textures[kMetallicMapSlot.data()] = mtd;
+		material.textures[kNormalMapSlot.data()] = nd;
+		material.textures[kRoughnessMapSlot.data()] = rd;
 
 		m_assetManager->create<Material>(std::string(kDefaultMaterialName), material);
+	}
+
+	void GameLayer::configureRenderPipeline() {
+		gfx::ViewDesc viewDesc{};
+		viewDesc.camera = {};
+		viewDesc.target = m_context.renderer->getBackBufferTarget();
+		viewDesc.viewport = {0, 0, static_cast<uint32_t>(m_context.window->getWidth()),
+		                     static_cast<uint32_t>(m_context.window->getHeight())};
+		viewDesc.clearColor = {0.1f, 0.1f, 0.1f, 1.0f};
+		viewDesc.clearDepth = true;
+
+		m_mainView = m_context.renderer->createView(viewDesc);
+
+		m_context.renderer->setViewOrder({m_mainView});
 	}
 } // namespace triple::game

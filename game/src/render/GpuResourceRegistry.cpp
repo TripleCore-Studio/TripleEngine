@@ -87,6 +87,7 @@ namespace triple::game {
 					desc.vertexCount =
 					    static_cast<uint32_t>(model->vertices.size() / model->vertexLayout.stride);
 					desc.vertexStride = model->vertexLayout.stride;
+					desc.layout = model->vertexLayout;
 					desc.indices = model->indices.data();
 					desc.indexCount = static_cast<uint32_t>(model->indices.size());
 

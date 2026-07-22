@@ -1,5 +1,7 @@
 #include "triple/game/asset/AssimpHelper.h"
 
+#include <algorithm>
+
 #include <triple/log/Logger.h>
 
 #include <assimp/Importer.hpp>
@@ -19,7 +21,7 @@ namespace triple::game {
 		const aiScene *scene = importer.ReadFile(path, flags);
 
 		if (!scene || !scene->mRootNode) {
-			triple::log::Logger::ModuleError("AssimpHelper", "fail load model: ({})", path);
+			triple::log::Logger::moduleError("AssimpHelper", "fail load model: ({})", path);
 			return LoadedModel();
 		}
 
@@ -43,7 +45,7 @@ namespace triple::game {
 			if (data) {
 				tex.width = width;
 				tex.height = height;
-				tex.channels = channels;
+				tex.channels = 4; // stbi was forced to output 4 channels regardless of source
 				tex.pixels.assign(data, data + width * height * 4);
 				stbi_image_free(data);
 			}
@@ -66,7 +68,7 @@ namespace triple::game {
 		if (data) {
 			tex.width = width;
 			tex.height = height;
-			tex.channels = channels;
+			tex.channels = 4; // stbi was forced to output 4 channels regardless of source
 			tex.pixels.assign(data, data + width * height * 4);
 			stbi_image_free(data);
 		}
@@ -158,7 +160,23 @@ namespace triple::game {
 
 			float opacity = 1.0f;
 			mat->Get(AI_MATKEY_OPACITY, opacity);
+
+			aiColor4D diffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
+			// AI_MATKEY_BASE_COLOR mirrors glTF's pbrMetallicRoughness.baseColorFactor exactly
+			// (including alpha); the legacy AI_MATKEY_COLOR_DIFFUSE key doesn't reliably carry
+			// alpha through Assimp's glTF2 importer, so prefer base color and fall back for
+			// other formats (FBX/OBJ) that only populate the legacy diffuse key.
+			if (mat->Get(AI_MATKEY_BASE_COLOR, diffuseColor) != AI_SUCCESS)
+				mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
+
+			// glTF (Blender's Principled BSDF "Alpha") stores translucency in the base color's
+			// alpha channel, not AI_MATKEY_OPACITY — that key stays 1.0 for glTF imports. Other
+			// formats (FBX/OBJ) use AI_MATKEY_OPACITY instead and leave diffuse alpha at 1.0.
+			// Whichever channel actually signals transparency should win.
+			opacity = std::min(opacity, diffuseColor.a);
 			loadedMat.opacity = opacity;
+			loadedMat.diffuseColor = {diffuseColor.r, diffuseColor.g, diffuseColor.b,
+			                          diffuseColor.a};
 
 			aiString alphaModeStr;
 			if (mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaModeStr) == AI_SUCCESS) {
