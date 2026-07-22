@@ -1,57 +1,96 @@
-#ifndef OPENGL_RENDERER_H
-#define OPENGL_RENDERER_H
-
-#include "triple/gfx/IOpenGLRenderer.h"
-#include "RenderResourceManager.h"
+#pragma once
 
 #include <memory>
+#include <triple/gfx/IRenderer.h>
 
-// ===================== RENDERER ======================
-#if defined(_WIN32) || defined(_WIN64)
-#if defined(RENDERER_EXPORTS)
-#define RENDERER_API __declspec(dllexport)
+#include "triple/gl/resource/ResourceManager.h"
+
+class GLFWwindow;
+
+#if defined(_WIN32)
+	#ifdef RENDERER_EXPORTS
+		#define RENDERER_API __declspec(dllexport)
+	#else
+		#define RENDERER_API __declspec(dllimport)
+	#endif
 #else
-#define RENDERER_API __declspec(dllimport)
-#endif
-#else
-#define RENDERER_API
+	#define RENDERER_API __attribute__((visibility("default")))
 #endif
 
 namespace triple::gl {
-	class OpenGLRenderer : public gfx::IOpenGLRenderer {
+	using namespace gfx;
+
+	class RENDERER_API OpenGLRenderer : public gfx::IRenderer {
 	public:
-		OpenGLRenderer() = default;
-		virtual void Initialize() override;
-		virtual void BeginFrame(float time) override;
-		virtual void RenderFrame(gfx::FrameContext &ctx) override;
-		virtual void EndFrame() override;
-		virtual void Shutdown() override;
-		virtual bool initGlad(void *loader) override;
-		virtual void SetViewport(int x, int y, int width, int height) override;
+		OpenGLRenderer();
 
-		virtual gfx::GPUHandle uploadTexture(const gfx::TextureDesc &texture) override;
-		virtual gfx::GPUHandle uploadShader(const gfx::ShaderDesc &shader) override;
-		virtual gfx::GPUHandle uploadGeometry(const gfx::GeometryDesc &geometry) override;
+		// lifecycle
+		bool initialize(const RendererConfig &config) override;
+		void shutdown() override;
+		void resize(uint32_t width, uint32_t height) override;
 
-		virtual bool UnloadTexture(gfx::GPUHandle handle) override;
-		virtual bool UnloadShader(gfx::GPUHandle handle) override;
-		virtual bool UnloadGeometry(gfx::GPUHandle handle) override;
+		// resources
+		[[nodiscard]] TextureHandle uploadTexture(const TextureDesc &desc) override;
+		[[nodiscard]] ShaderHandle uploadShader(const ShaderDesc &desc) override;
+		[[nodiscard]] GeometryHandle uploadGeometry(const GeometryDesc &desc) override;
+
+		void unloadTexture(TextureHandle handle) override;
+		void unloadShader(ShaderHandle handle) override;
+		void unloadGeometry(GeometryHandle handle) override;
+
+		// render targets
+		[[nodiscard]] RenderTargetHandle createRenderTarget(const RenderTargetDesc &desc) override;
+		void destroyRenderTarget(RenderTargetHandle handle) override;
+		[[nodiscard]] TextureHandle
+		getRenderTargetTexture(RenderTargetHandle handle) const override;
+
+		// views
+		[[nodiscard]] ViewHandle createView(const ViewDesc &desc) override;
+		void destroyView(ViewHandle handle) override;
+		void updateView(ViewHandle handle, const ViewDesc &desc) override;
+		[[nodiscard]] RenderTargetHandle getBackBufferTarget() const override;
+		void setViewOrder(const std::vector<ViewHandle> &order) override;
+
+		// frame
+		void beginFrame(float time) override;
+		void submit(ViewHandle view, const DrawCommand &cmd) override;
+		void endFrame() override;
+		void present() override;
+
+		// debug
+		[[nodiscard]] const char *getLastError() const override;
 
 	private:
-		bool m_initGlad = false;
-		std::unique_ptr<RenderResourceManager> m_resourceManager;
+		void renderView(GLViewRes &view);
+		void bindRenderTarget(const GLRenderTargetRes &target, const ViewDesc &desc);
+		void applyPassState(RenderPass pass);
+		GLShaderRes *bindShaderIfNeeded(GpuHandle handle, GpuHandle &currentShader,
+		                                const GLViewRes &view);
+		GLGeometryRes *bindGeometryIfNeeded(GpuHandle handle, GpuHandle &currentGeometry);
+		void bindTextures(const std::array<TextureHandle, kMaxTextureSlots> &textures);
+		void applyMaterialUniforms(const DrawCommand &cmd) const;
+
+	private:
+		void setLastError(std::string msg) const;
+		GLuint compileStage(GLenum stage, const char *src);
+
+	private:
+		GLuint m_materialUbo = 0;
+		static constexpr GLuint kMaterialUboBinding = 0;
+
+		mutable std::string m_lastError;
+		std::unique_ptr<ResourceManager> m_resources;
+		std::vector<ViewHandle> m_viewOrder;
+		RenderTargetHandle m_backBufferTarget;
+		GLFWwindow *m_window = nullptr;
+		float m_currentTime = 0;
 	};
+
+	extern "C" {
+
+	RENDERER_API IRenderer *createRenderer() { return new OpenGLRenderer(); }
+
+	RENDERER_API void destroyRenderer(IRenderer *renderer) { delete renderer; }
+
+	} // extern "C"
 } // namespace triple::gl
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-RENDERER_API triple::gfx::IRenderer *CreateRenderer();
-RENDERER_API void DestroyRenderer(triple::gfx::IRenderer *renderer);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // OPENGL_RENDERER_H
