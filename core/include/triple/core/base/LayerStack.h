@@ -32,6 +32,10 @@ namespace triple::core {
 		auto rbegin() { return m_layers.rbegin(); }
 		auto rend() { return m_layers.rend(); }
 
+		// Layers (world content, e.g. 3D scene) come before overlays (e.g. UI) in this range.
+		auto layersEnd() { return m_layers.begin() + m_insertIndex; }
+		auto overlaysBegin() { return m_layers.begin() + m_insertIndex; }
+
 	private:
 		std::vector<std::unique_ptr<Layer>> m_layers;
 		uint32_t m_insertIndex = 0;

@@ -11,20 +11,11 @@
 
 namespace triple::gfx {
 	struct TextureDesc {
-		uint32_t width = 0;
-		uint32_t height = 0;
+		uint16_t width = 0;
+		uint16_t height = 0;
 		TextureFormat format = TextureFormat::Rgba8;
 		const uint8_t *pixels = nullptr;
 		bool generateMips = true;
-	};
-
-	struct GeometryDesc {
-		const void *vertexData = nullptr;
-		uint32_t vertexCount = 0;
-		uint32_t vertexStride = 0;
-
-		const uint32_t *indices = nullptr;
-		uint32_t indexCount = 0;
 	};
 
 	struct UniformParamDesc {
@@ -48,6 +39,16 @@ namespace triple::gfx {
 	struct VertexLayout {
 		std::vector<VertexAttributeDesc> attributes;
 		uint32_t stride = 0; // total size of one vertex in bytes
+	};
+
+	struct GeometryDesc {
+		const void *vertexData = nullptr;
+		uint32_t vertexCount = 0;
+		uint32_t vertexStride = 0;
+		VertexLayout layout;
+
+		const uint32_t *indices = nullptr;
+		uint32_t indexCount = 0;
 	};
 
 	struct ShaderDesc {

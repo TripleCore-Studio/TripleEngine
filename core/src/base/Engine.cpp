@@ -1,6 +1,5 @@
 #include "triple/core/base/Engine.h"
 
-#include <triple/gfx/IOpenGLRenderer.h>
 #include <triple/gfx/FrameArena.h>
 
 #include <triple/log/Logger.h>
@@ -21,6 +20,10 @@
 #include "triple/core/event/EventBus.h"
 
 namespace triple::core {
+	namespace {
+		constexpr size_t kFrameArenaCapacity = 4 * 1024 * 1024;
+	}
+
 	struct Engine::Impl {
 		std::unique_ptr<InputSystem> inputSystem;
 		std::unique_ptr<EventBus> bus;
@@ -32,18 +35,20 @@ namespace triple::core {
 
 	Engine::Engine()
 	    : m_impl(new Impl()), m_isRunning(false), m_isInitialized(false), m_lastTime(0.0f) {
-		triple::log::Logger::Info("Engine starting...");
+		triple::log::Logger::info("Engine starting...");
 	}
 
 	bool Engine::init() {
 		if (m_isInitialized) {
-			triple::log::Logger::ModuleWarn(this->getModuleName(), "Engine already initialized");
+			triple::log::Logger::moduleWarn(this->getModuleName(), "Engine already initialized");
 			return true;
 		}
 
 		m_impl->bus = std::make_unique<EventBus>();
 		m_impl->moduleService = std::make_unique<ModuleService>("modules");
 		m_impl->inputSystem = std::make_unique<InputSystem>();
+		m_impl->frameArena = std::make_unique<gfx::FrameArena>();
+		m_impl->frameArena->init(kFrameArenaCapacity);
 
 		m_impl->moduleService->loadModule(ModuleType::OpenGLRenderer);
 		m_impl->inputSystem->init();
@@ -56,7 +61,7 @@ namespace triple::core {
 
 	Engine::ErrorCode Engine::run(const char *title, unsigned int width, unsigned int height) {
 		if (!this->m_isInitialized) {
-			triple::log::Logger::Critical(this->getModuleName(),
+			triple::log::Logger::critical(this->getModuleName(),
 			                              "Engine not initialized. Call init() before run().");
 			return ErrorCode::FailedInitEngine;
 		}
@@ -64,54 +69,47 @@ namespace triple::core {
 		OpenGLRenderModule *openGLModule = dynamic_cast<OpenGLRenderModule *>(
 		    m_impl->moduleService->getModule(ModuleType::OpenGLRenderer));
 		if (openGLModule == nullptr) {
-			triple::log::Logger::ModuleCritical(this->getModuleName(),
+			triple::log::Logger::moduleCritical(this->getModuleName(),
 			                                    "Failed to get OpenGL module");
 			return ErrorCode::ModuleLoadError;
 		}
 
 		gfx::IRenderer *renderer = openGLModule->getRenderer();
 		if (renderer == nullptr) {
-			triple::log::Logger::ModuleCritical(this->getModuleName(),
+			triple::log::Logger::moduleCritical(this->getModuleName(),
 			                                    "Failed to get OpenGL renderer from module");
 			return ErrorCode::ModuleLoadError;
 		}
 		m_impl->renderer = renderer;
 
-		gfx::IOpenGLRenderer *pGLRenderer = dynamic_cast<gfx::IOpenGLRenderer *>(renderer);
-		if (!pGLRenderer) {
-			triple::log::Logger::ModuleCritical(
-			    this->getModuleName(), "Failed to cast renderer to OpenGL renderer interface");
-			return ErrorCode::ModuleLoadError;
-		}
-
 		auto window = std::make_unique<GLWindow>(title, width, height, m_impl->bus.get());
 		void *loader = nullptr;
 		if (window->init(&loader) != GLWindow::ErrorCode::None) {
-			triple::log::Logger::ModuleCritical(this->getModuleName(),
+			triple::log::Logger::moduleCritical(this->getModuleName(),
 			                                    "Failed to initialize window");
 			return ErrorCode::FailedToLoadWindow;
 		}
 		m_impl->window = std::move(window);
 
 		if (loader == nullptr) {
-			triple::log::Logger::ModuleCritical(this->getModuleName(),
+			triple::log::Logger::moduleCritical(this->getModuleName(),
 			                                    "Loader for OpenGL not initialized");
 			return ErrorCode::FailedToLoadWindow;
 		}
 
-		if (pGLRenderer->initGlad(loader)) {
-			triple::log::Logger::ModuleInfo(this->getModuleName(),
-			                                "OpenGL renderer initialized successfully");
-		} else {
-			triple::log::Logger::ModuleCritical(this->getModuleName(),
-			                                    "Failed to initialize OpenGL renderer");
+		gfx::RendererConfig config;
+		config.vsync = true;
+		config.width = m_impl->window->getWidth();
+		config.height = m_impl->window->getHeight();
+		config.windowHandle = m_impl->window->getNativeWindow();
+		if (!renderer->initialize(config)) {
+			triple::log::Logger::moduleCritical(this->getModuleName(),
+			                                    "Failed to initialize renderer");
 			return ErrorCode::FailedInitRenderer;
 		}
 
-		// pGLRenderer->Initialize();
-
 		EngineContext ctx;
-		ctx.renderer = pGLRenderer;
+		ctx.renderer = renderer;
 		ctx.bus = m_impl->bus.get();
 		ctx.window = m_impl->window.get();
 		ctx.inputSystem = m_impl->inputSystem.get();
@@ -137,14 +135,21 @@ namespace triple::core {
 			m_impl->inputSystem->update(dt);
 
 			m_impl->frameArena->reset();
-			// m_impl->renderer->BeginFrame(m_lastTime);
+			m_impl->renderer->beginFrame(m_lastTime);
 
-			for (auto &layer : m_layerStack)
-				layer->onRender(m_lastTime);
+			// World layers submit 3D draw commands into the renderer's queue; endFrame() then
+			// clears the backbuffer and flushes them. Overlays (e.g. ImGui) draw immediately to
+			// the GL backbuffer, so they must run after that flush or their output gets wiped.
+			auto layersEnd = m_layerStack.layersEnd();
+			for (auto it = m_layerStack.begin(); it != layersEnd; ++it)
+				(*it)->onRender(m_lastTime);
 
-			// m_impl->renderer->EndFrame();
+			m_impl->renderer->endFrame();
 
-			m_impl->window->swapBuffers();
+			for (auto it = layersEnd; it != m_layerStack.end(); ++it)
+				(*it)->onRender(m_lastTime);
+
+			m_impl->renderer->present();
 		}
 
 		return ErrorCode::None;
@@ -156,13 +161,13 @@ namespace triple::core {
 		m_impl->bus->addListener([this](Event &e) { dispatchToLayers(e); });
 
 		m_impl->bus->addListener<WindowCloseEvent>([this](WindowCloseEvent &e) {
-			triple::log::Logger::Warn("Window ({}) closed", e.getTitle());
+			triple::log::Logger::warn("Window ({}) closed", e.getTitle());
 			m_impl->window->shutdown();
 			this->m_isRunning = false;
 		});
 
 		m_impl->bus->addListener<WindowResizeEvent>([this](WindowResizeEvent &e) {
-			m_impl->renderer->SetViewport(0, 0, e.getWidth(), e.getHeight());
+			m_impl->renderer->resize(e.getWidth(), e.getHeight());
 		});
 
 		m_impl->bus->addListener<KeyboardInputEvent>(
@@ -193,7 +198,7 @@ namespace triple::core {
 	}
 
 	Engine::~Engine() {
-		triple::log::Logger::Info("Engine stoping...");
+		triple::log::Logger::info("Engine stoping...");
 		delete m_impl;
 	}
 } // namespace triple::core

@@ -17,10 +17,6 @@ namespace triple::editor {
 		sunLight.elevation = 45.0f;
 		sunLight.intensity = 1.8f;
 
-		cameraLight.color = Vec3(0.9f, 0.95f, 1.0f);
-		cameraLight.intensity = 7.0f;
-		cameraLight.radius = 1.0f;
-
 		loadCallbacks();
 	}
 
@@ -31,18 +27,6 @@ namespace triple::editor {
 	void EditorLayer::onRender(float t) {}
 
 	void EditorLayer::onEvent(core::Event &e) {}
-
-	void EditorLayer::fillFrameContext(gfx::FrameContext &ctx) const {
-		ctx.ambientColor = ambientColor;
-		ctx.cameraLight = cameraLight;
-		ctx.sunLight.color = sunLight.color;
-		ctx.sunLight.intensity = sunLight.intensity;
-
-		float elRad = math::radians(sunLight.elevation);
-		float azRad = math::radians(sunLight.azimuth);
-		ctx.sunLight.direction = math::normalize(Vec3(
-		    std::cos(elRad) * std::sin(azRad), std::sin(elRad), std::cos(elRad) * std::cos(azRad)));
-	}
 
 	void EditorLayer::loadCallbacks() {
 		InputTrigger fullscreenTrigger;

@@ -18,15 +18,15 @@ namespace triple::core {
 	bool OpenGLRenderModule::load() {
 		this->m_data.libHandle = DynamicLibrary::Load(this->m_path);
 		if (!this->m_data.libHandle) {
-			triple::log::Logger::ModuleError(this->getModuleClassName(),
+			triple::log::Logger::moduleError(this->getModuleClassName(),
 			                                 "Failed to load OpenGL module: \"{}\"", this->m_path);
 			return false;
 		}
 
 		this->m_data.createFunc = reinterpret_cast<gfx::CreateRendererFunc>(
-		    DynamicLibrary::GetSymbol(this->m_data.libHandle, "CreateRenderer"));
+		    DynamicLibrary::GetSymbol(this->m_data.libHandle, "createRenderer"));
 		if (!this->m_data.createFunc) {
-			triple::log::Logger::ModuleError(
+			triple::log::Logger::moduleError(
 			    this->getModuleClassName(),
 			    "Failed to find CreateRenderer function in OpenGL module: \"{}\"", this->m_path);
 			this->unload();
@@ -34,9 +34,9 @@ namespace triple::core {
 		}
 
 		this->m_data.destroyFunc = reinterpret_cast<gfx::DestroyRendererFunc>(
-		    DynamicLibrary::GetSymbol(this->m_data.libHandle, "DestroyRenderer"));
+		    DynamicLibrary::GetSymbol(this->m_data.libHandle, "destroyRenderer"));
 		if (!this->m_data.destroyFunc) {
-			triple::log::Logger::ModuleError(
+			triple::log::Logger::moduleError(
 			    this->getModuleClassName(),
 			    "Failed to find DestroyRenderer function in OpenGL module: \"{}\"", this->m_path);
 			this->unload();
@@ -45,13 +45,13 @@ namespace triple::core {
 
 		this->m_data.renderer = this->m_data.createFunc();
 		if (!this->m_data.renderer) {
-			triple::log::Logger::ModuleError(this->getModuleClassName(),
+			triple::log::Logger::moduleError(this->getModuleClassName(),
 			                                 "Failed to create OpenGL renderer from module: \"{}\"",
 			                                 this->m_path);
 			this->unload();
 			return false;
 		}
-		triple::log::Logger::ModuleInfo(this->getModuleClassName(),
+		triple::log::Logger::moduleInfo(this->getModuleClassName(),
 		                                "OpenGL module loaded successfully: \"{}\"", this->m_path);
 		return true;
 	}
@@ -64,7 +64,7 @@ namespace triple::core {
 		if (this->m_data.libHandle) {
 			DynamicLibrary::Unload(this->m_data.libHandle);
 			this->m_data.libHandle = nullptr;
-			triple::log::Logger::ModuleWarn(this->getModuleClassName(),
+			triple::log::Logger::moduleWarn(this->getModuleClassName(),
 			                                "OpenGL module unloaded: \"{}\"", this->m_path);
 		}
 	}

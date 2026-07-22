@@ -1,11 +1,8 @@
 #pragma once
 
 #include <memory>
-#include <functional>
 
 #include <triple/core/base/Layer.h>
-
-#include <triple/gfx/IRenderer.h>
 
 #include "triple/game/ecs/Scene.h"
 #include "triple/game/asset/AssetManager.h"
@@ -26,9 +23,6 @@ namespace triple::game {
 		[[nodiscard]] AssetManager *getAssetManager() const { return m_assetManager.get(); }
 
 		void setActiveCamera(entt::entity camera) { m_cameraEntity = camera; }
-		void setFrameContextCallback(std::function<void(gfx::FrameContext &)> cb) {
-			m_onFrameContext = cb;
-		}
 
 	public:
 		CameraSettings cameraSettings;
@@ -38,18 +32,18 @@ namespace triple::game {
 		void cameraInit();
 		void load();
 		void registerDefaultAssets();
+		void configureRenderPipeline();
 
 	private:
 		std::unique_ptr<AssetManager> m_assetManager;
 		std::unique_ptr<GpuResourceRegistry> m_gpuRegistry;
 
-		gfx::IRenderer *m_renderer;
-		core::InputSystem *m_inputSystem;
-		core::EventBus *m_bus;
+		gfx::ViewHandle m_mainView;
+
+		core::EngineContext m_context;
 
 	private:
 		std::unique_ptr<Scene> m_scene;
 		entt::entity m_cameraEntity;
-		std::function<void(gfx::FrameContext &)> m_onFrameContext;
 	};
 } // namespace triple::game

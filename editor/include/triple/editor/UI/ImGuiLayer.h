@@ -5,7 +5,6 @@
 
 #include <entt/entt.hpp>
 
-#include <triple/gfx/LightSources.h>
 #include <triple/math/MathCommon.h>
 
 #include <triple/core/event/Event.h>
@@ -20,9 +19,9 @@ namespace triple::editor {
 	class ImGuiLayer : public core::Layer {
 	public:
 		ImGuiLayer(game::GameLayer *gameLayer, SunLight *sunLight, math::Vec3 *ambientColor,
-		           gfx::CameraLight *cameraLight, std::vector<std::string> *loadedModels)
+		           std::vector<std::string> *loadedModels)
 		    : m_gameLayer(gameLayer), m_sunLight(sunLight), m_ambientColor(ambientColor),
-		      m_cameraLight(cameraLight), m_loadedModels(loadedModels) {}
+		      m_loadedModels(loadedModels) {}
 
 		~ImGuiLayer();
 		void onAttach(const core::EngineContext &ctx) override;
@@ -52,7 +51,6 @@ namespace triple::editor {
 		game::GameLayer *m_gameLayer = nullptr;
 		SunLight *m_sunLight = nullptr;
 		math::Vec3 *m_ambientColor = nullptr;
-		gfx::CameraLight *m_cameraLight = nullptr;
 		std::vector<std::string> *m_loadedModels = nullptr;
 	};
 } // namespace triple::editor

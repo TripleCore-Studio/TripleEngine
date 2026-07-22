@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <triple/gfx/Vertex.h>
+#include <triple/math/Vec4.h>
 
 #include "triple/game/asset/Material.h"
 
@@ -24,6 +25,7 @@ namespace triple::game {
 			std::string name;
 			std::vector<LoadedTexture> diffuseTextures;
 			std::vector<LoadedTexture> normalTextures;
+			math::Vec4 diffuseColor{1.0f, 1.0f, 1.0f, 1.0f};
 			float opacity = 1.0f;
 			MaterialBlendMode blendMode = MaterialBlendMode::Opaque;
 		};

@@ -17,7 +17,7 @@
 
 #include <triple/game/utils/HierarchyUtils.h>
 #include <triple/game/ecs/NameComponent.h>
-#include <triple/game/ecs/MeshComponent.h>
+#include <triple/game/ecs/MeshRendererComponent.h>
 #include <triple/game/ecs/TransformComponent.h>
 
 #include <triple/game/asset/Model.h>
@@ -225,7 +225,7 @@ namespace triple::editor {
 					        m_gameLayer->getAssetManager()->storageFor<game::Model>().findByName(
 					            modelStr);
 					    if (modelId.isValid()) {
-						    registry.emplace<game::MeshComponent>(entity, modelId);
+						    registry.emplace<game::MeshRendererComponent>(entity, modelId);
 						    break; // only the first valid model is attached
 					    }
 				    }
@@ -234,7 +234,7 @@ namespace triple::editor {
 				        m_gameLayer->getAssetManager()->load<game::Model>(
 				            baseName, game::ModelLoadParams{path});
 				    if (modelId) {
-					    registry.emplace<game::MeshComponent>(entity, *modelId);
+					    registry.emplace<game::MeshRendererComponent>(entity, *modelId);
 				    }
 			    }
 		    },
@@ -252,7 +252,8 @@ namespace triple::editor {
 
 			    game::TransformComponent currentTransform =
 			        registry.get<game::TransformComponent>(e);
-			    game::MeshComponent currentMesh = registry.get<game::MeshComponent>(e);
+			    game::MeshRendererComponent currentMesh =
+			        registry.get<game::MeshRendererComponent>(e);
 			    game::NameComponent currentName = registry.get<game::NameComponent>(e);
 
 			    std::string newName = uniqueName(registry, currentName.name);
@@ -265,7 +266,7 @@ namespace triple::editor {
 			    newTransform.rotationEuler = currentTransform.rotationEuler;
 			    newTransform.scale = currentTransform.scale;
 
-			    registry.emplace<game::MeshComponent>(newEntity, currentMesh.model);
+			    registry.emplace<game::MeshRendererComponent>(newEntity, currentMesh.model);
 			    registry.emplace<game::NameComponent>(newEntity, newName);
 		    });
 
@@ -273,7 +274,6 @@ namespace triple::editor {
 		m_inspector->setCamera(
 		    &m_gameLayer->cameraSettings.cameraSpeed, m_gameLayer->cameraSettings.cameraSpeedMin,
 		    m_gameLayer->cameraSettings.cameraSpeedMax, &m_gameLayer->cameraSettings.lockY);
-		m_inspector->setLight(m_sunLight, m_cameraLight, m_ambientColor);
 
 		m_uiManager.addPanel<DescPanel>();
 

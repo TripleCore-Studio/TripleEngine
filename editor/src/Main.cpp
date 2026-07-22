@@ -11,24 +11,16 @@ int main() {
 	std::unique_ptr<triple::core::Engine> app = std::make_unique<triple::core::Engine>();
 	app->init();
 
-	auto game   = std::make_unique<triple::game::GameLayer>();
+	auto game = std::make_unique<triple::game::GameLayer>();
 	auto editor = std::make_unique<triple::editor::EditorLayer>(game.get());
-	auto imgui  = std::make_unique<triple::editor::ImGuiLayer>(
-        game.get(),
-        &editor->sunLight,
-        &editor->ambientColor,
-        &editor->cameraLight,
-        &editor->loadedModels);
+	auto imgui = std::make_unique<triple::editor::ImGuiLayer>(
+	    game.get(), &editor->sunLight, &editor->ambientColor, &editor->loadedModels);
 
 	editor->setImGuiLayer(imgui.get());
 
-	game->setFrameContextCallback([editorPtr = editor.get()](triple::gfx::FrameContext &ctx) {
-		editorPtr->fillFrameContext(ctx);
-	});
-
 	app->pushLayer(std::move(game));
-	app->pushLayer(std::move(imgui));
 	app->pushLayer(std::move(editor));
+	app->pushOverlay(std::move(imgui));
 
 	triple::core::Engine::ErrorCode code = app->run("Triple Engine v(0.1.0-pre-alpha)", 1280, 720);
 

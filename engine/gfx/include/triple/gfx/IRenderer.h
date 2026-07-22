@@ -24,16 +24,28 @@ namespace triple::gfx {
 		virtual void unloadShader(ShaderHandle handle) = 0;
 		virtual void unloadGeometry(GeometryHandle handle) = 0;
 
+		// render targets
+		[[nodiscard]] virtual RenderTargetHandle
+		createRenderTarget(const RenderTargetDesc &desc) = 0;
+		virtual void destroyRenderTarget(RenderTargetHandle handle) = 0;
+		[[nodiscard]] virtual TextureHandle
+		getRenderTargetTexture(RenderTargetHandle handle) const = 0;
+
 		// views
 		[[nodiscard]] virtual ViewHandle createView(const ViewDesc &desc) = 0;
 		virtual void destroyView(ViewHandle handle) = 0;
 		virtual void updateView(ViewHandle handle, const ViewDesc &desc) = 0;
 		[[nodiscard]] virtual RenderTargetHandle getBackBufferTarget() const = 0;
+		virtual void setViewOrder(const std::vector<ViewHandle> &order) = 0;
 
 		// frame
 		virtual void beginFrame(float time) = 0;
 		virtual void submit(ViewHandle view, const DrawCommand &cmd) = 0;
 		virtual void endFrame() = 0;
+		virtual void present() = 0;
+
+		// debug
+		[[nodiscard]] virtual const char *getLastError() const = 0;
 	};
 
 	using CreateRendererFunc = IRenderer *(*)();

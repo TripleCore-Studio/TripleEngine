@@ -11,7 +11,7 @@ namespace triple::game {
 		int width, height, channels;
 		stbi_uc *pixels = stbi_load(params.path.c_str(), &width, &height, &channels, 4);
 		if (!pixels) {
-			triple::log::Logger::ModuleError("TextureLoader", "Failed to load texture '{}'",
+			triple::log::Logger::moduleError("TextureLoader", "Failed to load texture '{}'",
 			                                 params.path);
 			return std::nullopt;
 		}

@@ -27,6 +27,14 @@ namespace triple::game {
 		return 0;
 	}
 
+	// TODO(vertex-layout binding): this always emits the full standard attribute set, and the
+	// `location` below is only correct because every .vert we ship happens to declare the same
+	// locations by hand (see docs/architecture/renderer.md, "Geometry" section). Should instead:
+	// (1) only emit attributes actually computed for the mesh (e.g. skip TANGENT/BITANGENT when
+	//     there's no UV/tangent generation), and
+	// (2) resolve `location` per-shader by matching `semantic` against the shader's declared
+	//     attributes (reflection), the way textureSlots/uniforms already do, instead of both
+	//     sides hardcoding the same numbers.
 	gfx::VertexLayout makeStandardVertexLayout() {
 		gfx::VertexLayout layout;
 		uint32_t offset = 0;
@@ -88,11 +96,12 @@ namespace triple::game {
 		material.shader = getDefaultOrAssert<Shader>(manager, kDefaultShaderName);
 		material.blendMode = loadedMaterial.blendMode;
 
-		// TODO: model loading is currently superficial — material params (albedoColor,
-		// metallic, roughness) and metallic/normal/roughness textures are not read from
-		// the Assimp material at all; always falls back to hardcoded defaults.
-		material.params[kAlbedoColorParam.data()] =
-		    MaterialParamValue{{1.0f, 1.0f, 1.0f, loadedMaterial.opacity}};
+		// TODO: model loading is still superficial — metallic/roughness factors and
+		// metallic/normal/roughness textures are not read from the Assimp material at all;
+		// always falls back to hardcoded defaults. albedoColor is read (AI_MATKEY_COLOR_DIFFUSE).
+		material.params[kAlbedoColorParam.data()] = MaterialParamValue{
+		    {loadedMaterial.diffuseColor.x, loadedMaterial.diffuseColor.y,
+		     loadedMaterial.diffuseColor.z, loadedMaterial.opacity}};
 		material.params[kMetallicParam.data()] = MaterialParamValue{{0.0f}};
 		material.params[kRoughnessParam.data()] = MaterialParamValue{{1.0f}};
 
@@ -128,7 +137,8 @@ namespace triple::game {
 			Mesh eMesh;
 			eMesh.name = loadedMesh.name;
 
-			uint32_t baseVertex = static_cast<uint32_t>(engineModel.vertices.size());
+			uint32_t baseVertex = static_cast<uint32_t>(engineModel.vertices.size() /
+			                                            engineModel.vertexLayout.stride);
 			uint32_t baseIndex = static_cast<uint32_t>(engineModel.indices.size());
 
 			for (auto &vert : loadedMesh.vertices) {
@@ -160,7 +170,7 @@ namespace triple::game {
 	std::optional<Model> ModelLoader::load(const ModelLoadParams &params) {
 		AssimpHelper::LoadedModel loadedModel = AssimpHelper::loadModel(params.path);
 		if (loadedModel.meshes.size() <= 0) {
-			triple::log::Logger::ModuleWarn(
+			triple::log::Logger::moduleWarn(
 			    "ModelLoader", "(model: {}) the model has no meshes and as a result was not loaded",
 			    params.path);
 			return std::nullopt;
