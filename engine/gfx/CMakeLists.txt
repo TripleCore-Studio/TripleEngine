@@ -9,6 +9,10 @@ target_include_directories(triple_gfx
 
 target_compile_features(triple_gfx INTERFACE cxx_std_20)
 
+target_link_libraries(triple_gfx INTERFACE
+    triple::math
+)
+
 file(GLOB_RECURSE HEADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp

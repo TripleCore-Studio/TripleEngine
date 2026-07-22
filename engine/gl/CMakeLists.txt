@@ -37,6 +37,7 @@ PUBLIC
     triple::gfx
 PRIVATE
 	glad
+    glfw
 	triple::math
 	triple::log
 )
@@ -47,3 +48,4 @@ if(WIN32)
 endif()
 
 copy_module_to_bin_modules(${LIB_NAME})
+remove_nostdlib_flags(${LIB_NAME})

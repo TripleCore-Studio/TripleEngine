@@ -10,3 +10,4 @@ SortIncludes: Never
 IndentAccessModifiers: false
 AccessModifierOffset: -4
 IndentCaseLabels: true
+IndentPPDirectives: BeforeHash
