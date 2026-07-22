@@ -7,7 +7,7 @@
 
 namespace triple::core {
 	class OpenGLRenderModule : public IModule {
-	  public:
+	public:
 		OpenGLRenderModule(const std::string &modulesPath, const std::string &moduleName);
 		virtual const std::string &getModuleName() const override;
 		virtual bool load() override;
@@ -18,7 +18,7 @@ namespace triple::core {
 
 		~OpenGLRenderModule();
 
-	  private:
+	private:
 		struct ModuleData {
 			LibHandle libHandle = nullptr;
 			gfx::CreateRendererFunc createFunc = nullptr;
