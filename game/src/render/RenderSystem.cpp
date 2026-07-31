@@ -64,19 +64,26 @@ namespace triple::game {
 			gfx::GeometryHandle geometry = gfx::GeometryHandle{
 			    s_registry->resolve({AssetType::Model, meshRenderer.model.raw})};
 
-			for (const Mesh &mesh : model->meshes) {
-				for (const Primitive &prim : mesh.primitives) {
-					submitPrimitive(prim, geometry, transform.worldMatrix, view, arena,
+			for (size_t meshIdx = 0; meshIdx < model->meshes.size(); ++meshIdx) {
+				const Mesh &mesh = model->meshes[meshIdx];
+
+				for (size_t primIdx = 0; primIdx < mesh.primitives.size(); ++primIdx) {
+					const Primitive &prim = mesh.primitives[primIdx];
+					const MaterialInstance &instance =
+					    meshRenderer.materialInstances[meshIdx][primIdx];
+
+					submitPrimitive(prim, instance, geometry, transform.worldMatrix, view, arena,
 					                cameraPosition);
 				}
 			}
 		}
 	}
 
-	void RenderSystem::submitPrimitive(const Primitive &prim, gfx::GeometryHandle geometry,
-	                                   const math::Mat4 &worldMatrix, gfx::ViewHandle view,
-	                                   gfx::FrameArena &arena, const math::Vec3 &cameraPosition) {
-		const Material *material = s_assetManager->storageFor<Material>().get(prim.material);
+	void RenderSystem::submitPrimitive(const Primitive &prim, const MaterialInstance &instance,
+	                                   gfx::GeometryHandle geometry, const math::Mat4 &worldMatrix,
+	                                   gfx::ViewHandle view, gfx::FrameArena &arena,
+	                                   const math::Vec3 &cameraPosition) {
+		const Material *material = s_assetManager->storageFor<Material>().get(instance.base());
 		const Shader *shader = s_assetManager->storageFor<Shader>().get(material->shader);
 
 		gfx::DrawCommand cmd;
@@ -88,7 +95,8 @@ namespace triple::game {
 		cmd.transform = worldMatrix;
 		cmd.pass = passFromBlendMode(material->blendMode);
 
-		MaterialUtils::packMaterial(*material, shader->desc, arena, *s_registry, cmd);
+		MaterialUtils::packMaterialInstance(instance, *material, shader->desc, arena, *s_registry,
+		                                    cmd);
 
 		cmd.sortKey =
 		    makeSortKey(cmd.pass, cmd.shader, cmd.geometry,

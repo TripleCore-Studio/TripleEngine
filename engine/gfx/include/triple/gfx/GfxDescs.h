@@ -71,8 +71,9 @@ namespace triple::gfx {
 		RenderTargetType type = RenderTargetType::BackBuffer;
 		uint32_t width = 0;
 		uint32_t height = 0;
-		TextureFormat colorFormat = TextureFormat::Rgba8;
+		std::vector<gfx::TextureFormat> colorFormats;
 		bool hasDepth = true;
+		gfx::TextureFormat depthFormat = gfx::TextureFormat::Depth24Stencil8;
 	};
 
 	struct CameraData {

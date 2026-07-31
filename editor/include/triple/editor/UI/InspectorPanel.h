@@ -27,7 +27,7 @@ namespace triple::editor {
 			ImGui::Begin(m_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
 			if (m_scene) {
-				auto *t = m_scene->getRegistry().try_get<game::TransformComponent>(m_entity);
+				auto *t = m_scene->registry().try_get<game::TransformComponent>(m_entity);
 				if (t) {
 					ImGui::Text("Transform");
 					ImGui::DragFloat3("Position", &t->position.x, 0.05f);

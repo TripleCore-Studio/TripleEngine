@@ -19,6 +19,7 @@
 #include "triple/game/asset/ModelLoader.h"
 #include "triple/game/asset/TextureLoader.h"
 #include "triple/game/asset/ShaderLoader.h"
+#include "triple/game/asset/MaterialLoader.h"
 
 namespace triple::game {
 	void GameLayer::onAttach(const core::EngineContext &ctx) {
@@ -33,7 +34,7 @@ namespace triple::game {
 	}
 
 	void GameLayer::onRender(float t) {
-		entt::registry &registry = getActiveScene()->getRegistry();
+		entt::registry &registry = getActiveScene()->registry();
 
 		auto &transform = registry.get<TransformComponent>(m_cameraEntity);
 		auto &cameraComp = registry.get<CameraComponent>(m_cameraEntity);
@@ -56,7 +57,7 @@ namespace triple::game {
 	void GameLayer::onEvent(core::Event &e) {}
 
 	void GameLayer::cameraUpdate(float dt) {
-		entt::registry &registry = getActiveScene()->getRegistry();
+		entt::registry &registry = getActiveScene()->registry();
 
 		TransformComponent &cameraTransform = registry.get<TransformComponent>(m_cameraEntity);
 
@@ -114,7 +115,7 @@ namespace triple::game {
 	}
 
 	void GameLayer::cameraInit() {
-		entt::registry &registry = getActiveScene()->getRegistry();
+		entt::registry &registry = getActiveScene()->registry();
 
 		m_cameraEntity = registry.create();
 
@@ -138,6 +139,8 @@ namespace triple::game {
 		m_assetManager->registerLoader<Model>(std::make_unique<ModelLoader>(m_assetManager.get()));
 		m_assetManager->registerLoader<Texture>(std::make_unique<TextureLoader>());
 		m_assetManager->registerLoader<Shader>(std::make_unique<ShaderLoader>());
+		m_assetManager->registerLoader<Material>(
+		    std::make_unique<MaterialLoader>(m_assetManager.get()));
 
 		registerDefaultAssets();
 

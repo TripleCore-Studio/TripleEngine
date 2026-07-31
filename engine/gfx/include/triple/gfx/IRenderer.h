@@ -29,7 +29,9 @@ namespace triple::gfx {
 		createRenderTarget(const RenderTargetDesc &desc) = 0;
 		virtual void destroyRenderTarget(RenderTargetHandle handle) = 0;
 		[[nodiscard]] virtual TextureHandle
-		getRenderTargetTexture(RenderTargetHandle handle) const = 0;
+		getRenderTargetTexture(RenderTargetHandle handle, uint32_t colorIndex = 0) const = 0;
+		[[nodiscard]] virtual TextureHandle
+		getRenderTargetDepthTexture(RenderTargetHandle handle) const = 0;
 
 		// views
 		[[nodiscard]] virtual ViewHandle createView(const ViewDesc &desc) = 0;

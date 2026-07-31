@@ -9,8 +9,6 @@
 #include <triple/gfx/GfxDescs.h>
 #include <triple/gfx/DrawCommand.h>
 
-#include "ResourceDescs.h"
-
 namespace triple::gl {
 	enum class ResourceType : uint8_t { Texture, Shader, Geometry, View, RenderTarget, Count };
 
@@ -37,10 +35,9 @@ namespace triple::gl {
 
 	struct GLRenderTargetRes {
 		GLuint fbo = 0;
-		gfx::TextureHandle colorTexture;
+		std::vector<gfx::TextureHandle> colorTextures;
 		gfx::TextureHandle depthTexture;
 		uint32_t width = 0, height = 0;
-		bool isBackBuffer = false;
 	};
 
 	struct GLViewRes {

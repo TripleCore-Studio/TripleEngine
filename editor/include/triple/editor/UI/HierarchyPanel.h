@@ -28,7 +28,7 @@ namespace triple::editor {
 		      m_onAddEntity(addEntity), m_onRemoveEntity(removeEntity), m_onDuplicate(duplicate) {}
 
 		void onRender() override {
-			auto &registry = m_scene->getRegistry();
+			auto &registry = m_scene->registry();
 
 			ImGuiIO &io = ImGui::GetIO();
 			ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always, ImVec2(0.0f, 0.0f));

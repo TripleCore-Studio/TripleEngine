@@ -8,6 +8,7 @@
 #include <triple/gfx/FrameArena.h>
 
 #include "triple/game/asset/Primitive.h"
+#include "triple/game/asset/MaterialInstance.h"
 
 namespace triple::game {
 	class Model;
@@ -26,9 +27,10 @@ namespace triple::game {
 		                        gfx::FrameArena &arena, const math::Vec3 &cameraPosition);
 
 	private:
-		static void submitPrimitive(const Primitive &prim, gfx::GeometryHandle geometry,
-		                            const math::Mat4 &worldMatrix, gfx::ViewHandle view,
-		                            gfx::FrameArena &arena, const math::Vec3 &cameraPosition);
+		static void submitPrimitive(const Primitive &prim, const MaterialInstance &instance,
+		                            gfx::GeometryHandle geometry, const math::Mat4 &worldMatrix,
+		                            gfx::ViewHandle view, gfx::FrameArena &arena,
+		                            const math::Vec3 &cameraPosition);
 
 		inline static gfx::IRenderer *s_renderer = nullptr;
 		inline static GpuResourceRegistry *s_registry = nullptr;

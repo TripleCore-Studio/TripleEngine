@@ -2,10 +2,9 @@
 
 ## Overview
 
-The renderer is built as a submit-style, forward-rendering pipeline sitting
-behind a stable `IRenderer` interface. The interface is a hard module boundary:
-backends (e.g. an OpenGL implementation) are compiled into a separate `.dll`
-and returned to the core via a factory function
+The renderer sits behind a stable `IRenderer` interface. The interface is a
+hard module boundary: backends (e.g. an OpenGL implementation) are compiled
+into a separate `.dll` and returned to the core via a factory function
 (`CreateRendererFunc`/`DestroyRendererFunc`). Everything crossing that
 boundary (handles, descriptors, draw commands) is kept POD/ABI-safe —
 no `std::string`, no STL containers with non-trivial layouts.
@@ -14,21 +13,40 @@ Layers don't own or call the renderer directly for scene submission. They
 push `DrawCommand`s into a per-view queue (`submit`); the actual GPU work
 (state changes, draw calls) happens once, in `endFrame`, after commands are
 sorted. This lets any number of layers (game scene, debug overlay, UI)
-contribute draw calls in any order without stepping on each other.
+contribute draw calls in any order without stepping on each other. Multiple
+`View`s can be queued per frame via `setViewOrder` — this is how multi-pass
+rendering (shadow maps, deferred G-buffer + lighting, post-processing) is
+built, entirely out of the same primitives, without new `IRenderer` methods.
 
-## Pipeline stages (current)
+This document covers the rendering pipeline's core primitives (`View`,
+`RenderPass`, `RenderTarget`, `IRenderer`). Shader authoring/composition
+(contracts, `#pragma include`, lighting) lives in
+[`shaders.md`](shaders.md); the `Material`/`MaterialInstance` asset format
+lives in [`formats/materials.md`](../formats/materials.md).
+
+> **Rendering model — currently implemented vs. planned:** what's actually
+> built today is a single-pass forward pipeline (one `View`, `Opaque` and
+> `Transparent` `RenderPass` groups sharing it). The architecture has since
+> been extended on paper to a **Deferred (Opaque/Cutoff) + Forward
+> (Transparent) hybrid** — see "Planned pipeline" below and
+> `decisions/0004-deferred-opaque-forward-transparent.md`. That design is not
+> yet implemented in code; this document describes both so implementers have
+> the full target shape to build toward.
+
+## Pipeline stages (current, single forward pass)
 
 1. `beginFrame` — renderer-side frame setup
 2. Layers call `RenderSystem::submitScene` (and similar) which walk the
    ECS registry, resolve GPU resources, pack materials, and call
    `IRenderer::submit(view, cmd)` — this only enqueues, nothing is drawn yet
-3. `endFrame` — for each `View`, sort its queued commands by `sortKey`,
-   apply GPU state per `RenderPass` group, execute the actual draw calls
-4. `swapBuffers` (core, after `endFrame`)
+3. `endFrame` — for each `View` (in `setViewOrder`), sort its queued commands
+   by `sortKey`, apply GPU state per `RenderPass` group, execute the actual
+   draw calls
+4. `present()` (core, after `endFrame`)
 
-Not yet implemented, but the architecture already supports them without
-interface changes (see "Planned multi-pass" below): shadow pass, post-processing,
-lighting.
+This is the shape actually running today: one `View` targeting the
+backbuffer, `Opaque` and `Transparent` commands sorted and drawn in it. See
+"Planned pipeline" below for the deferred+forward replacement.
 
 ## Key concepts
 
@@ -50,15 +68,24 @@ render target changes (e.g. a shadow-casting light's viewpoint, or an
 offscreen scene pass feeding a post-process pass). Multiple `RenderPass`
 groups (opaque, transparent) commonly coexist within a single `View`.
 
+Multiple `View`s may also target the **same** `RenderTargetHandle` — this is
+how the planned deferred G-buffer, lighting, and transparent-forward passes
+share one physical FBO while writing to different attachments (see "Planned
+pipeline" → `ViewDesc` below).
+
 ### `RenderPass`
 
-A `RenderPass` (`Shadow`/`Opaque`/`Transparent`/`PostProcess`/`Ui`) is a GPU
-state descriptor, not a shader selector — it says "blend on/off, depth write
-on/off", nothing about which shader program runs. Different materials with
-different shaders can share the same pass (e.g. terrain and characters both
-sit in `Opaque`), and the same shader can be used by materials in different
-passes (e.g. a PBR shader used by both an opaque wall and a semi-transparent
-window material).
+A `RenderPass` is a GPU state descriptor, not a shader selector — it says
+"blend on/off, depth write on/off", nothing about which shader program runs.
+Different materials with different shaders can share the same pass (e.g.
+terrain and characters both sit in `Opaque`), and the same shader can be
+used by materials in different passes (e.g. a PBR shader used by both an
+opaque wall and a semi-transparent window material).
+
+Current values: `Shadow`, `Opaque`, `Transparent`, `PostProcess`, `UI`,
+`Count`. The planned pipeline adds `Lighting` (see below) — a fullscreen
+pass reading the G-buffer, GPU state similar to `PostProcess` (depth
+test/write off, blend off) but kept semantically distinct from it.
 
 `DrawCommand::pass` + `DrawCommand::sortKey` drive this: `sortKey` packs
 `pass` into the most significant bits (via bit shifts, e.g. `pass << 56`),
@@ -66,54 +93,8 @@ so a single `std::sort` groups same-pass commands together, then
 sub-sorts within a pass — by shader/geometry for `Opaque` (minimize state
 changes), by camera distance for `Transparent` (correct back-to-front blending).
 
-### Shaders — reflection by name, not fixed structs
-
-A shader is described by a `.shader.json` file (see `formats/shader-format.md`)
-alongside its `.vert`/`.frag` sources: vertex attributes (semantic + type,
-`location` assigned by array order), uniform parameters (name + type, `offset`
-computed automatically per std140 alignment rules), and texture slots
-(name + binding index). Any shader can declare any set of parameters —
-nothing is hardcoded to a fixed "standard material" struct.
-
-`ShaderDesc::uniformBlockSize`/per-param `offset` follow std140 packing
-(GL-specific; a future Vulkan/DX12 backend would need std430/HLSL cbuffer
-variants — see `alignStd140()` and its TODO).
-
-model matrices and cameras are transmitted as pre-fixed uniforms: `uModel, uView, uProjection`
-
-### Materials — name-based parameter binding, not fixed fields
-
-```cpp
-struct Material {
-    TypedAssetID<Shader> shader;
-    MaterialBlendMode blendMode; // Opaque / AlphaCutoff / Transparent
-    std::unordered_map<std::string, MaterialParamValue> params;
-    std::unordered_map<std::string, TypedAssetID<Texture>> textures;
-};
-```
-
-`packMaterial()` iterates the *shader's* declared uniforms/texture slots and
-looks each one up by name in the material — missing entries are zero-filled
-(shader-declared defaults are a TODO). This means a shader only receives the
-parameters it actually declares; an unlit shader can ignore metallic/roughness
-entirely, and a fully custom shader (UI, particles) doesn't need to declare
-any of the "standard" model parameters at all.
-
-Standard parameter names produced by the model-import pipeline
-(`albedoColor`, `metallic`, `roughness`, `albedoMap`, `metallicMap`,
-`normalMap`, `roughnessMap`) are documented in
-`formats/standard-material-params.md` — a shader intended to render regular
-imported models should declare matching names to receive them.
-
-`MaterialBlendMode` maps to `RenderPass` via `passFromBlendMode()`:
-`Opaque`/`AlphaCutoff` → `RenderPass::Opaque` (same GPU state; cutoff is a
-shader-side `discard`, not a blend state change — not implemented yet),
-`Transparent` → `RenderPass::Transparent`.
-
-Transparency detection during model import prefers an explicit alpha mode
-from the source format (glTF's `alphaMode`: OPAQUE/MASK/BLEND) over the
-numeric `AI_MATKEY_OPACITY` fallback. Texture pixel scanning is deliberately
-not used — too slow/unreliable as a heuristic; trusts explicit content authoring.
+What runs inside each pass (shader contracts, `Opaque`/`AlphaCutoff` vs
+`Transparent` split) is covered in [`shaders.md`](shaders.md).
 
 ### Geometry — raw bytes, not a fixed `Vertex` struct
 
@@ -143,6 +124,9 @@ Assimp import path, not a limitation the engine imposes on shaders in general.
 >    geometry's `VertexLayout` and the shader's declared attributes (reflection,
 >    the same way `textureSlots`/uniforms already work) rather than by both
 >    sides independently hardcoding the same `location` number.
+>
+> This is explicitly deferred (see "Open questions" below) — the planned
+> pipeline still uses the single fixed `makeStandardVertexLayout()`.
 
 A `Model` is one shared vertex/index buffer; `Mesh`/`Primitive` reference
 `indexOffset`/`indexCount` ranges within it, each with its own material —
@@ -158,6 +142,133 @@ once per frame before the render phase — not owned by individual layers,
 since only core knows the true frame boundary. Data written here is only
 valid until the next `reset()`; the renderer must consume it synchronously
 within `submit`/`endFrame`, not hold onto the pointer across frames.
+
+---
+
+## Planned pipeline: Deferred (Opaque/Cutoff) + Forward (Transparent)
+
+**Status: decided, not yet implemented.** See
+`decisions/0004-deferred-opaque-forward-transparent.md` for the ADR. Shader
+authoring/composition details for this pipeline (material contracts,
+`#pragma include`, light data, the lighting pass file) are in
+[`shaders.md`](shaders.md) — this section covers only the renderer-side
+primitives: `RenderTarget`/MRT, `ViewDesc`, and the per-frame `View` order.
+
+### Why hybrid, not pure forward or pure deferred
+
+Deferred shading computes lighting once per screen pixel instead of once per
+object/material per light, and its cost doesn't scale linearly with light
+count per draw call the way naive forward shading's does. That's the whole
+reason to adopt it for opaque geometry.
+
+Deferred fundamentally doesn't work for transparency, though: a G-buffer
+holds exactly one layer of surface data per pixel, and there's no slot for
+"what's visible behind this transparent surface" — compositing multiple
+overlapping transparent layers requires seeing what's underneath, which a
+single G-buffer sample can't provide. So `Transparent` materials keep
+computing lighting themselves and are rendered in a separate **forward**
+pass, drawn after the deferred lighting result is ready, blending on top of
+it.
+
+### `RenderTarget` — MRT (multiple color attachments per FBO)
+
+Today `GLRenderTargetRes` holds a single `colorTexture`. The G-buffer needs
+several color attachments on the **same** physical FBO — one `RenderTargetHandle`
+stays one FBO with multiple "canvases" inside it, not several separate render
+targets.
+
+```cpp
+struct RenderTargetDesc {
+    RenderTargetType type = RenderTargetType::BackBuffer;
+    uint32_t width = 0, height = 0;
+    std::vector<TextureFormat> colorFormats; // was: one colorFormat, now: a list (MRT)
+    bool hasDepth = true;
+};
+
+struct GLRenderTargetRes {
+    GLuint fbo = 0;
+    std::vector<gfx::TextureHandle> colorTextures; // was: one colorTexture
+    gfx::TextureHandle depthTexture;
+    int width = 0, height = 0;
+    bool isBackBuffer = false;
+};
+```
+
+`IRenderer::getRenderTargetTexture` gains an attachment index:
+
+```cpp
+[[nodiscard]] virtual TextureHandle
+getRenderTargetTexture(RenderTargetHandle handle, uint32_t attachmentIndex = 0) const = 0;
+```
+
+G-buffer layout for the main case:
+
+```
+attachment 0: gAlbedo   (Rgba8)    — albedo * albedoColor
+attachment 1: gNormal   (Rgba16F)  — world-space normal, packed *0.5+0.5
+attachment 2: gMaterial (Rgba8)    — r=roughness, g=metallic, b=ao, a=emissiveStrength
+attachment 3: gLitColor (Rgba16F)  — Lighting pass output, later composited with by Transparent pass
++ one shared depth buffer for the whole FBO
+```
+
+### `ViewDesc` — which attachments are active, and clear behavior
+
+Several `View`s may reference the **same** `RenderTargetHandle` but with a
+different set of active color attachments for writing (`glDrawBuffers`) and
+different clear behavior:
+
+```cpp
+struct ViewDesc {
+    CameraData camera;
+    RenderTargetHandle target;
+    Viewport viewport;
+    Color clearColor;
+    bool clearDepth = true;
+    std::vector<uint32_t> activeColorAttachments; // NEW: e.g. {0,1,2} for gbuffer, {3} for lighting/transparent
+    bool clearColorAttachments = true;             // NEW: lighting/transparent must NOT clear (false)
+};
+```
+
+### Full per-frame `View` order (`setViewOrder`)
+
+```
+setViewOrder({
+    shadowView,         // target: a separate depth-only RenderTarget (already implemented)
+
+    gbufferView,        // target: m_gbufferTarget, activeColorAttachments={0,1,2}
+                        // draws Opaque/AlphaCutoff objects → write gAlbedo/gNormal/gMaterial
+
+    lightingView,       // target: m_gbufferTarget, activeColorAttachments={3}, clearColorAttachments=false
+                        // fullscreen quad, ONE DrawCommand for the whole View
+                        // reads gAlbedo/gNormal/gMaterial/gDepth (as input textures) + shadow map + LightsBuffer (SSBO)
+                        // depth test/write OFF, writes lit color into gLitColor
+
+    transparentView,    // target: m_gbufferTarget, activeColorAttachments={3}, clearColorAttachments=false
+                        // draws Transparent objects forward, on top of the already-resolved gLitColor
+                        // depth test ON (against the same depth buffer from gbufferView), depth write OFF, blend ON
+
+    postProcessView,    // target: getBackBufferTarget()
+                        // fullscreen quad, reads gLitColor (attachment 3 of m_gbufferTarget) as an input texture
+                        // applies tone mapping/gamma correction/effects, writes straight to the backbuffer
+                        // RenderPass::PostProcess (already existing, no applyPassState changes)
+});
+```
+
+`present()` afterward is just `glfwSwapBuffers` — no separate blit step,
+since the backbuffer write already happened in `postProcessView`.
+
+Important: **`gbufferView`, `lightingView`, and `transparentView` all point
+at the same `RenderTargetHandle`** — one physical FBO; the only difference
+between them is which attachments are active for writing in that `View`
+(via `glDrawBuffers`) and what's read as an input texture. There's one
+shared depth buffer across all three; it isn't recreated or cleared between
+them (except in `gbufferView`, where it's cleared at the start).
+
+Who actually assembles this `View` order and uploads the system shaders that
+run in each pass is covered in [`shaders.md`](shaders.md) — short version:
+`RenderSystem` (game/engine layer), not `OpenGLRenderer`.
+
+---
 
 ## `IRenderer`
 
@@ -206,6 +317,11 @@ using CreateRendererFunc = IRenderer *(*)();
 using DestroyRendererFunc = void (*)(IRenderer *);
 ```
 
+> Under the planned pipeline, `RenderTargetDesc` gains `colorFormats`
+> (replacing the single `colorFormat`) and `getRenderTargetTexture` gains an
+> `attachmentIndex` parameter — see "Planned pipeline" → `RenderTarget` above.
+> Not reflected in the interface above yet.
+
 Methods still conceptually group into four consumer roles, matching who
 actually calls them — this grouping is currently just comments/section
 ordering within the one class, not separate C++ interfaces:
@@ -239,24 +355,10 @@ m_impl->renderer->endFrame();
 m_impl->renderer->present(); // instead of m_impl->window->swapBuffers()
 ```
 
-Reasoning (see `decisions/0002-renderer-owns-present.md`, **not yet written
-as a file** — drafted in conversation only): `IWindow` previously called
-`swapBuffers()` itself, which works for OpenGL (`glfwSwapBuffers`) but
-doesn't generalize — DirectX/Vulkan present through the graphics
-API/swapchain (`IDXGISwapChain::Present`, `vkQueuePresent`), not through a
-windowing call. Keeping present on the window would force `IWindow` to
-carry backend-specific knowledge, defeating the purpose of the `IRenderer`
-module boundary. `endFrame` ("finish processing this frame's commands") and
-`present` ("show the result to the user") are also kept distinct — useful
-if frame recording/execution is ever decoupled (e.g. multi-threaded
-rendering with a frame of latency).
-
+See `decisions/0002-renderer-owns-present.md` for the full ADR.
 Consequence: `IWindow::swapBuffers()` becomes unused/removable; every
 `IRenderer` backend must implement `present()`, even a trivial GL one
 (`glfwSwapBuffers` under the hood).
-
-**TODO:** save `docs/decisions/0002-renderer-owns-present.md` as a proper
-ADR (one decision per file, same format as `0001-graphics-api.md`).
 
 ## `GpuResourceRegistry`
 
@@ -268,44 +370,55 @@ correct `TypedGpuHandle<Tag>` at the call site.
 
 `Reloaded`/`Unloaded` handling is not yet implemented (TODO).
 
-## Planned multi-pass (architecture supports it, not yet implemented)
+## Shadow mapping (implemented as a separate `View` + offscreen `RenderTarget`)
 
-Shadow mapping and post-processing don't require interface changes beyond
-adding `createRenderTarget`/`destroyRenderTarget` and a
-`getRenderTargetTexture(RenderTargetHandle) -> TextureHandle` bridge method.
-Both follow the same shape: a separate `View` (different camera and/or
-render target) whose output texture is read by a later `View`'s shader as
-an ordinary texture slot, submitted in explicit, hand-written order
-(no render graph / automatic dependency scheduling — deliberately deferred
-until more than 2-3 sequential passes make manual ordering unwieldy).
+A separate `View` (different camera, offscreen depth `RenderTarget`) whose
+output texture is read by a later `View`'s shader as an ordinary texture
+slot, submitted in explicit, hand-written order (no render graph / automatic
+dependency scheduling — deliberately deferred until more than a handful of
+sequential passes make manual ordering unwieldy). Only a small fixed number
+of lights may cast shadows in a single frame — see
+`decisions/0003-shadow-casting-light-limit.md`.
 
-```
-View "shadow"  (light camera  → shadow-map texture)
-View "scene"   (player camera → offscreen color texture)
-View "postfx"  (fullscreen quad → backbuffer, samples "scene" texture)
-```
+Post-processing and the full deferred lighting pipeline follow the same
+"separate `View`, output read as a texture slot" shape — see "Planned
+pipeline" above for the concrete `View` order once lighting/deferred is
+implemented.
 
-Lighting (how light sources reach a shader) is deliberately not designed yet.
+## Open questions — explicitly deferred (not designed/implemented now)
+
+- **UI pass** — the command format for UI hasn't been designed yet (likely a
+  separate submission path, not through `Material`/`DrawCommand` as they
+  stand today).
+- **Per-model vertex layout** (a model dictates its own attribute set) —
+  deferred in favor of the current fixed `makeStandardVertexLayout()` (see
+  the vertex-layout binding TODO above).
+- **Multi-shading-model deferred** (different lighting models for different
+  materials within one G-buffer, via an extra `materialID` channel) —
+  considered only as a hypothetical edge of complexity, not a plan.
+
+Shader/material-specific open questions (runtime std140 validation, material
+parameter animation) are listed in [`shaders.md`](shaders.md) and
+[`formats/materials.md`](../formats/materials.md) respectively.
 
 ## Known limitations / TODO
 
 - `IRenderer` is still one flat class — the discussed split into
   `IRendererLifecycle`/`IGpuResourceUploader`/`IViewManager`/`IFrameRenderer`
   hasn't been applied yet
-- `docs/decisions/0002-renderer-owns-present.md` hasn't been saved as an
-  actual file yet — only drafted in conversation
 - Upload methods still return a bare `TypedGpuHandle`, not the discussed
   `UploadResult<HandleT>{handle, success}` + `getLastError()` pair
 - `GpuResourceRegistry`: `Reloaded`/`Unloaded` asset events not handled
-- No shadow mapping (architecture supports it; not implemented)
-- No post-processing pass (architecture supports it; not implemented)
-- No lighting model / light source passing to shaders yet
+- The deferred (Opaque/Cutoff) + forward (Transparent) pipeline described
+  above is designed but **not implemented** — today's renderer still runs a
+  single forward `View`
+- No post-processing pass yet (architecture supports it; not implemented)
+- No lighting model / light source passing to shaders implemented yet
+  (design in [`shaders.md`](shaders.md); SSBO-based, three light types)
 - `AlphaCutoff` blend mode is declared but currently behaves identically to `Opaque`
   (no shader-side discard convention established yet)
 - std140 uniform packing is GL-specific; a second backend (Vulkan/DX12) needs
   its own alignment rule (see `alignStd140()`)
 - No render graph / automatic pass dependency ordering — multi-pass order is
-  hand-written; fine for a couple of passes, will need revisiting if the
-  pipeline grows to several sequential passes
-- No `OpenGLRenderer` (or any) concrete `IRenderer` implementation yet —
-  everything above is interface + game-side systems only
+  hand-written; fine for a handful of passes, will need revisiting if the
+  pipeline grows further
