@@ -1,11 +1,17 @@
 # Shader Descriptor Format (`.shader.json`)
 
-Every shader consists of three files sharing the same base name:
+This file only applies to **material shaders** (see
+[`architecture/shaders.md`](../architecture/shaders.md)) — system shaders
+(shadow, lighting pass, postprocess) are loaded via
+`ShaderLoader::loadSystemShader` and don't have a `.shader.json` at all,
+since they never go through `Material`/`packMaterial`.
+
+Every material shader consists of three files sharing the same base name:
 
 ```
 pbr.vert          # vertex shader source
 pbr.frag          # fragment shader source
-pbr.shader.json   # metadata: attributes, uniforms, texture slots
+pbr.shader.json   # metadata: targetPass, uniforms, texture slots
 ```
 
 `ShaderLoader` only takes the base path (`assets/shaders/pbr`) and appends the three extensions itself.
@@ -16,11 +22,7 @@ pbr.shader.json   # metadata: attributes, uniforms, texture slots
 
 ```json
 {
-  "attributes": [
-    { "semantic": "POSITION", "type": "Vec3" },
-    { "semantic": "NORMAL", "type": "Vec3" },
-    { "semantic": "TEXCOORD0", "type": "Vec2" }
-  ],
+  "targetPass": "geometry",
   "uniforms": [
     { "name": "albedoColor", "type": "Vec4" },
     { "name": "roughness", "type": "Float" },
@@ -33,27 +35,28 @@ pbr.shader.json   # metadata: attributes, uniforms, texture slots
 }
 ```
 
-All three sections are optional — if a shader has no textures, just omit `"textureSlots"`.
+All sections are optional — if a shader has no textures, just omit
+`"textureSlots"`. Vertex attribute layout is **not** described here — it's
+fixed in code (`makeStandardVertexLayout()`), not per-shader; see
+`architecture/renderer.md` → Geometry. (An earlier version of this format
+had an `"attributes"` field here — it never actually drove vertex layout and
+has been removed.)
 
 ---
 
-## `attributes` — vertex layout
+## `targetPass` — shader contract (planned, not yet implemented)
 
-Describes what the shader expects as input (`layout(location = N) in ...` in GLSL).
+**Status: decided, not yet implemented** — see
+`architecture/shaders.md` → "Planned: material shader contracts" and
+`decisions/0004-deferred-opaque-forward-transparent.md`.
 
-| Field | Type | Description |
+Declares which of the two material shader contracts this shader implements,
+so the loader can validate it against the owning `Material.blendMode`:
+
+| Value | Used by `blendMode` | Contract |
 |---|---|---|
-| `semantic` | string | Attribute name: `"POSITION"`, `"NORMAL"`, `"TEXCOORD0"`, `"TANGENT"`, etc. — a free-form string, the engine doesn't validate it against a fixed list |
-| `type` | string | `Float`, `Vec2`, `Vec3`, `Vec4` |
-
-⚠️ **`location` is NOT specified explicitly** — it's assigned automatically based on array order (first element = location 0, second = location 1, ...). This means **the order in the JSON must match the order of `layout(location = N)` in the actual `.vert` file**. Reordering entries in the JSON won't throw an error at load time — the data will simply end up bound to the wrong attributes.
-
-```glsl
-// pbr.vert — locations must follow the same order as the JSON above
-layout(location = 0) in vec3 aPosition;  // attributes[0]
-layout(location = 1) in vec3 aNormal;    // attributes[1]
-layout(location = 2) in vec2 aUV;        // attributes[2]
-```
+| `"geometry"` | `Opaque`, `AlphaCutoff` | Writes G-buffer outputs (`gAlbedo`/`gNormal`/`gMaterial`), no lighting, no `o_FragColor` |
+| `"forward"` | `Transparent` | Computes lighting itself, writes `o_FragColor` with alpha, ordinary alpha blending |
 
 ---
 

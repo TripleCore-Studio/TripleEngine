@@ -7,7 +7,7 @@
 #include <triple/math/Vec4.h>
 
 #include "AssetTypes.h"
-
+#include "LoadersParams.h"
 #include "Texture.h"
 #include "Shader.h"
 
@@ -33,6 +33,11 @@ namespace triple::game {
 	template <>
 	struct AssetTypeOf<Material> {
 		static constexpr AssetType kValue = AssetType::Material;
+	};
+
+	template <>
+	struct LoadParamsOf<Material> {
+		using Type = MaterialLoadParams;
 	};
 } // namespace triple::game
 

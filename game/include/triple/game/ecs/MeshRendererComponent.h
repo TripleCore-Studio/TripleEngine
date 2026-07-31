@@ -3,10 +3,12 @@
 
 #include "triple/game/asset/AssetTypes.h"
 #include "triple/game/asset/Model.h"
+#include "triple/game/asset/MaterialInstance.h"
 
 namespace triple::game {
 	struct MeshRendererComponent {
 		TypedAssetID<Model> model;
+		std::vector<std::vector<MaterialInstance>> materialInstances;
 	};
 } // namespace triple::game
 

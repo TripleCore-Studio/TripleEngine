@@ -41,8 +41,10 @@ namespace triple::gl {
 		// render targets
 		[[nodiscard]] RenderTargetHandle createRenderTarget(const RenderTargetDesc &desc) override;
 		void destroyRenderTarget(RenderTargetHandle handle) override;
+		[[nodiscard]] TextureHandle getRenderTargetTexture(RenderTargetHandle handle,
+		                                                   uint32_t colorIndex = 0) const override;
 		[[nodiscard]] TextureHandle
-		getRenderTargetTexture(RenderTargetHandle handle) const override;
+		getRenderTargetDepthTexture(RenderTargetHandle handle) const override;
 
 		// views
 		[[nodiscard]] ViewHandle createView(const ViewDesc &desc) override;

@@ -15,4 +15,7 @@ namespace triple::game {
 	struct TextureLoadParams {
 		std::string path;
 	};
+	struct MaterialLoadParams {
+		std::string path;
+	};
 } // namespace triple::game

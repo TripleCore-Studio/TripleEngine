@@ -23,6 +23,13 @@ namespace triple::gl {
 			return static_cast<ResourcePool<T> &>(*m_pools[idx(type)]);
 		}
 
+	public:
+		gfx::TextureHandle createColorAttachmentTexture(uint16_t width, uint16_t height,
+		                                                gfx::TextureFormat format);
+
+		gfx::TextureHandle createDepthAttachmentTexture(uint16_t width, uint16_t height,
+		                                                gfx::TextureFormat format);
+
 	private:
 		static constexpr size_t idx(ResourceType t) { return static_cast<size_t>(t); }
 		std::array<std::unique_ptr<IResourcePool>, static_cast<size_t>(ResourceType::Count)>

@@ -210,7 +210,7 @@ namespace triple::editor {
 		    m_gameLayer->getActiveScene(),
 		    [this](entt::entity e) { m_inspector->setTarget(e, m_gameLayer->getActiveScene()); },
 		    [this](std::string path) {
-			    entt::registry &registry = m_gameLayer->getActiveScene()->getRegistry();
+			    entt::registry &registry = m_gameLayer->getActiveScene()->registry();
 
 			    entt::entity entity = registry.create();
 			    std::string baseName = std::filesystem::path(path).stem().string();
@@ -241,14 +241,14 @@ namespace triple::editor {
 		    [this](entt::entity e) {
 			    if (e != m_gameLayer->getActiveCamera()) {
 				    game::HierarchyUtils::destroyEntityRecursive(
-				        m_gameLayer->getActiveScene()->getRegistry(), e);
+				        m_gameLayer->getActiveScene()->registry(), e);
 			    }
 		    },
 		    [this](entt::entity e) {
 			    if (e == m_gameLayer->getActiveCamera())
 				    return;
 
-			    entt::registry &registry = m_gameLayer->getActiveScene()->getRegistry();
+			    entt::registry &registry = m_gameLayer->getActiveScene()->registry();
 
 			    game::TransformComponent currentTransform =
 			        registry.get<game::TransformComponent>(e);

@@ -240,120 +240,100 @@ namespace triple::gl {
 	[[nodiscard]] RenderTargetHandle
 	OpenGLRenderer::createRenderTarget(const RenderTargetDesc &desc) {
 		if (desc.type == RenderTargetType::BackBuffer) {
-			GpuHandle raw = m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget)
-			                    .create(GLRenderTargetRes{0, TextureHandle{}, TextureHandle{},
-			                                              desc.width, desc.height, true});
+			GpuHandle raw =
+			    m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget)
+			        .create(GLRenderTargetRes{0, {}, TextureHandle{}, desc.width, desc.height});
 			return RenderTargetHandle{raw};
 		}
+
+		GLRenderTargetRes res;
+		res.width = desc.width;
+		res.height = desc.height;
 
 		GLuint fbo;
 		glGenFramebuffers(1, &fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		res.fbo = fbo;
 
-		TextureHandle colorTex, depthTex;
+		std::vector<GLenum> drawBuffers;
+		for (size_t i = 0; i < desc.colorFormats.size(); ++i) {
+			gfx::TextureHandle tex = m_resources->createColorAttachmentTexture(
+			    desc.width, desc.height, desc.colorFormats[i]);
 
-		bool isDepthOnly = (desc.colorFormat == TextureFormat::Depth24Stencil8);
+			res.colorTextures.push_back(tex);
+			GLuint glTex = m_resources->pool<GLTextureRes>(ResourceType::Texture).get(tex.raw)->id;
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, glTex,
+			                       0);
 
-		if (isDepthOnly) {
+			drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
+		}
+
+		if (desc.hasDepth) {
+			gfx::TextureHandle depthTex = m_resources->createDepthAttachmentTexture(
+			    desc.width, desc.height, desc.depthFormat);
+
+			res.depthTexture = depthTex;
+			GLuint glDepth =
+			    m_resources->pool<GLTextureRes>(ResourceType::Texture).get(depthTex.raw)->id;
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, glDepth, 0);
+		}
+
+		if (drawBuffers.empty()) {
 			glDrawBuffer(GL_NONE);
 			glReadBuffer(GL_NONE);
-
-			TextureDesc depthDesc{};
-			depthDesc.width = desc.width;
-			depthDesc.height = desc.height;
-			depthDesc.format = TextureFormat::Depth24Stencil8;
-			depthTex = uploadTexture(depthDesc);
-
-			auto *depthRes =
-			    m_resources->pool<GLTextureRes>(ResourceType::Texture).get(depthTex.raw);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
-			                       depthRes->id, 0);
 		} else {
-			TextureDesc colorDesc{};
-			colorDesc.width = desc.width;
-			colorDesc.height = desc.height;
-			colorDesc.format = desc.colorFormat;
-			colorTex = uploadTexture(colorDesc);
-
-			auto *colorRes =
-			    m_resources->pool<GLTextureRes>(ResourceType::Texture).get(colorTex.raw);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-			                       colorRes->id, 0);
-
-			if (desc.hasDepth) {
-				TextureDesc depthDesc{};
-				depthDesc.width = desc.width;
-				depthDesc.height = desc.height;
-				depthDesc.format = TextureFormat::Depth24Stencil8;
-				depthTex = uploadTexture(depthDesc);
-
-				auto *depthRes =
-				    m_resources->pool<GLTextureRes>(ResourceType::Texture).get(depthTex.raw);
-				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
-				                       depthRes->id, 0);
-			}
+			glDrawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
 		}
 
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
-			setLastError("createRenderTarget: framebuffer incomplete");
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glDeleteFramebuffers(1, &fbo);
-			return RenderTargetHandle{};
+			setLastError("createRenderTarget: framebuffer incomplete, status=" +
+			             std::to_string(status));
+			assert(false && "createRenderTarget: incomplete framebuffer");
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		GpuHandle raw =
+		return gfx::RenderTargetHandle{
 		    m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget)
-		        .create(GLRenderTargetRes{fbo, colorTex, depthTex, desc.width, desc.height, false});
-
-		return RenderTargetHandle{raw};
+		        .create(std::move(res))};
 	}
 	void OpenGLRenderer::destroyRenderTarget(RenderTargetHandle handle) {
 		auto &pool = m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget);
-		auto *res = pool.get(handle.raw);
+		GLRenderTargetRes *res = pool.get(handle.raw);
 		if (!res) {
-			setLastError("destroyRenderTarget: invalid or stale handle");
+			setLastError("destroyRenderTarget: invalid handle");
+			assert(false && "destroyRenderTarget: invalid handle");
 			return;
 		}
 
-		if (res->isBackBuffer) {
-			pool.destroy(handle.raw);
-			return;
+		for (gfx::TextureHandle colorTex : res->colorTextures) {
+			unloadTexture(colorTex);
 		}
-
-		if (res->colorTexture.isValid())
-			unloadTexture(res->colorTexture);
-
-		if (res->depthTexture.isValid())
+		if (res->depthTexture.isValid()) {
 			unloadTexture(res->depthTexture);
+		}
 
 		glDeleteFramebuffers(1, &res->fbo);
+
 		pool.destroy(handle.raw);
 	}
+	[[nodiscard]] TextureHandle OpenGLRenderer::getRenderTargetTexture(RenderTargetHandle handle,
+	                                                                   uint32_t colorIndex) const {
+		const GLRenderTargetRes *res =
+		    m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget).get(handle.raw);
+		assert(res && "getRenderTargetTexture: invalid handle");
+		assert(colorIndex < res->colorTextures.size() &&
+		       "getRenderTargetTexture: colorIndex out of range");
+		return res->colorTextures[colorIndex];
+	}
 	[[nodiscard]] TextureHandle
-	OpenGLRenderer::getRenderTargetTexture(RenderTargetHandle handle) const {
-		auto &pool = m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget);
-		auto *res = pool.get(handle.raw);
-		if (!res) {
-			setLastError("getRenderTargetTexture: invalid or stale handle");
-			return TextureHandle{};
-		}
-
-		if (res->isBackBuffer) {
-			setLastError("getRenderTargetTexture: backbuffer has no sampleable texture");
-			return TextureHandle{};
-		}
-
-		if (res->colorTexture.isValid())
-			return res->colorTexture;
-
-		if (res->depthTexture.isValid())
-			return res->depthTexture;
-
-		setLastError("getRenderTargetTexture: render target has no texture");
-		return TextureHandle{};
+	OpenGLRenderer::getRenderTargetDepthTexture(RenderTargetHandle handle) const {
+		const GLRenderTargetRes *res =
+		    m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget).get(handle.raw);
+		assert(res && "getRenderTargetDepthTexture: invalid handle");
+		assert(res->depthTexture.isValid() && "getRenderTargetDepthTexture: target has no depth");
+		return res->depthTexture;
 	}
 
 	[[nodiscard]] ViewHandle OpenGLRenderer::createView(const ViewDesc &desc) {
