@@ -12,10 +12,6 @@ TripleEngine is a custom game engine written in C++20
 
 TripleEngine is a personal project focused on learning graphics programming, engine architecture, and game engine development from scratch.
 
-## Screenshots
-
-![TripleEngine Preview](docs/screenshots/v0.1.0/overview.jpg)
-
 ## Features
 
 ### Core
@@ -60,7 +56,3 @@ Breaking changes are expected and APIs may change significantly between releases
 ## License
 
 MIT License
-
-## Credits
-
-See THIRD_PARTY_ASSETS.md for third-party assets and attributions.
