@@ -207,6 +207,8 @@ namespace triple::game {
 		                     static_cast<uint32_t>(m_context.window->getHeight())};
 		viewDesc.clearColor = {0.1f, 0.1f, 0.1f, 1.0f};
 		viewDesc.clearDepth = true;
+		viewDesc.activeColorAttachments = {0};
+		viewDesc.clearColorAttachments = {0};
 
 		m_mainView = m_context.renderer->createView(viewDesc);
 

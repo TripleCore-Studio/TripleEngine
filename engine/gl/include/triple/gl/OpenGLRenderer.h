@@ -41,8 +41,10 @@ namespace triple::gl {
 		// render targets
 		[[nodiscard]] RenderTargetHandle createRenderTarget(const RenderTargetDesc &desc) override;
 		void destroyRenderTarget(RenderTargetHandle handle) override;
+
 		[[nodiscard]] TextureHandle getRenderTargetTexture(RenderTargetHandle handle,
 		                                                   uint32_t colorIndex = 0) const override;
+
 		[[nodiscard]] TextureHandle
 		getRenderTargetDepthTexture(RenderTargetHandle handle) const override;
 
@@ -64,13 +66,20 @@ namespace triple::gl {
 
 	private:
 		void renderView(GLViewRes &view);
-		void bindRenderTarget(const GLRenderTargetRes &target, const ViewDesc &desc);
+		void prepareView(const GLRenderTargetRes &target, const GLViewRes &view);
 		void applyPassState(RenderPass pass);
+
 		GLShaderRes *bindShaderIfNeeded(GpuHandle handle, GpuHandle &currentShader,
 		                                const GLViewRes &view);
+
 		GLGeometryRes *bindGeometryIfNeeded(GpuHandle handle, GpuHandle &currentGeometry);
 		void bindTextures(const std::array<TextureHandle, kMaxTextureSlots> &textures);
 		void applyMaterialUniforms(const DrawCommand &cmd) const;
+
+		static std::vector<GLenum>
+		computeDrawBuffers(const std::vector<uint32_t> &activeColorAttachments);
+
+		RenderTargetHandle createBackBufferTarget(uint32_t width, uint32_t height);
 
 	private:
 		void setLastError(std::string msg) const;
@@ -90,9 +99,9 @@ namespace triple::gl {
 
 	extern "C" {
 
-	RENDERER_API IRenderer *createRenderer() { return new OpenGLRenderer(); }
+	RENDERER_API IRenderer *createRenderer();
 
-	RENDERER_API void destroyRenderer(IRenderer *renderer) { delete renderer; }
+	RENDERER_API void destroyRenderer(IRenderer *renderer);
 
 	} // extern "C"
 } // namespace triple::gl

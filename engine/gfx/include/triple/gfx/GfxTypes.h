@@ -66,6 +66,7 @@ namespace triple::gfx {
 	enum class RenderPass : uint8_t {
 		Shadow,
 		Opaque,
+		Lighting,
 		Transparent,
 		PostProcess,
 		UI,

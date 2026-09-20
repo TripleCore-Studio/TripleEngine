@@ -1,9 +1,4 @@
 {
-  "attributes": [
-    { "semantic": "aPosition", "type": "Vec3" },
-    { "semantic": "aNormal", "type": "Vec3" },
-    { "semantic": "aUV", "type": "Vec2" }
-  ],
   "uniforms": [
     { "name": "albedoColor", "type": "Vec4" },
     { "name": "roughness", "type": "Float" },

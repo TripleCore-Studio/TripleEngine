@@ -102,6 +102,13 @@ namespace triple::gfx {
 		Viewport viewport;
 		Color clearColor;
 		bool clearDepth = true;
+
+		// MRT: which color attachment's thie View uses for write
+		// and what is needed clear before render this view
+		// empty in activeColorAttachments = write off
+		// for a regular single-attachment View (backbuffer, old forward) — simply {0}.
+		std::vector<uint32_t> activeColorAttachments;
+		std::vector<uint32_t> clearColorAttachments;
 	};
 
 	struct RendererConfig {

@@ -38,10 +38,12 @@ namespace triple::gl {
 		std::vector<gfx::TextureHandle> colorTextures;
 		gfx::TextureHandle depthTexture;
 		uint32_t width = 0, height = 0;
+		gfx::RenderTargetType type = gfx::RenderTargetType::BackBuffer;
 	};
 
 	struct GLViewRes {
 		gfx::ViewDesc desc;
 		std::vector<gfx::DrawCommand> queue;
+		std::vector<GLenum> activeDrawBuffers;
 	};
 } // namespace triple::gl
