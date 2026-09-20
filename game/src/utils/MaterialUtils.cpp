@@ -1,9 +1,12 @@
 #include "triple/game/utils/MaterialUtils.h"
 
 namespace triple::game {
-	void packMaterialInstance(const MaterialInstance &instance, const Material &baseMaterial,
-	                          const gfx::ShaderDesc &shaderDesc, gfx::FrameArena &arena,
-	                          GpuResourceRegistry &gpuRegistry, gfx::DrawCommand &outCmd) {
+	void MaterialUtils::packMaterialInstance(const MaterialInstance &instance,
+	                                         const Material &baseMaterial,
+	                                         const gfx::ShaderDesc &shaderDesc,
+	                                         gfx::FrameArena &arena,
+	                                         GpuResourceRegistry &gpuRegistry,
+	                                         gfx::DrawCommand &outCmd) {
 		// --- uniforms ---
 		uint8_t *blob = arena.allocate(shaderDesc.uniformBlockSize);
 

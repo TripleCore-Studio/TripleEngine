@@ -25,7 +25,7 @@ namespace triple::game {
 
 		MeshRendererComponent meshRenderer;
 		meshRenderer.model = model;
-		meshRenderer.materialInstance = makeMaterialInstancesForModel(*modelPtr);
+		meshRenderer.materialInstances = makeMaterialInstancesForModel(*modelPtr);
 
 		m_registry.emplace<MeshRendererComponent>(entity, std::move(meshRenderer));
 

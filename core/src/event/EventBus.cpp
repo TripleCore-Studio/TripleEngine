@@ -1,4 +1,4 @@
-#include "triple/core/Event/EventBus.h"
+#include "triple/core/event/EventBus.h"
 
 namespace triple::core {
 	void EventBus::dispatch(Event &event) {
