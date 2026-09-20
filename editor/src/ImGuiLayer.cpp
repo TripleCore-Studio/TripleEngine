@@ -1,4 +1,4 @@
-#include "triple/editor/UI/ImGuiLayer.h"
+﻿#include "triple/editor/UI/ImGuiLayer.h"
 
 #include <filesystem>
 
@@ -16,6 +16,7 @@
 #include <triple/core/input/MouseButton.h>
 
 #include <triple/game/utils/HierarchyUtils.h>
+#include <triple/game/ecs/EntityFactory.h>
 #include <triple/game/ecs/NameComponent.h>
 #include <triple/game/ecs/MeshRendererComponent.h>
 #include <triple/game/ecs/TransformComponent.h>
@@ -212,31 +213,36 @@ namespace triple::editor {
 		    [this](std::string path) {
 			    entt::registry &registry = m_gameLayer->getActiveScene()->registry();
 
-			    entt::entity entity = registry.create();
 			    std::string baseName = std::filesystem::path(path).stem().string();
 			    std::string name = uniqueName(registry, baseName);
 
-			    registry.emplace<game::NameComponent>(entity, name);
-			    registry.emplace<game::TransformComponent>(entity);
+			    game::EntityFactory entityFactory(registry, *m_gameLayer->getAssetManager());
 
+			    std::optional<game::TypedAssetID<game::Model>> modelId;
 			    if (!m_loadedModels->empty()) {
 				    for (auto &modelStr : *m_loadedModels) {
-					    game::TypedAssetID<game::Model> modelId =
+					    game::TypedAssetID<game::Model> found =
 					        m_gameLayer->getAssetManager()->storageFor<game::Model>().findByName(
 					            modelStr);
-					    if (modelId.isValid()) {
-						    registry.emplace<game::MeshRendererComponent>(entity, modelId);
+					    if (found.isValid()) {
+						    modelId = found;
 						    break; // only the first valid model is attached
 					    }
 				    }
 			    } else {
-				    std::optional<game::TypedAssetID<game::Model>> modelId =
-				        m_gameLayer->getAssetManager()->load<game::Model>(
-				            baseName, game::ModelLoadParams{path});
-				    if (modelId) {
-					    registry.emplace<game::MeshRendererComponent>(entity, *modelId);
-				    }
+				    modelId = m_gameLayer->getAssetManager()->load<game::Model>(
+				        baseName, game::ModelLoadParams{path});
 			    }
+
+			    entt::entity entity;
+			    if (modelId) {
+				    entity = entityFactory.createMeshEntity(*modelId);
+			    } else {
+				    entity = registry.create();
+				    registry.emplace<game::TransformComponent>(entity);
+			    }
+
+			    registry.emplace<game::NameComponent>(entity, name);
 		    },
 		    [this](entt::entity e) {
 			    if (e != m_gameLayer->getActiveCamera()) {
@@ -258,15 +264,14 @@ namespace triple::editor {
 
 			    std::string newName = uniqueName(registry, currentName.name);
 
-			    entt::entity newEntity = registry.create();
-			    game::TransformComponent &newTransform =
-			        registry.emplace<game::TransformComponent>(newEntity);
+			    game::EntityFactory entityFactory(registry, *m_gameLayer->getAssetManager());
 
+			    game::TransformComponent newTransform;
 			    newTransform.position = currentTransform.position + Vec3(1, 1, 1);
 			    newTransform.rotationEuler = currentTransform.rotationEuler;
 			    newTransform.scale = currentTransform.scale;
 
-			    registry.emplace<game::MeshRendererComponent>(newEntity, currentMesh.model);
+			    entt::entity newEntity = entityFactory.createMeshEntity(currentMesh.model, newTransform);
 			    registry.emplace<game::NameComponent>(newEntity, newName);
 		    });
 
