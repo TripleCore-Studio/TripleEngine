@@ -33,12 +33,20 @@ namespace triple::game {
 		void load();
 		void registerDefaultAssets();
 		void configureRenderPipeline();
+		void createFramebuffers(uint32_t width, uint32_t height);
 
 	private:
 		std::unique_ptr<AssetManager> m_assetManager;
 		std::unique_ptr<GpuResourceRegistry> m_gpuRegistry;
 
-		gfx::ViewHandle m_mainView;
+		gfx::GeometryHandle m_fullscreenQuad;
+
+		gfx::RenderTargetHandle m_gbufferTarget;
+
+		gfx::ViewHandle m_gbufferView;
+		gfx::ViewHandle m_lightingView;
+		gfx::ViewHandle m_transparentView;
+		gfx::ViewHandle m_postProcessView;
 
 		core::EngineContext m_context;
 

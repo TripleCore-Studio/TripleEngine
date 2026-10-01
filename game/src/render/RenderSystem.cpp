@@ -1,16 +1,16 @@
 #include "triple/game/render/RenderSystem.h"
 
-#include <triple/game/asset/Model.h>
 #include <triple/game/asset/Material.h>
+#include <triple/game/asset/Model.h>
 
-#include <triple/math/Vec4.h>
-#include <triple/math/MathCommon.h>
 #include <triple/math/Mat4Operations.h>
+#include <triple/math/MathCommon.h>
+#include <triple/math/Vec4.h>
 
 #include <triple/log/Logger.h>
 
-#include "triple/game/ecs/TransformComponent.h"
 #include "triple/game/ecs/MeshRendererComponent.h"
+#include "triple/game/ecs/TransformComponent.h"
 
 #include "triple/game/render/GpuResourceRegistry.h"
 
@@ -22,8 +22,8 @@ namespace triple::game {
 	[[nodiscard]] static gfx::RenderPass passFromBlendMode(MaterialBlendMode mode) {
 		switch (mode) {
 			case MaterialBlendMode::Opaque:
-			case MaterialBlendMode::AlphaCutoff: // same GPU state as Opaque for now; shader may
-			                                     // discard()
+			case MaterialBlendMode::AlphaCutoff: // same GPU state as Opaque for now;
+			                                     // shader may discard()
 				return gfx::RenderPass::Opaque;
 			case MaterialBlendMode::Transparent:
 				return gfx::RenderPass::Transparent;
@@ -39,10 +39,13 @@ namespace triple::game {
 		return bits ^ mask;
 	}
 
-	[[nodiscard]] static uint64_t makeSortKey(gfx::RenderPass pass, gfx::ShaderHandle shader,
-	                                          gfx::GeometryHandle geometry,
-	                                          const math::Vec3 &worldPosition,
-	                                          const math::Vec3 &cameraPosition) {
+	[[nodiscard]] static uint64_t makeSortKey(
+	    gfx::RenderPass pass,
+	    gfx::ShaderHandle shader,
+	    gfx::GeometryHandle geometry,
+	    const math::Vec3 &worldPosition,
+	    const math::Vec3 &cameraPosition
+	) {
 		if (pass == gfx::RenderPass::Transparent) {
 			float distance = math::lengthSquared(worldPosition - cameraPosition);
 			uint32_t depthBits = floatToSortableUint(distance);
@@ -54,15 +57,21 @@ namespace triple::game {
 		       uint64_t(geometry.raw.slot);
 	}
 
-	void RenderSystem::submitScene(entt::registry &registry, gfx::ViewHandle view,
-	                               gfx::FrameArena &arena, const math::Vec3 &cameraPosition) {
+	void RenderSystem::submitScene(
+	    entt::registry &registry,
+	    gfx::ViewHandle opaqueView,
+	    gfx::ViewHandle transparentView,
+	    gfx::FrameArena &arena,
+	    const math::Vec3 &cameraPosition
+	) {
 		auto sceneView = registry.view<TransformComponent, MeshRendererComponent>();
 
 		for (auto [entity, transform, meshRenderer] : sceneView.each()) {
 			const Model *model = s_assetManager->storageFor<Model>().get(meshRenderer.model);
 
 			gfx::GeometryHandle geometry = gfx::GeometryHandle{
-			    s_registry->resolve({AssetType::Model, meshRenderer.model.raw})};
+			    s_registry->resolve({AssetType::Model, meshRenderer.model.raw})
+			};
 
 			for (size_t meshIdx = 0; meshIdx < model->meshes.size(); ++meshIdx) {
 				const Mesh &mesh = model->meshes[meshIdx];
@@ -72,17 +81,67 @@ namespace triple::game {
 					const MaterialInstance &instance =
 					    meshRenderer.materialInstances[meshIdx][primIdx];
 
-					submitPrimitive(prim, instance, geometry, transform.worldMatrix, view, arena,
-					                cameraPosition);
+					submitPrimitive(
+					    prim,
+					    instance,
+					    geometry,
+					    transform.worldMatrix,
+					    opaqueView,
+					    transparentView,
+					    arena,
+					    cameraPosition
+					);
 				}
 			}
 		}
 	}
 
-	void RenderSystem::submitPrimitive(const Primitive &prim, const MaterialInstance &instance,
-	                                   gfx::GeometryHandle geometry, const math::Mat4 &worldMatrix,
-	                                   gfx::ViewHandle view, gfx::FrameArena &arena,
-	                                   const math::Vec3 &cameraPosition) {
+	void RenderSystem::submitFullscreenPass(
+	    gfx::ViewHandle view,
+	    gfx::RenderPass pass,
+	    std::string_view shaderName,
+	    std::initializer_list<gfx::TextureHandle> textures
+	) {
+		std::optional<TypedAssetID<Shader>> shaderId =
+		    s_assetManager->storageFor<Shader>().findByName(shaderName.data());
+
+		if (!shaderId) {
+			triple::log::Logger::moduleError(
+			    "RenderSystem", "Fullscreen pass shader '{}' not found", shaderName
+			);
+			return;
+		}
+
+		gfx::DrawCommand cmd;
+		cmd.geometry = s_fullscreenQuad;
+		cmd.indexOffset = 0;
+		cmd.indexCount = s_fullscreenQuadIndexCount;
+		cmd.shader = gfx::ShaderHandle{s_registry->resolve({AssetType::Shader, shaderId->raw})};
+		cmd.transform = math::Mat4::identity(); // ignored: the fullscreen vert shader doesn't read
+		                                        // uModel at all
+		cmd.pass = pass;
+		cmd.sortKey = 0; // single draw call in this view, nothing to sort against
+
+		uint32_t slot = 0;
+		for (gfx::TextureHandle tex : textures) {
+			if (slot >= gfx::kMaxTextureSlots)
+				break;
+			cmd.textures[slot++] = tex;
+		}
+
+		s_renderer->submit(view, cmd);
+	}
+
+	void RenderSystem::submitPrimitive(
+	    const Primitive &prim,
+	    const MaterialInstance &instance,
+	    gfx::GeometryHandle geometry,
+	    const math::Mat4 &worldMatrix,
+	    gfx::ViewHandle opaqueView,
+	    gfx::ViewHandle transparentView,
+	    gfx::FrameArena &arena,
+	    const math::Vec3 &cameraPosition
+	) {
 		const Material *material = s_assetManager->storageFor<Material>().get(instance.base());
 		const Shader *shader = s_assetManager->storageFor<Shader>().get(material->shader);
 
@@ -95,13 +154,23 @@ namespace triple::game {
 		cmd.transform = worldMatrix;
 		cmd.pass = passFromBlendMode(material->blendMode);
 
-		MaterialUtils::packMaterialInstance(instance, *material, shader->desc, arena, *s_registry,
-		                                    cmd);
+		MaterialUtils::packMaterialInstance(
+		    instance, *material, shader->desc, arena, *s_registry, cmd
+		);
 
-		cmd.sortKey =
-		    makeSortKey(cmd.pass, cmd.shader, cmd.geometry,
-		                math::Mat4Operations::getTranslation(worldMatrix), cameraPosition);
+		cmd.sortKey = makeSortKey(
+		    cmd.pass,
+		    cmd.shader,
+		    cmd.geometry,
+		    math::Mat4Operations::getTranslation(worldMatrix),
+		    cameraPosition
+		);
 
-		s_renderer->submit(view, cmd);
+		// Opaque/AlphaCutoff go into the gbuffer (deferred), Transparent stays forward
+		// and blends on top of whatever lighting already wrote into gLitColor.
+		gfx::ViewHandle targetView =
+		    (cmd.pass == gfx::RenderPass::Transparent) ? transparentView : opaqueView;
+
+		s_renderer->submit(targetView, cmd);
 	}
 } // namespace triple::game

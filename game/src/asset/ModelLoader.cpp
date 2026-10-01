@@ -81,9 +81,11 @@ namespace triple::game {
 		return id;
 	}
 
-	TypedAssetID<Material> processMaterial(const AssimpHelper::LoadedMesh &mesh,
-	                                       const AssimpHelper::LoadedModel &loadedModel,
-	                                       AssetManager *manager) {
+	TypedAssetID<Material> processMaterial(
+	    const AssimpHelper::LoadedMesh &mesh,
+	    const AssimpHelper::LoadedModel &loadedModel,
+	    AssetManager *manager
+	) {
 		AssimpHelper::LoadedMaterial loadedMaterial = loadedModel.materials[mesh.materialIndex];
 		AssimpHelper::LoadedTexture difftex;
 		bool isEmpty = true;
@@ -93,15 +95,18 @@ namespace triple::game {
 		}
 
 		Material material;
-		material.shader = getDefaultOrAssert<Shader>(manager, kDefaultShaderName);
+		material.shader = getDefaultOrAssert<Shader>(manager, kGBufferShaderName);
 		material.blendMode = loadedMaterial.blendMode;
 
 		// TODO: model loading is still superficial — metallic/roughness factors and
 		// metallic/normal/roughness textures are not read from the Assimp material at all;
 		// always falls back to hardcoded defaults. albedoColor is read (AI_MATKEY_COLOR_DIFFUSE).
 		material.params[kAlbedoColorParam.data()] = MaterialParamValue{
-		    {loadedMaterial.diffuseColor.x, loadedMaterial.diffuseColor.y,
-		     loadedMaterial.diffuseColor.z, loadedMaterial.opacity}};
+		    {loadedMaterial.diffuseColor.x,
+		     loadedMaterial.diffuseColor.y,
+		     loadedMaterial.diffuseColor.z,
+		     loadedMaterial.opacity}
+		};
 		material.params[kMetallicParam.data()] = MaterialParamValue{{0.0f}};
 		material.params[kRoughnessParam.data()] = MaterialParamValue{{1.0f}};
 
@@ -129,16 +134,18 @@ namespace triple::game {
 		return manager->create<Material>(loadedMaterial.name, material);
 	}
 
-	void processMeshes(Model &engineModel, const AssimpHelper::LoadedModel &loadedModel,
-	                   AssetManager *manager) {
+	void processMeshes(
+	    Model &engineModel, const AssimpHelper::LoadedModel &loadedModel, AssetManager *manager
+	) {
 		engineModel.vertexLayout = makeStandardVertexLayout();
 
 		for (const auto &loadedMesh : loadedModel.meshes) {
 			Mesh eMesh;
 			eMesh.name = loadedMesh.name;
 
-			uint32_t baseVertex = static_cast<uint32_t>(engineModel.vertices.size() /
-			                                            engineModel.vertexLayout.stride);
+			uint32_t baseVertex = static_cast<uint32_t>(
+			    engineModel.vertices.size() / engineModel.vertexLayout.stride
+			);
 			uint32_t baseIndex = static_cast<uint32_t>(engineModel.indices.size());
 
 			for (auto &vert : loadedMesh.vertices) {
@@ -171,8 +178,10 @@ namespace triple::game {
 		AssimpHelper::LoadedModel loadedModel = AssimpHelper::loadModel(params.path);
 		if (loadedModel.meshes.size() <= 0) {
 			triple::log::Logger::moduleWarn(
-			    "ModelLoader", "(model: {}) the model has no meshes and as a result was not loaded",
-			    params.path);
+			    "ModelLoader",
+			    "(model: {}) the model has no meshes and as a result was not loaded",
+			    params.path
+			);
 			return std::nullopt;
 		}
 
