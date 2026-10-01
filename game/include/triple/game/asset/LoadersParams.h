@@ -11,6 +11,8 @@ namespace triple::game {
 	};
 	struct ShaderLoadParams {
 		std::string basePath;
+		// to request a JSON file
+		bool requireDescriptor = true;
 	};
 	struct TextureLoadParams {
 		std::string path;

@@ -8,7 +8,9 @@ namespace triple::game {
 	constexpr std::string_view kDefaultMetallicTextureName = "default_metallic";
 	constexpr std::string_view kDefaultRoughnessTextureName = "default_roughness";
 
-	constexpr std::string_view kDefaultShaderName = "default_shader";
+	constexpr std::string_view kGBufferShaderName = "gbuffer_shader";
+	constexpr std::string_view kLightingPassShaderName = "lighting_pass_shader";
+	constexpr std::string_view kPostProcessShaderName = "postprocess_shader";
 
 	constexpr std::string_view kDefaultMaterialName = "default_material";
 
