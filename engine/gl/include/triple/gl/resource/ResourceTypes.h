@@ -25,6 +25,14 @@ namespace triple::gl {
 		GLint modelLocation = -1;      // "u_model"
 		GLint viewLocation = -1;       // "u_view"
 		GLint projectionLocation = -1; // "u_projection"
+
+		// TODO(temp): experimental built-ins added for the rain/post-process shader tests, not a
+		// designed feature. Remove or replace with a proper per-frame uniform mechanism. To remove,
+		// also delete the glGetUniformLocation calls in OpenGLRenderer::uploadShader
+		// (OpenGLResource.cpp) and the glUniform1f/glUniform2f in bindShaderIfNeeded
+		// (openGLRenderer.cpp).
+		GLint timeLocation = -1;       // "uTime" (float, seconds)
+		GLint resolutionLocation = -1; // "uResolution" (vec2, view viewport in pixels)
 	};
 
 	struct GLGeometryRes {

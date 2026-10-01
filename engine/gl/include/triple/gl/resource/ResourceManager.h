@@ -7,6 +7,30 @@
 #include "ResourcePool.h"
 
 namespace triple::gl {
+	template <typename T>
+	struct ResourceTraits;
+
+	template <>
+	struct ResourceTraits<GLTextureRes> {
+		static constexpr ResourceType kType = ResourceType::Texture;
+	};
+	template <>
+	struct ResourceTraits<GLShaderRes> {
+		static constexpr ResourceType kType = ResourceType::Shader;
+	};
+	template <>
+	struct ResourceTraits<GLGeometryRes> {
+		static constexpr ResourceType kType = ResourceType::Geometry;
+	};
+	template <>
+	struct ResourceTraits<GLViewRes> {
+		static constexpr ResourceType kType = ResourceType::View;
+	};
+	template <>
+	struct ResourceTraits<GLRenderTargetRes> {
+		static constexpr ResourceType kType = ResourceType::RenderTarget;
+	};
+
 	class ResourceManager {
 	public:
 		ResourceManager() {
@@ -19,16 +43,18 @@ namespace triple::gl {
 		}
 
 		template <typename T>
-		ResourcePool<T> &pool(ResourceType type) {
-			return static_cast<ResourcePool<T> &>(*m_pools[idx(type)]);
+		ResourcePool<T> &pool() {
+			return static_cast<ResourcePool<T> &>(*m_pools[idx(ResourceTraits<T>::kType)]);
 		}
 
 	public:
-		gfx::TextureHandle createColorAttachmentTexture(uint16_t width, uint16_t height,
-		                                                gfx::TextureFormat format);
+		gfx::TextureHandle createColorAttachmentTexture(
+		    uint16_t width, uint16_t height, gfx::TextureFormat format
+		);
 
-		gfx::TextureHandle createDepthAttachmentTexture(uint16_t width, uint16_t height,
-		                                                gfx::TextureFormat format);
+		gfx::TextureHandle createDepthAttachmentTexture(
+		    uint16_t width, uint16_t height, gfx::TextureFormat format
+		);
 
 	private:
 		static constexpr size_t idx(ResourceType t) { return static_cast<size_t>(t); }

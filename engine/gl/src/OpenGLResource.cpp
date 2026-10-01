@@ -27,14 +27,24 @@ namespace triple::gl {
 		glGenTextures(1, &id);
 		glBindTexture(GL_TEXTURE_2D, id);
 		GLTextureFormatInfo info = toGLFormat(desc.format);
-		glTexImage2D(GL_TEXTURE_2D, 0, info.format, desc.width, desc.height, 0, info.format,
-		             info.type, desc.pixels);
+		glTexImage2D(
+		    GL_TEXTURE_2D,
+		    0,
+		    info.format,
+		    desc.width,
+		    desc.height,
+		    0,
+		    info.format,
+		    info.type,
+		    desc.pixels
+		);
 		if (desc.generateMips)
 			glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		GpuHandle raw = m_resources->pool<GLTextureRes>(ResourceType::Texture)
-		                    .create(GLTextureRes{id, GL_TEXTURE_2D, desc.width, desc.height});
+		GpuHandle raw = m_resources->pool<GLTextureRes>().create(
+		    GLTextureRes{id, GL_TEXTURE_2D, desc.width, desc.height}
+		);
 
 		return TextureHandle{raw};
 	}
@@ -71,9 +81,12 @@ namespace triple::gl {
 		GLint viewLoc = glGetUniformLocation(program, "uView");
 		GLint projLoc = glGetUniformLocation(program, "uProjection");
 
-		GpuHandle raw =
-		    m_resources->pool<GLShaderRes>(ResourceType::Shader)
-		        .create(GLShaderRes{program, desc.uniformBlockSize, modelLoc, viewLoc, projLoc});
+		GLint timeLoc = glGetUniformLocation(program, "uTime");
+		GLint resolutionLoc = glGetUniformLocation(program, "uResolution");
+
+		GpuHandle raw = m_resources->pool<GLShaderRes>().create(GLShaderRes{
+		    program, desc.uniformBlockSize, modelLoc, viewLoc, projLoc, timeLoc, resolutionLoc
+		});
 		return ShaderHandle{raw};
 	}
 
@@ -84,31 +97,44 @@ namespace triple::gl {
 
 		glGenBuffers(1, &vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(desc.vertexCount) * desc.vertexStride,
-		             desc.vertexData, GL_STATIC_DRAW);
+		glBufferData(
+		    GL_ARRAY_BUFFER,
+		    static_cast<GLsizeiptr>(desc.vertexCount) * desc.vertexStride,
+		    desc.vertexData,
+		    GL_STATIC_DRAW
+		);
 
 		for (const auto &attr : desc.layout.attributes) {
 			glEnableVertexAttribArray(attr.location);
-			glVertexAttribPointer(attr.location, componentCount(attr.type), glBaseType(attr.type),
-			                      GL_FALSE, static_cast<GLsizei>(desc.layout.stride),
-			                      reinterpret_cast<void *>(static_cast<uintptr_t>(attr.offset)));
+			glVertexAttribPointer(
+			    attr.location,
+			    componentCount(attr.type),
+			    glBaseType(attr.type),
+			    GL_FALSE,
+			    static_cast<GLsizei>(desc.layout.stride),
+			    reinterpret_cast<void *>(static_cast<uintptr_t>(attr.offset))
+			);
 		}
 
 		glGenBuffers(1, &ebo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		             static_cast<GLsizeiptr>(desc.indexCount) * sizeof(uint32_t), desc.indices,
-		             GL_STATIC_DRAW);
+		glBufferData(
+		    GL_ELEMENT_ARRAY_BUFFER,
+		    static_cast<GLsizeiptr>(desc.indexCount) * sizeof(uint32_t),
+		    desc.indices,
+		    GL_STATIC_DRAW
+		);
 
 		glBindVertexArray(0);
 
-		GpuHandle raw = m_resources->pool<GLGeometryRes>(ResourceType::Geometry)
-		                    .create(GLGeometryRes{vao, vbo, ebo, desc.indexCount, GL_UNSIGNED_INT});
+		GpuHandle raw = m_resources->pool<GLGeometryRes>().create(
+		    GLGeometryRes{vao, vbo, ebo, desc.indexCount, GL_UNSIGNED_INT}
+		);
 		return GeometryHandle{raw};
 	}
 
 	void OpenGLRenderer::unloadTexture(TextureHandle handle) {
-		auto &pool = m_resources->pool<GLTextureRes>(ResourceType::Texture);
+		auto &pool = m_resources->pool<GLTextureRes>();
 		auto *res = pool.get(handle.raw);
 		if (!res) {
 			setLastError("unloadTexture: invalid or stale handle");
@@ -119,7 +145,7 @@ namespace triple::gl {
 	}
 
 	void OpenGLRenderer::unloadShader(ShaderHandle handle) {
-		auto &pool = m_resources->pool<GLShaderRes>(ResourceType::Shader);
+		auto &pool = m_resources->pool<GLShaderRes>();
 		auto *res = pool.get(handle.raw);
 		if (!res) {
 			setLastError("unloadShader: invalid or stale handle");
@@ -130,7 +156,7 @@ namespace triple::gl {
 	}
 
 	void OpenGLRenderer::unloadGeometry(GeometryHandle handle) {
-		auto &pool = m_resources->pool<GLGeometryRes>(ResourceType::Geometry);
+		auto &pool = m_resources->pool<GLGeometryRes>();
 		auto *res = pool.get(handle.raw);
 		if (!res) {
 			setLastError("unloadGeometry: invalid or stale handle");
@@ -142,14 +168,16 @@ namespace triple::gl {
 		pool.destroy(handle.raw);
 	}
 
-	[[nodiscard]] RenderTargetHandle
-	OpenGLRenderer::createRenderTarget(const RenderTargetDesc &desc) {
+	[[nodiscard]] RenderTargetHandle OpenGLRenderer::createRenderTarget(
+	    const RenderTargetDesc &desc
+	) {
 		if (desc.type == RenderTargetType::BackBuffer) {
 			setLastError("createRenderTarget: cannot create a BackBuffer target via public API");
 
 			assert(
 			    false &&
-			    "createRenderTarget: BackBuffer target must be created internally by the renderer");
+			    "createRenderTarget: BackBuffer target must be created internally by the renderer"
+			);
 
 			return RenderTargetHandle{};
 		}
@@ -167,24 +195,26 @@ namespace triple::gl {
 		std::vector<GLenum> drawBuffers;
 		for (size_t i = 0; i < desc.colorFormats.size(); ++i) {
 			gfx::TextureHandle tex = m_resources->createColorAttachmentTexture(
-			    desc.width, desc.height, desc.colorFormats[i]);
+			    desc.width, desc.height, desc.colorFormats[i]
+			);
 
 			res.colorTextures.push_back(tex);
-			GLuint glTex = m_resources->pool<GLTextureRes>(ResourceType::Texture).get(tex.raw)->id;
+			GLuint glTex = m_resources->pool<GLTextureRes>().get(tex.raw)->id;
 
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, glTex,
-			                       0);
+			glFramebufferTexture2D(
+			    GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, glTex, 0
+			);
 
 			drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
 		}
 
 		if (desc.hasDepth) {
 			gfx::TextureHandle depthTex = m_resources->createDepthAttachmentTexture(
-			    desc.width, desc.height, desc.depthFormat);
+			    desc.width, desc.height, desc.depthFormat
+			);
 
 			res.depthTexture = depthTex;
-			GLuint glDepth =
-			    m_resources->pool<GLTextureRes>(ResourceType::Texture).get(depthTex.raw)->id;
+			GLuint glDepth = m_resources->pool<GLTextureRes>().get(depthTex.raw)->id;
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, glDepth, 0);
 		}
 
@@ -197,20 +227,21 @@ namespace triple::gl {
 
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
-			setLastError("createRenderTarget: framebuffer incomplete, status=" +
-			             std::to_string(status));
+			setLastError(
+			    "createRenderTarget: framebuffer incomplete, status=" + std::to_string(status)
+			);
 			assert(false && "createRenderTarget: incomplete framebuffer");
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return gfx::RenderTargetHandle{
-		    m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget)
-		        .create(std::move(res))};
+		    m_resources->pool<GLRenderTargetRes>().create(std::move(res))
+		};
 	}
 
 	void OpenGLRenderer::destroyRenderTarget(RenderTargetHandle handle) {
-		auto &pool = m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget);
+		auto &pool = m_resources->pool<GLRenderTargetRes>();
 		GLRenderTargetRes *res = pool.get(handle.raw);
 		if (!res) {
 			setLastError("destroyRenderTarget: invalid handle");
@@ -236,20 +267,22 @@ namespace triple::gl {
 		pool.destroy(handle.raw);
 	}
 
-	[[nodiscard]] TextureHandle OpenGLRenderer::getRenderTargetTexture(RenderTargetHandle handle,
-	                                                                   uint32_t colorIndex) const {
-		const GLRenderTargetRes *res =
-		    m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget).get(handle.raw);
+	[[nodiscard]] TextureHandle OpenGLRenderer::getRenderTargetTexture(
+	    RenderTargetHandle handle, uint32_t colorIndex
+	) const {
+		const GLRenderTargetRes *res = m_resources->pool<GLRenderTargetRes>().get(handle.raw);
 		assert(res && "getRenderTargetTexture: invalid handle");
-		assert(colorIndex < res->colorTextures.size() &&
-		       "getRenderTargetTexture: colorIndex out of range");
+		assert(
+		    colorIndex < res->colorTextures.size() &&
+		    "getRenderTargetTexture: colorIndex out of range"
+		);
 		return res->colorTextures[colorIndex];
 	}
 
-	[[nodiscard]] TextureHandle
-	OpenGLRenderer::getRenderTargetDepthTexture(RenderTargetHandle handle) const {
-		const GLRenderTargetRes *res =
-		    m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget).get(handle.raw);
+	[[nodiscard]] TextureHandle OpenGLRenderer::getRenderTargetDepthTexture(
+	    RenderTargetHandle handle
+	) const {
+		const GLRenderTargetRes *res = m_resources->pool<GLRenderTargetRes>().get(handle.raw);
 		assert(res && "getRenderTargetDepthTexture: invalid handle");
 		assert(res->depthTexture.isValid() && "getRenderTargetDepthTexture: target has no depth");
 		return res->depthTexture;
@@ -260,18 +293,18 @@ namespace triple::gl {
 
 		res.activeDrawBuffers = computeDrawBuffers(desc.activeColorAttachments);
 
-		GpuHandle raw = m_resources->pool<GLViewRes>(ResourceType::View).create(std::move(res));
+		GpuHandle raw = m_resources->pool<GLViewRes>().create(std::move(res));
 		return ViewHandle{raw};
 	}
 
 	void OpenGLRenderer::destroyView(ViewHandle handle) {
-		auto &pool = m_resources->pool<GLViewRes>(ResourceType::View);
+		auto &pool = m_resources->pool<GLViewRes>();
 		if (!pool.destroy(handle.raw))
 			setLastError("destroyView: invalid or stale handle");
 	}
 
 	void OpenGLRenderer::updateView(ViewHandle handle, const ViewDesc &desc) {
-		auto &pool = m_resources->pool<GLViewRes>(ResourceType::View);
+		auto &pool = m_resources->pool<GLViewRes>();
 		auto *res = pool.get(handle.raw);
 		if (!res) {
 			setLastError("updateView: invalid or stale handle");
@@ -285,8 +318,9 @@ namespace triple::gl {
 		return m_backBufferTarget;
 	}
 
-	std::vector<GLenum>
-	OpenGLRenderer::computeDrawBuffers(const std::vector<uint32_t> &activeColorAttachments) {
+	std::vector<GLenum> OpenGLRenderer::computeDrawBuffers(
+	    const std::vector<uint32_t> &activeColorAttachments
+	) {
 		std::vector<GLenum> result;
 		result.reserve(activeColorAttachments.size());
 		for (uint32_t attachmentIndex : activeColorAttachments) {

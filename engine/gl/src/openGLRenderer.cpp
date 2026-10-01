@@ -1,5 +1,6 @@
 #include "triple/gl/OpenGLRenderer.h"
 #include <algorithm>
+#include <assert.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -60,31 +61,29 @@ namespace triple::gl {
 
 	void OpenGLRenderer::shutdown() {
 		// textures
-		m_resources->pool<GLTextureRes>(ResourceType::Texture).forEachAlive([](GLTextureRes &res) {
+		m_resources->pool<GLTextureRes>().forEachAlive([](GLTextureRes &res) {
 			glDeleteTextures(1, &res.id);
 		});
 
 		// shaders
-		m_resources->pool<GLShaderRes>(ResourceType::Shader).forEachAlive([](GLShaderRes &res) {
+		m_resources->pool<GLShaderRes>().forEachAlive([](GLShaderRes &res) {
 			glDeleteProgram(res.program);
 		});
 
 		// geometry
-		m_resources->pool<GLGeometryRes>(ResourceType::Geometry)
-		    .forEachAlive([](GLGeometryRes &res) {
-			    glDeleteVertexArrays(1, &res.vao);
-			    glDeleteBuffers(1, &res.vbo);
-			    glDeleteBuffers(1, &res.ebo);
-		    });
+		m_resources->pool<GLGeometryRes>().forEachAlive([](GLGeometryRes &res) {
+			glDeleteVertexArrays(1, &res.vao);
+			glDeleteBuffers(1, &res.vbo);
+			glDeleteBuffers(1, &res.ebo);
+		});
 
 		// render targets (fbo; their textures will already be removed above, since they are also in
 		// the Texture-pool
-		m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget)
-		    .forEachAlive([this](GLRenderTargetRes &res) {
-			    if (res.type != gfx::RenderTargetType::BackBuffer) {
-				    glDeleteFramebuffers(1, &res.fbo);
-			    }
-		    });
+		m_resources->pool<GLRenderTargetRes>().forEachAlive([this](GLRenderTargetRes &res) {
+			if (res.type != gfx::RenderTargetType::BackBuffer) {
+				glDeleteFramebuffers(1, &res.fbo);
+			}
+		});
 
 		// views do not own GL resources directly - just data, there is nothing to clean.
 
@@ -94,7 +93,7 @@ namespace triple::gl {
 	void OpenGLRenderer::resize(uint32_t width, uint32_t height) {
 		glViewport(0, 0, width, height);
 
-		auto &pool = m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget);
+		auto &pool = m_resources->pool<GLRenderTargetRes>();
 		auto *backBufferRes = pool.get(m_backBufferTarget.raw);
 		if (backBufferRes) {
 			backBufferRes->width = width;
@@ -107,12 +106,12 @@ namespace triple::gl {
 	void OpenGLRenderer::beginFrame(float time) {
 		m_currentTime = time;
 
-		auto &viewPool = m_resources->pool<GLViewRes>(ResourceType::View);
+		auto &viewPool = m_resources->pool<GLViewRes>();
 		viewPool.forEachAlive([](GLViewRes &res) { res.queue.clear(); });
 	}
 
 	void OpenGLRenderer::submit(ViewHandle view, const DrawCommand &cmd) {
-		auto *res = m_resources->pool<GLViewRes>(ResourceType::View).get(view.raw);
+		auto *res = m_resources->pool<GLViewRes>().get(view.raw);
 		if (!res) {
 			setLastError("submit: invalid or stale view handle");
 			return;
@@ -121,7 +120,7 @@ namespace triple::gl {
 	}
 
 	void OpenGLRenderer::endFrame() {
-		auto &viewPool = m_resources->pool<GLViewRes>(ResourceType::View);
+		auto &viewPool = m_resources->pool<GLViewRes>();
 
 		for (ViewHandle handle : m_viewOrder) {
 			GLViewRes *view = viewPool.get(handle.raw);
@@ -138,10 +137,13 @@ namespace triple::gl {
 	void OpenGLRenderer::present() { glfwSwapBuffers(m_window); }
 
 	void OpenGLRenderer::renderView(GLViewRes &view) {
-		std::sort(view.queue.begin(), view.queue.end(),
-		          [](const DrawCommand &a, const DrawCommand &b) { return a.sortKey < b.sortKey; });
+		std::sort(
+		    view.queue.begin(), view.queue.end(), [](const DrawCommand &a, const DrawCommand &b) {
+			    return a.sortKey < b.sortKey;
+		    }
+		);
 
-		auto &targetPool = m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget);
+		auto &targetPool = m_resources->pool<GLRenderTargetRes>();
 		auto *targetRes = targetPool.get(view.desc.target.raw);
 		if (!targetRes) {
 			setLastError("renderView: view has invalid render target");
@@ -154,8 +156,8 @@ namespace triple::gl {
 		GpuHandle currentShader = kInvalidGpuHandle;
 		GpuHandle currentGeometry = kInvalidGpuHandle;
 
-		auto &shaderPool = m_resources->pool<GLShaderRes>(ResourceType::Shader);
-		auto &geomPool = m_resources->pool<GLGeometryRes>(ResourceType::Geometry);
+		auto &shaderPool = m_resources->pool<GLShaderRes>();
+		auto &geomPool = m_resources->pool<GLGeometryRes>();
 
 		for (const auto &cmd : view.queue) {
 			if (cmd.pass != currentPass) {
@@ -181,9 +183,12 @@ namespace triple::gl {
 			applyMaterialUniforms(cmd);
 			bindTextures(cmd.textures);
 
-			glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(cmd.indexCount), GL_UNSIGNED_INT,
-			               reinterpret_cast<void *>(
-			                   static_cast<uintptr_t>(cmd.indexOffset * sizeof(uint32_t))));
+			glDrawElements(
+			    GL_TRIANGLES,
+			    static_cast<GLsizei>(cmd.indexCount),
+			    GL_UNSIGNED_INT,
+			    reinterpret_cast<void *>(static_cast<uintptr_t>(cmd.indexOffset * sizeof(uint32_t)))
+			);
 		}
 	}
 
@@ -198,8 +203,9 @@ namespace triple::gl {
 		} else if (view.activeDrawBuffers.empty()) {
 			glDrawBuffer(GL_NONE);
 		} else {
-			glDrawBuffers(static_cast<GLsizei>(view.activeDrawBuffers.size()),
-			              view.activeDrawBuffers.data());
+			glDrawBuffers(
+			    static_cast<GLsizei>(view.activeDrawBuffers.size()), view.activeDrawBuffers.data()
+			);
 		}
 
 		if (desc.clearDepth) {
@@ -209,20 +215,36 @@ namespace triple::gl {
 		if (target.type == gfx::RenderTargetType::BackBuffer) {
 			GLbitfield clearMask = GL_COLOR_BUFFER_BIT;
 
-			glClearColor(desc.clearColor.r, desc.clearColor.g, desc.clearColor.b,
-			             desc.clearColor.a);
+			glClearColor(
+			    desc.clearColor.r, desc.clearColor.g, desc.clearColor.b, desc.clearColor.a
+			);
 
 			if (desc.clearDepth)
 				clearMask |= GL_DEPTH_BUFFER_BIT;
 
 			glClear(clearMask);
 		} else {
+			float cc[4] = {
+			    desc.clearColor.r, desc.clearColor.g, desc.clearColor.b, desc.clearColor.a
+			};
+
 			for (uint32_t attachmentIndex : desc.clearColorAttachments) {
+				// glClearBufferfv takes the draw buffer slot (position in glDrawBuffers),
+				// not the GL_COLOR_ATTACHMENTn number.
+				auto it = std::find(
+				    desc.activeColorAttachments.begin(),
+				    desc.activeColorAttachments.end(),
+				    attachmentIndex
+				);
+				assert(
+				    it != desc.activeColorAttachments.end() &&
+				    "prepareView: clearColorAttachments entry is not an active attachment"
+				);
+				if (it == desc.activeColorAttachments.end())
+					continue;
 
-				float cc[4] = {desc.clearColor.r, desc.clearColor.g, desc.clearColor.b,
-				               desc.clearColor.a};
-
-				glClearBufferfv(GL_COLOR, static_cast<GLint>(attachmentIndex), cc);
+				GLint drawBuffer = static_cast<GLint>(it - desc.activeColorAttachments.begin());
+				glClearBufferfv(GL_COLOR, drawBuffer, cc);
 			}
 			if (desc.clearDepth) {
 				glClear(GL_DEPTH_BUFFER_BIT);
@@ -275,9 +297,10 @@ namespace triple::gl {
 		}
 	}
 
-	GLShaderRes *OpenGLRenderer::bindShaderIfNeeded(GpuHandle handle, GpuHandle &currentShader,
-	                                                const GLViewRes &view) {
-		auto &shaderPool = m_resources->pool<GLShaderRes>(ResourceType::Shader);
+	GLShaderRes *OpenGLRenderer::bindShaderIfNeeded(
+	    GpuHandle handle, GpuHandle &currentShader, const GLViewRes &view
+	) {
+		auto &shaderPool = m_resources->pool<GLShaderRes>();
 		GLShaderRes *shaderRes = shaderPool.get(handle);
 		if (!shaderRes)
 			return nullptr;
@@ -286,19 +309,30 @@ namespace triple::gl {
 			glUseProgram(shaderRes->program);
 			currentShader = handle;
 
-			if (shaderRes->viewLocation != -1)
-				glUniformMatrix4fv(shaderRes->viewLocation, 1, GL_FALSE,
-				                   &view.desc.camera.viewMatrix.data[0]);
-			if (shaderRes->projectionLocation != -1)
-				glUniformMatrix4fv(shaderRes->projectionLocation, 1, GL_FALSE,
-				                   &view.desc.camera.projectionMatrix.data[0]);
+			const auto &camera = view.desc.camera;
+			auto setMat4 = [](GLint location, const auto &matrix) {
+				if (location != -1)
+					glUniformMatrix4fv(location, 1, GL_FALSE, &matrix.data[0]);
+			};
+			setMat4(shaderRes->viewLocation, camera.viewMatrix);
+			setMat4(shaderRes->projectionLocation, camera.projectionMatrix);
+
+			if (shaderRes->timeLocation != -1)
+				glUniform1f(shaderRes->timeLocation, m_currentTime);
+			if (shaderRes->resolutionLocation != -1)
+				glUniform2f(
+				    shaderRes->resolutionLocation,
+				    static_cast<float>(view.desc.viewport.width),
+				    static_cast<float>(view.desc.viewport.height)
+				);
 		}
 		return shaderRes;
 	}
 
-	GLGeometryRes *OpenGLRenderer::bindGeometryIfNeeded(GpuHandle handle,
-	                                                    GpuHandle &currentGeometry) {
-		auto &geomPool = m_resources->pool<GLGeometryRes>(ResourceType::Geometry);
+	GLGeometryRes *OpenGLRenderer::bindGeometryIfNeeded(
+	    GpuHandle handle, GpuHandle &currentGeometry
+	) {
+		auto &geomPool = m_resources->pool<GLGeometryRes>();
 		GLGeometryRes *geomRes = geomPool.get(handle);
 		if (!geomRes)
 			return nullptr;
@@ -320,7 +354,7 @@ namespace triple::gl {
 	}
 
 	void OpenGLRenderer::bindTextures(const std::array<TextureHandle, kMaxTextureSlots> &textures) {
-		auto &texPool = m_resources->pool<GLTextureRes>(ResourceType::Texture);
+		auto &texPool = m_resources->pool<GLTextureRes>();
 		for (uint32_t slot = 0; slot < kMaxTextureSlots; ++slot) {
 			if (!textures[slot].isValid())
 				continue;
@@ -339,8 +373,7 @@ namespace triple::gl {
 		res.width = width;
 		res.height = height;
 
-		GpuHandle raw =
-		    m_resources->pool<GLRenderTargetRes>(ResourceType::RenderTarget).create(std::move(res));
+		GpuHandle raw = m_resources->pool<GLRenderTargetRes>().create(std::move(res));
 		return RenderTargetHandle{raw};
 	}
 

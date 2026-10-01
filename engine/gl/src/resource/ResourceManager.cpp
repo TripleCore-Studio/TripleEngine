@@ -22,17 +22,18 @@ namespace triple::gl {
 		}
 	}
 
-	gfx::TextureHandle ResourceManager::createColorAttachmentTexture(uint16_t width,
-	                                                                 uint16_t height,
-	                                                                 gfx::TextureFormat format) {
+	gfx::TextureHandle ResourceManager::createColorAttachmentTexture(
+	    uint16_t width, uint16_t height, gfx::TextureFormat format
+	) {
 
 		GLFormatInfo fi = toGLFormat(format);
 
 		GLuint tex;
 		glGenTextures(1, &tex);
 		glBindTexture(GL_TEXTURE_2D, tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, fi.internalFormat, width, height, 0, fi.format, fi.type,
-		             nullptr);
+		glTexImage2D(
+		    GL_TEXTURE_2D, 0, fi.internalFormat, width, height, 0, fi.format, fi.type, nullptr
+		);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -40,20 +41,21 @@ namespace triple::gl {
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		GLTextureRes res{tex, GL_TEXTURE_2D, width, height};
-		return gfx::TextureHandle{pool<GLTextureRes>(ResourceType::Texture).create(std::move(res))};
+		return gfx::TextureHandle{pool<GLTextureRes>().create(std::move(res))};
 	}
 
-	gfx::TextureHandle ResourceManager::createDepthAttachmentTexture(uint16_t width,
-	                                                                 uint16_t height,
-	                                                                 gfx::TextureFormat format) {
+	gfx::TextureHandle ResourceManager::createDepthAttachmentTexture(
+	    uint16_t width, uint16_t height, gfx::TextureFormat format
+	) {
 
 		GLFormatInfo fi = toGLFormat(format);
 
 		GLuint tex;
 		glGenTextures(1, &tex);
 		glBindTexture(GL_TEXTURE_2D, tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, fi.internalFormat, width, height, 0, fi.format, fi.type,
-		             nullptr);
+		glTexImage2D(
+		    GL_TEXTURE_2D, 0, fi.internalFormat, width, height, 0, fi.format, fi.type, nullptr
+		);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -61,6 +63,6 @@ namespace triple::gl {
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		GLTextureRes res{tex, GL_TEXTURE_2D, width, height};
-		return gfx::TextureHandle{pool<GLTextureRes>(ResourceType::Texture).create(std::move(res))};
+		return gfx::TextureHandle{pool<GLTextureRes>().create(std::move(res))};
 	}
 } // namespace triple::gl

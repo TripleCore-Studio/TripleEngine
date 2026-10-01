@@ -55,7 +55,6 @@ namespace triple::gfx {
 		std::string vertexSource;
 		std::string fragmentSource;
 
-		VertexLayout vertexLayout;
 		std::vector<UniformParamDesc> uniforms;
 		uint32_t uniformBlockSize = 0; // total size of the packed material blob
 
