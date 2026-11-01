@@ -1,5 +1,8 @@
 # Triple Engine Docs
 
+## Workflow
+- [Git branches and commits](workflow/git.md)
+
 ## Architecture
 - [Renderer](architecture/renderer.md)
 - [Shaders](architecture/shaders.md)
