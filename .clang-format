@@ -11,7 +11,7 @@ IndentAccessModifiers: false
 AccessModifierOffset: -4
 IndentCaseLabels: true
 IndentPPDirectives: BeforeHash
-AlignAfterOpenBracket: AlwaysBreak
+AlignAfterOpenBracket: BlockIndent
 BinPackArguments: false
 BinPackParameters: false
 PenaltyReturnTypeOnItsOwnLine: 1000
